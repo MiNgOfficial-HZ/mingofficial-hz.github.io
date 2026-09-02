@@ -25,6 +25,8 @@
       ub.textContent = myUser ? '😊' : '👤';
       ub.setAttribute('aria-label', myUser ? '我的账户（' + (myUser.nick || '') + '）' : '登录 / 注册');
     }
+    var gh = $('#guestHint');
+    if (gh) gh.hidden = !!myUser;
   }
 
   function apiPost(path, body) {
@@ -948,6 +950,7 @@
         break;
       }
       case 'submit-login': submitLogin(); break;
+      case 'guest-login': openLoginModal(); break;
       case 'img-remove': {
         var imgUrl = btn.getAttribute('data-url');
         pendingModalImgs = pendingModalImgs.filter(function (u) { return u !== imgUrl; });
