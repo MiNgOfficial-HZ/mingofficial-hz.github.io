@@ -28,6 +28,7 @@
   --font-tech: "Rajdhani", "Noto Sans SC", -apple-system, sans-serif;
   --font-display: "LXGW WenKai TC", "Noto Sans SC", -apple-system, sans-serif; /* Apple 式手写流线感 */
   --font-latin: "Fira Code", "Consolas", "SF Mono", ui-monospace, monospace; /* 科技等宽 */
+  --font-hand: "Long Cang", "Kaiti SC", "KaiTi", "Noto Sans SC", sans-serif; /* 手写体 */
   
 }
 [data-theme="light"] {
@@ -186,20 +187,32 @@ button { font-family: inherit; }
   color: var(--accent); margin-bottom: 22px;
 }
 .hero-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(2.6rem, 7.2vw, 5.4rem);
-  line-height: 1.2; letter-spacing: 0;
-  background: linear-gradient(180deg, var(--ink) 55%, color-mix(in srgb, var(--ink) 45%, transparent));
+  display: flex; flex-direction: column; align-items: center;
+  font-family: var(--font-hand);
+  line-height: 1.35; letter-spacing: 0.04em;
+  margin-top: -6px;
+}
+.hero-title span, .hero-title em { display: block; }
+.ht-l1, .ht-l3 {
+  font-size: clamp(1.7rem, 4.4vw, 3.2rem);
+  color: var(--muted);
+  background: linear-gradient(180deg, var(--ink) 60%, color-mix(in srgb, var(--ink) 42%, transparent));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.hero-title em {
-  font-family: var(--font-latin);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.ht-l1 { align-self: flex-start; text-align: left; transform: rotate(-1.2deg); }
+.ht-l3 { align-self: flex-end; text-align: right; transform: rotate(1.2deg); }
+.hero-title .ht-mid {
+  align-self: center;
+  font-family: var(--font-hand);
   font-style: normal;
+  font-size: clamp(3.4rem, 9vw, 6.6rem);
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  margin: 2px 0;
+  transform: rotate(-0.8deg);
   background: linear-gradient(95deg, var(--accent), #ff7a5c 60%, var(--gold));
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 10px 26px rgba(255, 59, 48, 0.28));
 }
 .hero-sub { max-width: 620px; margin: 22px auto 0; color: var(--muted); font-size: 1.02rem; line-height: 1.9; }
 .hero-sub .warn-en {
