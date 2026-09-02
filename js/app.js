@@ -268,7 +268,7 @@
   }
 
   /* ---------- 数据 ---------- */
-  var S = { moments: [], travels: [], tech: [], friends: [], messages: [] };
+  var S = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [] };
   var cloudOk = false;
   var pendingOp = null;
 
@@ -279,13 +279,14 @@
       ],
       travels: [],
       tech: [],
+      studies: [],
       friends: [],
       messages: []
     };
   }
 
   function normalize(data) {
-    var out = { moments: [], travels: [], tech: [], friends: [], messages: [] };
+    var out = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [] };
     Object.keys(out).forEach(function (k) {
       if (data && Array.isArray(data[k])) out[k] = data[k];
     });
@@ -378,6 +379,7 @@
       ['💬', S.moments.length, '条说说'],
       ['🧳', S.travels.length, '段旅程'],
       ['📷', S.tech.length, '件数码'],
+      ['📚', S.studies.length, '篇指南'],
       ['🔗', S.friends.length, '位友人']
     ];
     $('#heroStats').innerHTML = chips.map(function (c) {
@@ -431,6 +433,15 @@
     }).join('');
   }
 
+  function galleryHTML(imgs, title) {
+    if (!imgs || !imgs.length) return '';
+    var cover = '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(imgs[0]) + '"><img src="' + esc(imgs[0]) + '" alt="' + esc(title) + '" loading="lazy" /></button>';
+    var thumbs = imgs.slice(1, 6).map(function (u) {
+      return '<button class="tg-thumb" type="button" data-action="open-img" data-url="' + esc(u) + '"><img src="' + esc(u) + '" alt="' + esc(title) + '" loading="lazy" /></button>';
+    }).join('');
+    return '<div class="tech-gallery">' + cover + thumbs + '</div>';
+  }
+
   var CAT_EMOJI = { '手机': '📱', '电脑': '💻', '耳机': '🎧', '相机': '📷', '桌面': '⌨️', '智能家居': '🏠', '其他': '📦' };
 
   function renderTech() {
@@ -447,12 +458,25 @@
             '<span class="stars-bg">★★★★★</span>' +
             '<span class="stars-fill" style="width:' + pct + '%">★★★★★</span>' +
           '</div>' +
-          (t.imgs && t.imgs.length ? '<div class="tech-gallery">' +
-            '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(t.imgs[0]) + '"><img src="' + esc(t.imgs[0]) + '" alt="' + esc(t.title) + '" loading="lazy" /></button>' +
-            t.imgs.slice(1, 6).map(function (u) {
-              return '<button class="tg-thumb" type="button" data-action="open-img" data-url="' + esc(u) + '"><img src="' + esc(u) + '" alt="' + esc(t.title) + '" loading="lazy" /></button>';
-            }).join('') +
-          '</div>' : '') +
+          galleryHTML(t.imgs, t.title) +
+          '<p class="tech-text">' + esc(t.text) + '</p>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+  }
+
+  function renderStudies() {
+    var list = $('#studyList');
+    if (!list) return;
+    if (!S.studies.length) { list.innerHTML = emptyHTML('还没有任何指南，点右上角 <b>＋</b> 添加第一篇教程/焚诀 ✍️'); return; }
+    list.innerHTML = sortDesc(S.studies, 'date').map(function (t, i) {
+      var pct2 = '';
+      return '<article class="tech-item reveal" style="--rd:' + Math.min(i * 70, 350) + 'ms" data-id="' + t.id + '">' +
+        '<div class="tech-dot">📚</div>' +
+        '<div class="tech-card card">' +
+          '<div class="tech-head"><span class="badge">' + esc(t.category || '指南') + '</span><time>' + esc(t.date) + '</time>' + actionsHTML('study', t.id) + '</div>' +
+          '<h3 class="tech-name">' + esc(t.title) + '</h3>' +
+          galleryHTML(t.imgs, t.title) +
           '<p class="tech-text">' + esc(t.text) + '</p>' +
         '</div>' +
       '</article>';
@@ -499,6 +523,7 @@
     renderMoments();
     renderTravels();
     renderTech();
+    renderStudies();
     renderFriends();
     renderMessages();
     bindReveal();
@@ -658,16 +683,17 @@
     });
   }
 
-  var pendingTechImgs = [];
+  var pendingModalImgs = [];
+  var imgFolder = 'tech';
 
   function renderImgList() {
     var list = $('#imgList');
     if (!list) return;
-    list.innerHTML = pendingTechImgs.map(function (u) {
+    list.innerHTML = pendingModalImgs.map(function (u) {
       return '<div class="img-thumb"><img src="' + esc(u) + '" alt="图片" loading="lazy" /><button class="img-rm" type="button" data-action="img-remove" data-url="' + esc(u) + '" aria-label="移除">✕</button></div>';
     }).join('');
     var lbl = $('#imgAddLabel');
-    if (lbl) lbl.style.display = pendingTechImgs.length >= 6 ? 'none' : '';
+    if (lbl) lbl.style.display = pendingModalImgs.length >= 6 ? 'none' : '';
   }
 
   function compressImage(file, cb) {
@@ -699,16 +725,16 @@
       var files = Array.prototype.slice.call(input.files || []);
       input.value = '';
       if (!files.length) return;
-      var remaining = 6 - pendingTechImgs.length;
+      var remaining = 6 - pendingModalImgs.length;
       files = files.slice(0, Math.max(0, remaining));
       if (!files.length) { toast('最多 6 张图片', 'info'); return; }
       var done = 0;
       files.forEach(function (file) {
         if (file.size > 8 * 1024 * 1024) { toast('「' + file.name + '」超过 8MB，已跳过', 'error'); done++; if (done === files.length) renderImgList(); return; }
         compressImage(file, function (b64, ext) {
-          apiPost('/api/upload', { name: 'upload.' + ext, data: b64 }).then(function (res) {
+          apiPost('/api/upload', { name: 'upload.' + ext, data: b64, session: mySession, folder: imgFolder }).then(function (res) {
             if (res.ok && res.json.url) {
-              pendingTechImgs.push(res.json.url);
+              pendingModalImgs.push(res.json.url);
               toast('图片已上传 🖼️');
             } else {
               toast(res.json.error || '上传失败', 'error');
@@ -724,7 +750,8 @@
   }
 
   function openTechModal(item) {
-    pendingTechImgs = item && Array.isArray(item.imgs) ? item.imgs.slice() : [];
+    imgFolder = 'tech';
+    pendingModalImgs = item && Array.isArray(item.imgs) ? item.imgs.slice() : [];
     openModal({
       title: item ? '编辑体验' : '添加数码体验',
       submitText: item ? '保存修改' : '添加 ✨',
@@ -737,11 +764,37 @@
         { key: '_imgs', label: '图片', type: 'imgs' }
       ],
       onSubmit: function (v) {
-        var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim(), imgs: pendingTechImgs.slice(0, 6) };
+        var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim(), imgs: pendingModalImgs.slice(0, 6) };
         if (item) {
           adminMutate('tech.edit', Object.assign({ id: item.id }, data), '体验已更新 📷');
         } else {
           adminMutate('tech.add', Object.assign({ id: uid() }, data), '体验已添加 📷');
+        }
+        return true;
+      }
+    });
+    wireImgPicker();
+  }
+
+  function openStudyModal(item) {
+    imgFolder = 'study';
+    pendingModalImgs = item && Array.isArray(item.imgs) ? item.imgs.slice() : [];
+    openModal({
+      title: item ? '编辑指南' : '添加指南',
+      submitText: item ? '保存修改' : '添加 ✍️',
+      fields: [
+        { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：C 语言焚诀 · 燃烧你的 CPU' },
+        { key: 'category', label: '类目', type: 'select', options: ['教程', '焚诀', '笔记', '杂谈'], value: item ? item.category : '教程' },
+        { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
+        { key: 'text', label: '内容', type: 'textarea', required: true, max: 800, rows: 5, placeholder: '教程步骤 / 焚诀心法 / 学习笔记…' },
+        { key: '_imgs', label: '图片', type: 'imgs' }
+      ],
+      onSubmit: function (v) {
+        var data = { title: v.title.trim(), category: v.category, date: v.date, text: v.text.trim(), imgs: pendingModalImgs.slice(0, 6) };
+        if (item) {
+          adminMutate('study.edit', Object.assign({ id: item.id }, data), '指南已更新 📚');
+        } else {
+          adminMutate('study.add', Object.assign({ id: uid() }, data), '指南已添加 📚');
         }
         return true;
       }
@@ -810,7 +863,7 @@
       case 'submit-login': submitLogin(); break;
       case 'img-remove': {
         var imgUrl = btn.getAttribute('data-url');
-        pendingTechImgs = pendingTechImgs.filter(function (u) { return u !== imgUrl; });
+        pendingModalImgs = pendingModalImgs.filter(function (u) { return u !== imgUrl; });
         renderImgList();
         break;
       }
@@ -826,6 +879,11 @@
         message: '删除后该用户无法再登录，此操作不可撤销。',
         onOk: function () { panelAction('delete', id); }
       }); break;
+      case 'qa-moment': $('#qaMenu').classList.remove('open'); openMomentModal(null); break;
+      case 'qa-travel': $('#qaMenu').classList.remove('open'); openTravelModal(null); break;
+      case 'qa-tech': $('#qaMenu').classList.remove('open'); openTechModal(null); break;
+      case 'qa-study': $('#qaMenu').classList.remove('open'); openStudyModal(null); break;
+      case 'qa-friend': $('#qaMenu').classList.remove('open'); openFriendModal(null); break;
       case 'add-moment': openMomentModal(null); break;
       case 'edit-moment': openMomentModal(find('moments')); break;
       case 'del-moment': confirmDel('moment', id, '说说'); break;
@@ -835,6 +893,9 @@
       case 'add-tech': openTechModal(null); break;
       case 'edit-tech': openTechModal(find('tech')); break;
       case 'del-tech': confirmDel('tech', id, '体验'); break;
+      case 'add-study': openStudyModal(null); break;
+      case 'edit-study': openStudyModal(find('studies')); break;
+      case 'del-study': confirmDel('study', id, '指南'); break;
       case 'add-friend': openFriendModal(null); break;
       case 'edit-friend': openFriendModal(find('friends')); break;
       case 'del-friend': confirmDel('friend', id, '友链'); break;
@@ -932,7 +993,7 @@
       });
     });
   }, { rootMargin: '-40% 0px -52% 0px' }) : null;
-  ['moments', 'travel', 'tech', 'guest'].forEach(function (sec) {
+  ['moments', 'travel', 'tech', 'study', 'guest'].forEach(function (sec) {
     var el = document.getElementById(sec);
     if (el && spyIO) spyIO.observe(el);
   });
@@ -969,9 +1030,19 @@
     else openLoginModal();
   });
 
-  /* ---------- 页脚年份 & FAB ---------- */
+  /* ---------- 页脚年份 & FAB 快捷新建 ---------- */
   $('#year').textContent = new Date().getFullYear();
-  $('#fab').addEventListener('click', function () { openMomentModal(null); });
+  $('#fab').addEventListener('click', function (e) {
+    e.stopPropagation();
+    var m = $('#qaMenu');
+    if (m) m.classList.toggle('open');
+  });
+  document.addEventListener('click', function (e) {
+    var m = $('#qaMenu');
+    if (m && m.classList.contains('open') && !e.target.closest('#qaMenu') && !e.target.closest('#fab')) {
+      m.classList.remove('open');
+    }
+  });
 
   /* ---------- 启动 ---------- */
   boot();
