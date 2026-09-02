@@ -791,7 +791,7 @@
   (function initTheme() {
     var t = null;
     try { t = localStorage.getItem(THEME_KEY); } catch (e) {}
-    if (!t) t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (!t) t = 'dark'; /* 科技风默认暗色，可随时切换 */
     applyTheme(t);
   })();
 
