@@ -225,7 +225,9 @@
   function openPanelModal() {
     $('#modalTitle').textContent = '🛡️ 管理面板 · 用户';
     $('#modalBody').innerHTML = '<p class="confirm-text">加载中…</p>';
-    $('#modalFoot').innerHTML = '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>';
+    $('#modalFoot').innerHTML =
+      (myUser && myUser.role === 'owner' ? '<button class="btn btn-soft" type="button" data-action="panel-create">＋ 新建账号</button>' : '') +
+      '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>';
     $('#modalBackdrop').hidden = false;
     document.body.style.overflow = 'hidden';
     apiPost('/api/users/list', { session: mySession }).then(function (res) {
@@ -236,6 +238,7 @@
         var acts = '';
         if (myUser && myUser.role === 'owner' && u.role !== 'owner') {
           acts = '<button class="act-btn" type="button" data-action="panel-role" data-id="' + u.id + '" data-role="' + (u.role === 'admin' ? 'user' : 'admin') + '">' + (u.role === 'admin' ? '取消管理' : '设为管理') + '</button>' +
+                 '<button class="act-btn" type="button" data-action="panel-resetpw" data-id="' + u.id + '">重置密码</button>' +
                  '<button class="act-btn danger" type="button" data-action="panel-del" data-id="' + u.id + '">删</button>';
         }
         return '<div class="panel-user">' +
@@ -248,6 +251,48 @@
       }).join('');
       $('#modalBody').innerHTML = (rows || '<p class="confirm-text">还没有注册用户</p>') +
         '<p class="panel-tip">提示：任何人邮箱验证码登录即自动注册；你（giraffeming@126.com）是所有者，可授权/移除管理员。</p>';
+    });
+  }
+
+  function openCreateUserModal() {
+    openModal({
+      title: '👤 新建账号（发放给访客）',
+      submitText: '创建并发放',
+      fields: [
+        { key: 'email', label: '邮箱', type: 'email', required: true, max: 60, placeholder: '对方的邮箱' },
+        { key: 'nick', label: '昵称', max: 20, placeholder: '昵称（选填，默认邮箱前缀）' },
+        { key: 'password', label: '初始密码', type: 'password', required: true, max: 64, placeholder: '6-64 位' },
+        { key: 'password2', label: '确认密码', type: 'password', required: true, max: 64, placeholder: '再输一遍' }
+      ],
+      onSubmit: function (v) {
+        if (String(v.password).length < 6) { toast('密码至少 6 位', 'error'); return false; }
+        if (v.password !== v.password2) { toast('两次输入的密码不一致', 'error'); return false; }
+        apiPost('/api/users/create', { session: mySession, email: v.email.trim(), nick: v.nick.trim(), password: v.password }).then(function (res) {
+          if (res.ok) { toast('账号已创建 ✔ 可把邮箱和密码发给对方了'); closeModal(); openPanelModal(); }
+          else { toast(res.json.error || '创建失败', 'error'); }
+        });
+        return false;
+      }
+    });
+  }
+
+  function openResetPwModal(id) {
+    openModal({
+      title: '🔑 重置密码',
+      submitText: '保存',
+      fields: [
+        { key: 'password', label: '新密码', type: 'password', required: true, max: 64, placeholder: '6-64 位' },
+        { key: 'password2', label: '确认', type: 'password', required: true, max: 64, placeholder: '再输一遍' }
+      ],
+      onSubmit: function (v) {
+        if (String(v.password).length < 6) { toast('密码至少 6 位', 'error'); return false; }
+        if (v.password !== v.password2) { toast('两次输入的密码不一致', 'error'); return false; }
+        apiPost('/api/users/action', { session: mySession, op: 'resetPw', id: id, password: v.password }).then(function (res) {
+          if (res.ok) { toast('密码已重置 ✔'); closeModal(); openPanelModal(); }
+          else { toast(res.json.error || '操作失败', 'error'); }
+        });
+        return false;
+      }
     });
   }
 
@@ -760,6 +805,8 @@
       case 'open-pw': openPwModal(); break;
       case 'open-panel': openPanelModal(); break;
       case 'logout-user': logoutUser(); break;
+      case 'panel-create': openCreateUserModal(); break;
+      case 'panel-resetpw': openResetPwModal(id); break;
       case 'panel-role': panelAction('setRole', id, btn.getAttribute('data-role')); break;
       case 'panel-del': openConfirm({
         title: '删除这个用户？',
