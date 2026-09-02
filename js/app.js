@@ -52,10 +52,26 @@
     mySession = s || '';
     try { if (s) localStorage.setItem(USER_LS, s); else localStorage.removeItem(USER_LS); } catch (e) {}
   }
-  function hasEditRight() { return !!myUser && (myUser.role === 'owner' || myUser.role === 'admin' || myUser.role === 'edit'); }
+  var PERM_MAP = { moment: 'say', travel: 'travel', tech: 'tech', study: 'study', friend: 'friends', msg: 'msg' };
+  function permFor(kindRaw) {
+    if (!myUser) return false;
+    var p = S.perms;
+    if (myUser.role === 'owner') return true;
+    if (myUser.role === 'admin') return !!p.admin[PERM_MAP[kindRaw]];
+    if (myUser.role === 'member') return !!p.member.canEdit;
+    return false;
+  }
+  function canEditAny() {
+    if (!myUser) return false;
+    var p = S.perms;
+    if (myUser.role === 'owner') return true;
+    if (myUser.role === 'admin') { var ks = Object.keys(p.admin); for (var i = 0; i < ks.length; i++) { if (p.admin[ks[i]]) return true; } return false; }
+    if (myUser.role === 'member') return !!p.member.canEdit;
+    return false;
+  }
   function hasPanelRight() { return !!myUser && (myUser.role === 'owner' || myUser.role === 'admin'); }
   function refreshAdminState() {
-    isAdmin = hasEditRight();
+    isAdmin = canEditAny();
     syncAdminUI();
   }
 
@@ -102,8 +118,8 @@
 
   function openMineModal() {
     if (!myUser) { openLoginModal(); return; }
-    var roleCls = myUser.role === 'owner' ? 'owner' : (myUser.role === 'admin' ? 'admin' : (myUser.role === 'edit' ? 'edit' : ''));
-    var roleLabel = myUser.role === 'owner' ? '站长' : (myUser.role === 'admin' ? '管理员' : (myUser.role === 'edit' ? '可编辑' : '仅查看'));
+    var roleCls = myUser.role === 'owner' ? 'owner' : (myUser.role === 'admin' ? 'admin' : '');
+    var roleLabel = myUser.role === 'owner' ? '站长' : (myUser.role === 'admin' ? '管理员' : (S.perms.member.canEdit ? '成员 · 可编辑' : '成员 · 仅查看'));
     $('#modalTitle').textContent = '👤 我的账户';
     $('#modalBody').innerHTML =
       '<div class="mine-card">' +
@@ -157,16 +173,14 @@
     document.body.style.overflow = 'hidden';
     apiPost('/api/users/list', { session: mySession }).then(function (res) {
       if (!res.ok) { $('#modalBody').innerHTML = '<p class="confirm-text">' + esc(res.json.error || '加载失败') + '</p>'; return; }
+      var permCache = res.json.perms || S.perms;
       var rows = (res.json.users || []).map(function (u) {
-        var rc = u.role === 'owner' ? 'owner' : (u.role === 'admin' ? 'admin' : (u.role === 'edit' ? 'edit' : ''));
-        var rl = u.role === 'owner' ? '站长' : (u.role === 'admin' ? '管理员' : (u.role === 'edit' ? '可编辑' : '仅查看'));
+        var rc = u.role === 'owner' ? 'owner' : (u.role === 'admin' ? 'admin' : '');
+        var rl = u.role === 'owner' ? '站长' : (u.role === 'admin' ? '管理员' : (permCache.member.canEdit ? '成员 · 可编辑' : '成员 · 仅查看'));
         var acts = '';
         if (myUser && myUser.role === 'owner' && u.role !== 'owner') {
-          acts = '<button class="act-btn" type="button" data-action="panel-role" data-id="' + u.id + '" data-role="' + (u.role === 'admin' ? 'view' : 'admin') + '">' + (u.role === 'admin' ? '取消管理' : '设为管理') + '</button>';
-          if (u.role !== 'admin') {
-            acts += '<button class="act-btn" type="button" data-action="panel-role" data-id="' + u.id + '" data-role="' + (u.role === 'edit' ? 'view' : 'edit') + '">' + (u.role === 'edit' ? '改仅查看' : '改可编辑') + '</button>';
-          }
-          acts += '<button class="act-btn" type="button" data-action="panel-resetpw" data-id="' + u.id + '">重置密码</button>' +
+          acts = '<button class="act-btn" type="button" data-action="panel-role" data-id="' + u.id + '" data-role="' + (u.role === 'admin' ? 'member' : 'admin') + '">' + (u.role === 'admin' ? '取消管理' : '设为管理') + '</button>' +
+                  '<button class="act-btn" type="button" data-action="panel-resetpw" data-id="' + u.id + '">重置密码</button>' +
                   '<button class="act-btn danger" type="button" data-action="panel-del" data-id="' + u.id + '">删</button>';
         }
         return '<div class="panel-user">' +
@@ -177,8 +191,26 @@
             '<div class="pu-sub">创建 ' + esc(u.c || '-') + (u.l ? ' · 最近登录 ' + esc(u.l) : '') + '</div>' +
           '</div>' + acts + '</div>';
       }).join('');
-      $('#modalBody').innerHTML = (rows || '<p class="confirm-text">还没有任何账号</p>') +
-        '<p class="panel-tip">提示：在此创建账号并设置权限（可编辑 / 仅查看）；「设为管理」可授权新管理员。账号密码请私下发给访客。</p>';
+      var permBlock = '';
+      if (myUser && myUser.role === 'owner') {
+        var pg = function (title, items) {
+          var rows2 = items.map(function (it) {
+            var val = permCache;
+            var parts = it[0].split('.');
+            for (var i = 0; i < parts.length; i++) val = val[parts[i]];
+            return '<div class="switch-row"><span>' + it[1] + '</span><label class="switch"><input type="checkbox" data-perm="' + it[0] + '"' + (val ? ' checked' : '') + ' /><span class="slider"></span></label></div>';
+          }).join('');
+          return '<div class="perm-group">' + title + '</div>' + rows2;
+        };
+        permBlock = '<div class="perm-block"><h4>🎛 权限管理（滑块即开关）</h4>' +
+          pg('管理员 · 可管理板块', [['admin.say', '说说'], ['admin.travel', '游记'], ['admin.tech', '数码'], ['admin.study', '指南'], ['admin.friends', '友链'], ['admin.msg', '留言']]) +
+          pg('成员（已登录访客）', [['member.canMsg', '发表留言'], ['member.canEdit', '编辑内容']]) +
+          pg('游客（未登录）', [['guest.canMsg', '允许留言']]) +
+          '<button class="btn btn-soft btn-small" type="button" data-action="perms-save" style="margin-top:12px">保存权限</button>' +
+          '<p class="panel-tip">默认：管理员可管理内容板块（密钥与登录由系统保护）；成员可留言不可编辑；游客仅可浏览。</p></div>';
+      }
+      $('#modalBody').innerHTML = (rows || '<p class="confirm-text">还没有任何账号</p>') + permBlock +
+        '<p class="panel-tip">账号密码请私下发给访客；「设为管理」授予管理员角色。</p>';
     });
   }
 
@@ -191,7 +223,7 @@
         { key: 'nick', label: '昵称', max: 20, placeholder: '昵称（选填）' },
         { key: 'password', label: '初始密码', type: 'password', required: true, max: 64, placeholder: '6-64 位' },
         { key: 'password2', label: '确认密码', type: 'password', required: true, max: 64, placeholder: '再输一遍' },
-        { key: 'role', label: '访问权限', type: 'select', options: ['edit', 'view'], value: 'view', hint: '可编辑：可增删改内容；仅查看：只读' }
+        { key: 'role', label: '角色', type: 'select', options: ['member', 'admin'], value: 'member', hint: '成员：可留言（编辑权限在权限管理中统一配置）；管理员：按权限矩阵管理内容' }
       ],
       onSubmit: function (v) {
         if (String(v.password).length < 6) { toast('密码至少 6 位', 'error'); return false; }
@@ -238,6 +270,7 @@
       if (res.ok) { myUser = res.json.user; }
       else { saveUserSession(''); myUser = null; }
       refreshAdminState();
+      renderAll();
     });
   }
 
@@ -270,7 +303,8 @@
   }
 
   /* ---------- 数据 ---------- */
-  var S = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [] };
+  var S = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [],
+    perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true }, member: { canMsg: true, canEdit: false }, guest: { canMsg: false } } };
   var cloudOk = false;
   var pendingOp = null;
 
@@ -288,10 +322,21 @@
   }
 
   function normalize(data) {
-    var out = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [] };
+    var out = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [],
+      perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true }, member: { canMsg: true, canEdit: false }, guest: { canMsg: false } } };
     Object.keys(out).forEach(function (k) {
+      if (k === 'perms') return;
       if (data && Array.isArray(data[k])) out[k] = data[k];
     });
+    if (data && data.perms) {
+      var src = data.perms;
+      ['admin', 'member', 'guest'].forEach(function (g) {
+        var srcG = src[g] || {};
+        Object.keys(out.perms[g]).forEach(function (k) {
+          if (typeof srcG[k] === 'boolean') out.perms[g][k] = srcG[k];
+        });
+      });
+    }
     return out;
   }
 
@@ -390,7 +435,7 @@
   }
 
   function actionsHTML(kind, id) {
-    if (!isAdmin) return '';
+    if (!permFor(kind)) return '';
     return '<div class="item-actions">' +
       '<button class="act-btn" type="button" data-action="edit-' + kind + '" data-id="' + id + '" aria-label="编辑">✎</button>' +
       '<button class="act-btn danger" type="button" data-action="del-' + kind + '" data-id="' + id + '" aria-label="删除">✕</button>' +
@@ -421,7 +466,7 @@
           '<span class="t-emoji">' + esc(t.emoji || '🌏') + '</span>' +
           '<span class="t-date">' + esc(t.date) + '</span>' +
           '<span class="t-loc">📍 ' + esc(t.location || '在路上') + '</span>' +
-          (isAdmin ? '<div class="t-actions">' +
+          (permFor('travel') ? '<div class="t-actions">' +
             '<button class="act-btn" type="button" data-action="edit-travel" data-id="' + t.id + '" aria-label="编辑">✎</button>' +
             '<button class="act-btn danger" type="button" data-action="del-travel" data-id="' + t.id + '" aria-label="删除">✕</button>' +
           '</div>' : '') +
@@ -516,7 +561,7 @@
         '<div class="m-avatar">' + esc(initial) + '</div>' +
         '<div class="m-body">' +
           '<div class="m-head"><span class="m-name">' + esc(m.name) + '</span><time>' + esc(m.time) + '</time>' +
-          (isAdmin ? '<button class="act-btn danger" type="button" data-action="del-msg" data-id="' + m.id + '" aria-label="删除">✕</button>' : '') + '</div>' +
+          (permFor('msg') ? '<button class="act-btn danger" type="button" data-action="del-msg" data-id="' + m.id + '" aria-label="删除">✕</button>' : '') + '</div>' +
           '<p class="m-text">' + esc(m.text) + '</p>' +
         '</div>' +
       '</article>';
@@ -531,7 +576,18 @@
     renderStudies();
     renderFriends();
     renderMessages();
+    applyGuestGate();
     bindReveal();
+  }
+
+  function applyGuestGate() {
+    var g = $('#guestGate'), f = $('#msgForm');
+    if (!g || !f) return;
+    var canPost = false;
+    if (myUser) canPost = myUser.role === 'owner' || myUser.role === 'admin' || !!S.perms.member.canMsg;
+    else canPost = !!S.perms.guest.canMsg;
+    f.style.display = canPost ? '' : 'none';
+    g.style.display = canPost ? 'none' : '';
   }
 
   function sortDesc(list, key) {
@@ -962,6 +1018,18 @@
       case 'open-panel': openPanelModal(); break;
       case 'logout-user': logoutUser(); break;
       case 'panel-create': openCreateUserModal(); break;
+      case 'perms-save': {
+        var np = { admin: {}, member: {}, guest: {} };
+        $$('#modalBody input[data-perm]').forEach(function (inp) {
+          var parts = inp.getAttribute('data-perm').split('.');
+          np[parts[0]][parts.slice(1).join('.')] = inp.checked;
+        });
+        apiPost('/api/users/setperms', { session: mySession, perms: np }).then(function (res) {
+          if (res.ok) { S.perms = res.json.perms; toast('权限已保存 ✔'); openPanelModal(); renderAll(); }
+          else { toast(res.json.error || '保存失败', 'error'); }
+        });
+        break;
+      }
       case 'panel-resetpw': openResetPwModal(id); break;
       case 'panel-role': panelAction('setRole', id, btn.getAttribute('data-role')); break;
       case 'panel-del': openConfirm({
@@ -1011,7 +1079,7 @@
     if (!name) return markInvalid(nameEl, '请填写你的名字');
     if (!EMAIL_RE.test(email)) return markInvalid(emailEl, '邮箱格式不正确');
     if (!text) return markInvalid(textEl, '写点什么再发送吧');
-    apiPost('/api/msg', { name: name, email: email, text: text }).then(function (res) {
+    apiPost('/api/msg', { name: name, email: email, text: text, session: mySession }).then(function (res) {
       if (res.ok) {
         if (res.json.db) { S = normalize(res.json.db); writeCache(); renderAll(); }
         e.target.reset();
