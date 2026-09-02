@@ -126,6 +126,20 @@ button { font-family: inherit; }
 }
 @keyframes chipPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
 @media (max-width: 480px) { .sync-chip { font-size: 0.7rem; padding: 6px 10px; } }
+
+/* ---------- 管理模式 ---------- */
+.admin-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 13px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--muted); font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.admin-btn:hover { color: var(--accent); border-color: var(--accent); }
+body.admin-mode .admin-btn { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.admin-only { display: none !important; }
+body.admin-mode .admin-only { display: inline-flex; }
+@media (max-width: 480px) { .admin-btn { padding: 6px 10px; font-size: 0.7rem; } }
 @media (max-width: 840px) {
   .menu-toggle { display: grid; }
   .main-nav {
