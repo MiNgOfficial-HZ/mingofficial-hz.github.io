@@ -781,6 +781,26 @@
     });
   });
 
+  /* ---------- 顶部阅读进度条 ---------- */
+  (function initProgress() {
+    var bar = document.getElementById('progressBar');
+    if (!bar) return;
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      var pct = max > 0 ? Math.min(100, (window.scrollY || doc.scrollTop) / max * 100) : 0;
+      bar.style.width = pct.toFixed(2) + '%';
+    }
+    function onScroll() {
+      if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  })();
+
   /* ---------- 主题 ---------- */
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
