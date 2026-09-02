@@ -447,6 +447,12 @@
             '<span class="stars-bg">★★★★★</span>' +
             '<span class="stars-fill" style="width:' + pct + '%">★★★★★</span>' +
           '</div>' +
+          (t.imgs && t.imgs.length ? '<div class="tech-gallery">' +
+            '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(t.imgs[0]) + '"><img src="' + esc(t.imgs[0]) + '" alt="' + esc(t.title) + '" loading="lazy" /></button>' +
+            t.imgs.slice(1, 6).map(function (u) {
+              return '<button class="tg-thumb" type="button" data-action="open-img" data-url="' + esc(u) + '"><img src="' + esc(u) + '" alt="' + esc(t.title) + '" loading="lazy" /></button>';
+            }).join('') +
+          '</div>' : '') +
           '<p class="tech-text">' + esc(t.text) + '</p>' +
         '</div>' +
       '</article>';
@@ -526,7 +532,14 @@
     var v = f.value != null ? f.value : '';
     var label = '<label for="f_' + f.key + '">' + esc(f.label) + (f.required ? ' <i style="color:var(--danger);font-style:normal">*</i>' : '') + '</label>';
     var inner;
-    if (f.type === 'textarea') {
+    if (f.type === 'imgs') {
+      inner = '<div class="img-picker">' +
+        '<div class="img-list" id="imgList"></div>' +
+        '<label class="img-add" for="imgFileInput" id="imgAddLabel">＋ 添加图片</label>' +
+        '<input id="imgFileInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />' +
+        '</div>' +
+        '<p class="field-hint">单张 ≤ 2MB，支持 JPG / PNG / WebP，自动压缩；最多 6 张</p>';
+    } else if (f.type === 'textarea') {
       inner = '<textarea id="f_' + f.key + '" name="' + f.key + '" rows="' + (f.rows || 4) + '" maxlength="' + (f.max || 500) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>';
     } else if (f.type === 'select') {
       inner = '<select id="f_' + f.key + '" name="' + f.key + '">' + (f.options || []).map(function (o) {
@@ -561,6 +574,7 @@
   }
 
   function validateField(f, v) {
+    if (f.key && f.key.charAt(0) === '_') return '';
     if (f.required && !String(v || '').trim()) return '请填写「' + f.label + '」';
     if ((f.type === 'email' || f.key === 'email') && v && !EMAIL_RE.test(v)) return '邮箱格式不太对哦';
     if (f.type === 'url' && v) {
@@ -573,7 +587,7 @@
     if (!currentSubmit) return;
     var values = {};
     $$('#modalBody input, #modalBody textarea, #modalBody select').forEach(function (el) {
-      values[el.name] = el.value;
+      if (el.name && el.name.charAt(0) !== '_') values[el.name] = el.value;
     });
     var firstErr = '';
     currentFields.forEach(function (f) {
@@ -644,7 +658,73 @@
     });
   }
 
+  var pendingTechImgs = [];
+
+  function renderImgList() {
+    var list = $('#imgList');
+    if (!list) return;
+    list.innerHTML = pendingTechImgs.map(function (u) {
+      return '<div class="img-thumb"><img src="' + esc(u) + '" alt="图片" loading="lazy" /><button class="img-rm" type="button" data-action="img-remove" data-url="' + esc(u) + '" aria-label="移除">✕</button></div>';
+    }).join('');
+    var lbl = $('#imgAddLabel');
+    if (lbl) lbl.style.display = pendingTechImgs.length >= 6 ? 'none' : '';
+  }
+
+  function compressImage(file, cb) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var maxW = 1280;
+        var scale = Math.min(1, maxW / (img.width || 1280));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * scale));
+        c.height = Math.max(1, Math.round(img.height * scale));
+        var ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        var isPng = file.type === 'image/png';
+        var dataUrl = isPng ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.82);
+        if (isPng && dataUrl.length > 2600000) dataUrl = c.toDataURL('image/jpeg', 0.8);
+        cb(dataUrl.split(',')[1], isPng ? 'png' : 'jpg');
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function wireImgPicker() {
+    var input = $('#imgFileInput');
+    if (!input) return;
+    input.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(input.files || []);
+      input.value = '';
+      if (!files.length) return;
+      var remaining = 6 - pendingTechImgs.length;
+      files = files.slice(0, Math.max(0, remaining));
+      if (!files.length) { toast('最多 6 张图片', 'info'); return; }
+      var done = 0;
+      files.forEach(function (file) {
+        if (file.size > 8 * 1024 * 1024) { toast('「' + file.name + '」超过 8MB，已跳过', 'error'); done++; if (done === files.length) renderImgList(); return; }
+        compressImage(file, function (b64, ext) {
+          apiPost('/api/upload', { name: 'upload.' + ext, data: b64 }).then(function (res) {
+            if (res.ok && res.json.url) {
+              pendingTechImgs.push(res.json.url);
+              toast('图片已上传 🖼️');
+            } else {
+              toast(res.json.error || '上传失败', 'error');
+            }
+          }).finally(function () {
+            done++;
+            if (done === files.length) renderImgList();
+          });
+        });
+      });
+    });
+    renderImgList();
+  }
+
   function openTechModal(item) {
+    pendingTechImgs = item && Array.isArray(item.imgs) ? item.imgs.slice() : [];
     openModal({
       title: item ? '编辑体验' : '添加数码体验',
       submitText: item ? '保存修改' : '添加 ✨',
@@ -653,10 +733,11 @@
         { key: 'category', label: '分类', type: 'select', options: ['手机', '电脑', '耳机', '相机', '桌面', '智能家居', '其他'], value: item ? item.category : '手机' },
         { key: 'rating', label: '评分', type: 'select', options: ['5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1'], value: item ? String(item.rating) : '4.5' },
         { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
-        { key: 'text', label: '体验感受', type: 'textarea', required: true, max: 500, rows: 4, placeholder: '真实的使用感受，优缺点都可以说…' }
+        { key: 'text', label: '体验感受', type: 'textarea', required: true, max: 500, rows: 4, placeholder: '真实的使用感受，优缺点都可以说…' },
+        { key: '_imgs', label: '图片', type: 'imgs' }
       ],
       onSubmit: function (v) {
-        var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim() };
+        var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim(), imgs: pendingTechImgs.slice(0, 6) };
         if (item) {
           adminMutate('tech.edit', Object.assign({ id: item.id }, data), '体验已更新 📷');
         } else {
@@ -665,6 +746,7 @@
         return true;
       }
     });
+    wireImgPicker();
   }
 
   function openFriendModal(item) {
@@ -726,6 +808,13 @@
         break;
       }
       case 'submit-login': submitLogin(); break;
+      case 'img-remove': {
+        var imgUrl = btn.getAttribute('data-url');
+        pendingTechImgs = pendingTechImgs.filter(function (u) { return u !== imgUrl; });
+        renderImgList();
+        break;
+      }
+      case 'open-img': openLightbox(btn.getAttribute('data-url')); break;
       case 'open-pw': openPwModal(); break;
       case 'open-panel': openPanelModal(); break;
       case 'logout-user': logoutUser(); break;
@@ -854,7 +943,22 @@
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !$('#modalBackdrop').hidden) closeModal();
+    if (e.key === 'Escape' && !$('#lightbox').hidden) closeLightbox();
   });
+
+  function openLightbox(url) {
+    var lb = $('#lightbox');
+    $('#lightboxImg').src = url;
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    $('#lightbox').hidden = true;
+    $('#lightboxImg').src = '';
+    document.body.style.overflow = '';
+  }
+  $('#lightbox').addEventListener('click', function () { closeLightbox(); });
+  $('.lightbox-close').addEventListener('click', function () { closeLightbox(); });
   $('#modalBody').addEventListener('input', function (e) {
     if (e.target.classList) e.target.classList.remove('invalid');
   });
