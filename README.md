@@ -11,35 +11,40 @@
 | 💬 说说墙 | 时间线展示短动态，右下角 **＋** 随时新增；每条可编辑 / 删除 |
 | 🧳 旅行日志 | 卡片网格展示游记（标题、日期、封面表情、地点、摘要、标签），可增删改 |
 | 📷 数码生活 | 时间线展示数码产品体验与评分（星级），可增删改 |
-| 🍵 留言 & 友链 | 访客留言表单（姓名 / 邮箱 / 内容，带校验与反馈），友链卡片可增删改 |
+| 🍵 留言 & 友链 | 访客留言表单（姓名 / 邮箱 / 内容）+ 邮件通知站长；友链卡片可增删改 |
+| 👤 用户系统 | 邮箱验证码登录 / 注册（验证码由站长 126 邮箱发出）、设置/修改密码、邮箱+密码登录 |
+| 🛡️ 管理面板 | 所有者可查看全部用户、授权/取消管理员、删除用户 |
 
-## 云端同步架构（v3 · Cloudflare Worker 代理）
+## 完整架构（v4）
 
 ```
-游客留言 ──▶ POST /api/msg（限流+校验）──▶ GitHub minghz-db/db.json ──▶ 邮件通知 126 邮箱
-站长操作 ──▶ 密码在 Worker 校验 ──▶ 12h HMAC 会话 ──▶ 白名单操作 ──▶ 写 GitHub
-所有人打开页面 ──▶ raw.githubusercontent.com 直读最新 db.json（全站一致）
+静态页面（GitHub Pages，零密钥）
+  ├─ 游客：留言 → POST /api/msg（限流+校验）
+  ├─ 用户：验证码/密码 → POST /api/auth/*（126 邮箱发验证码）
+  └─ 站长：ADMIN_PASS 或 管理员会话 → POST /api/admin（增删改）
+          ↓ 全部经 Cloudflare Worker（gateway）
+Cloudflare Worker（所有凭证：GH_TOKEN/ADMIN_PASS/SESSION_SECRET/USER_KEY/126 SMTP）
+          ↓
+GitHub minghz-db/db.json（内容数据 + 用户数据[邮箱 AES-256 加密]）
+          ↓
+私有 minghz-notify 仓库 Action → SMTP → 126 邮箱（新留言通知）
 ```
 
-- **写入口**：Cloudflare Worker（minghz-api.mingsite.workers.dev）
-- **🔒 安全**：页面源码零密钥 —— GitHub Token、管理密码、会话密钥全部只存在于 Worker 服务端（加密凭证）；未授权操作一律 401
-- **防刷**：游客留言限流（每 IP 每小时 5 条）；密码尝试限流（每 IP 每小时 10 次）
-- **数据**：公开仓库 [MiNgOfficial-HZ/minghz-db](https://github.com/MiNgOfficial-HZ/minghz-db) 的 db.json，每次修改一条 git 提交，可回滚
-- **邮件**：私有仓库 minghz-notify 的 GitHub Action 扫描新留言并通过 SMTP 通知站长
-- **离线**：LocalStorage 仅作缓存；云端不可达时展示缓存并自动重试
+## 安全设计
+
+- 页面源码零密钥（GitHub Token / 管理密码 / 邮箱密钥均仅在 Worker 服务端）
+- 用户邮箱 AES-256-GCM 加密存储（密钥仅在 Worker），公开仓库也看不到明文邮箱
+- 密码 PBKDF2-SHA256（60000 迭代 + 随机盐）哈希存储
+- 验证码：6 位数字，10 分钟有效，5 次错误作废，60 秒重发间隔；发送与登录均按 IP/邮箱限流
+- 管理面板仅"所有者"可授权/删除；管理员可看用户列表
 
 ## 权限与管理模式
 
-- **游客**：只读 + 留言（留言云端同步并邮件通知站长）
-- **站长**：点击顶部「🔐 管理」→ 输入管理密码（校验在 Worker 服务端）→ 解锁 12 小时，可增删改全部内容
-- 游客模式下：右下角 ＋、各区块添加按钮、每条内容的编辑/删除按钮均不显示
-
-## 技术说明
-
-- 纯静态 HTML/CSS/JS + Cloudflare Worker（免费额度即可），无框架无构建
-- 字体 Google Fonts 内联引入；响应式；深浅主题；Toast 反馈；删除确认
-- 页面左上角状态灯：☁️ 已同步 / 🔄 同步中 / ⚠️ 离线
+- 游客：只读 + 留言
+- 注册用户：验证码 / 邮箱+密码登录，可设密码
+- 管理员：可增删改站点内容 + 查看用户列表（由所有者授权）
+- 所有者：giraffeming@126.com，全部权限
 
 ## 本地预览
 
-    npx serve .  或直接双击 index.html（管理模式需 https 网络环境）
+    npx serve .  或直接双击 index.html（登录/管理需在线）
