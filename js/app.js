@@ -829,7 +829,7 @@
   });
 
   /* ---------- 弹窗交互 ---------- */
-  $('#modalBackdrop').addEventListener('click', function (e) {
+  $('#modalBackdrop').addEventListener('mousedown', function (e) {
     if (e.target === this) closeModal();
   });
   document.addEventListener('keydown', function (e) {
