@@ -427,6 +427,7 @@
         '<div class="t-body">' +
           '<h3 class="t-title">' + esc(t.title) + '</h3>' +
           '<p class="t-summary">' + esc(t.summary) + '</p>' +
+          (t.content ? '<button class="read-more" type="button" data-action="read-item" data-kind="travel" data-id="' + t.id + '">阅读全文 →</button>' : '') +
           (tags ? '<div class="t-tags">' + tags + '</div>' : '') +
         '</div>' +
       '</article>';
@@ -460,6 +461,7 @@
           '</div>' +
           galleryHTML(t.imgs, t.title) +
           '<p class="tech-text">' + esc(t.text) + '</p>' +
+          (t.content ? '<button class="read-more" type="button" data-action="read-item" data-kind="tech" data-id="' + t.id + '">阅读全文 →</button>' : '') +
         '</div>' +
       '</article>';
     }).join('');
@@ -478,6 +480,7 @@
           '<h3 class="tech-name">' + esc(t.title) + '</h3>' +
           galleryHTML(t.imgs, t.title) +
           '<p class="tech-text">' + esc(t.text) + '</p>' +
+          (t.content ? '<button class="read-more" type="button" data-action="read-item" data-kind="study" data-id="' + t.id + '">阅读全文 →</button>' : '') +
         '</div>' +
       '</article>';
     }).join('');
@@ -548,6 +551,46 @@
     els.forEach(function (el) { el.dataset.bound = '1'; io.observe(el); });
   }
 
+  /* ---------- 轻量 Markdown 渲染（先转义后转换，安全无忧） ---------- */
+  var MD_FENCE = String.fromCharCode(96, 96, 96);
+  function mdInline(s) {
+    s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />');
+    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    return s;
+  }
+  function mdBlock(block) {
+    var lines = block.split('\n');
+    var out = [];
+    var list = null;
+    var para = [];
+    function flushPara() { if (para.length) { out.push('<p>' + mdInline(para.join(' ')) + '</p>'); para = []; } }
+    function flushList() { if (list) { out.push('<ul>' + list.map(function (li) { return '<li>' + mdInline(li) + '</li>'; }).join('') + '</ul>'); list = null; } }
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      if (!t) { flushPara(); flushList(); continue; }
+      if (/^#{1,4}\s/.test(t)) { flushPara(); flushList(); var hv = Math.min(4, t.match(/^#+/)[0].length); out.push('<h' + hv + '>' + mdInline(t.replace(/^#+\s+/, '')) + '</h' + hv + '>'); continue; }
+      if (/^(-{3,}|\*{3,})$/.test(t)) { flushPara(); flushList(); out.push('<hr/>'); continue; }
+      if (/^>\s?/.test(t)) { flushPara(); flushList(); out.push('<blockquote>' + mdInline(t.replace(/^>\s?/, '')) + '</blockquote>'); continue; }
+      if (/^[-*+]\s/.test(t)) { flushPara(); if (!list) list = []; list.push(t.replace(/^[-*+]\s/, '')); continue; }
+      if (/^\d+[.)]\s/.test(t)) { flushPara(); if (!list) list = []; list.push(t.replace(/^\d+[.)]\s/, '')); continue; }
+      flushList(); para.push(t);
+    }
+    flushPara(); flushList();
+    return out.join('');
+  }
+  function mdToHtml(src) {
+    var h = String(src || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var segs = h.split(MD_FENCE);
+    var out = [];
+    for (var i = 0; i < segs.length; i++) {
+      if (i % 2 === 1) { out.push('<pre><code>' + segs[i].replace(/^[^\n]*\n/, '') + '</code></pre>'); }
+      else { out.push(mdBlock(segs[i])); }
+    }
+    return out.join('');
+  }
   /* ---------- 弹窗系统 ---------- */
   var currentFields = [];
   var currentSubmit = null;
@@ -557,7 +600,14 @@
     var v = f.value != null ? f.value : '';
     var label = '<label for="f_' + f.key + '">' + esc(f.label) + (f.required ? ' <i style="color:var(--danger);font-style:normal">*</i>' : '') + '</label>';
     var inner;
-    if (f.type === 'imgs') {
+    if (f.type === 'markdown') {
+      inner = '<div class="md-box">' +
+        '<div class="md-tabs"><button type="button" class="m-tab on" data-action="md-tab-edit">✏️ 编辑</button><button type="button" class="m-tab" data-action="md-tab-prev">👁️ 预览</button></div>' +
+        '<textarea class="md-input" id="f_' + f.key + '" name="' + f.key + '" rows="14" maxlength="50000" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>' +
+        '<div class="md-preview md-body" hidden></div>' +
+        '</div>' +
+        '<p class="field-hint">支持 Markdown：# 标题 · **加粗** · *斜体* · 代码 · - 列表 · &gt; 引用 · [链接](url) · ![](图片) · 三个反引号包裹代码块</p>';
+    } else if (f.type === 'imgs') {
       inner = '<div class="img-picker">' +
         '<div class="img-list" id="imgList"></div>' +
         '<label class="img-add" for="imgFileInput" id="imgAddLabel">＋ 添加图片</label>' +
@@ -596,6 +646,40 @@
     document.body.style.overflow = '';
     currentSubmit = null;
     pendingConfirm = null;
+  }
+
+  function mdToggleTab(btn, mode) {
+    var box = btn.closest('.md-box');
+    if (!box) return;
+    var tabs = box.querySelectorAll('.m-tab');
+    var tx = box.querySelector('.md-input');
+    var px = box.querySelector('.md-preview');
+    if (!tx || !px) return;
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('on');
+    btn.classList.add('on');
+    if (mode === 'prev') { px.innerHTML = mdToHtml(tx.value); px.hidden = false; tx.hidden = true; }
+    else { px.hidden = true; tx.hidden = false; }
+  }
+
+  var READER_KINDS = { travel: 'travels', tech: 'tech', study: 'studies' };
+  function openReader(kind, id) {
+    var arr = S[READER_KINDS[kind]] || [];
+    var item = null;
+    for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) { item = arr[i]; break; } }
+    if (!item) return;
+    var meta = '';
+    if (kind === 'travel') meta = esc(item.location || '') + (item.date ? ' · ' + esc(item.date) : '');
+    else meta = esc(item.category || '') + (item.date ? ' · ' + esc(item.date) : '');
+    $('#readerMeta').textContent = meta;
+    $('#readerTitle').textContent = item.title || '';
+    $('#readerBody').innerHTML = mdToHtml(item.content || item.text || item.summary || '暂无内容');
+    $('#reader').hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeReader() {
+    $('#reader').hidden = true;
+    $('#readerBody').innerHTML = '';
+    document.body.style.overflow = '';
   }
 
   function validateField(f, v) {
@@ -669,14 +753,15 @@
         { key: 'location', label: '地点', max: 30, placeholder: '如：浙江 · 杭州' },
         { key: 'emoji', label: '封面表情', max: 4, placeholder: '🌊' },
         { key: 'summary', label: '摘要', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '用两三句话记录这趟旅程…' },
+        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 早上六点的湖边\n\n**正文从这里开始**……' },
         { key: 'tags', label: '标签', max: 60, placeholder: '江南, 慢游', hint: '用逗号分隔' }
       ],
       onSubmit: function (v) {
         var tags = v.tags.split(/[,，、]/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 5);
         if (item) {
-          adminMutate('travel.edit', { id: item.id, title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags }, '游记已更新 🧳');
+          adminMutate('travel.edit', { id: item.id, title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), content: v.content || '', tags: tags }, '游记已更新 🧳');
         } else {
-          adminMutate('travel.add', { id: uid(), title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim() || '🌏', grad: Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags }, '游记已添加 🧳');
+          adminMutate('travel.add', { id: uid(), title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim() || '🌏', grad: Math.floor(Math.random() * 8), summary: v.summary.trim(), content: v.content || '', tags: tags }, '游记已添加 🧳');
         }
         return true;
       }
@@ -760,11 +845,12 @@
         { key: 'category', label: '分类', type: 'select', options: ['手机', '电脑', '耳机', '相机', '桌面', '智能家居', '其他'], value: item ? item.category : '手机' },
         { key: 'rating', label: '评分', type: 'select', options: ['5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1'], value: item ? String(item.rating) : '4.5' },
         { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
-        { key: 'text', label: '体验感受', type: 'textarea', required: true, max: 500, rows: 4, placeholder: '真实的使用感受，优缺点都可以说…' },
+        { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括体验…' },
+        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 为什么入手它\n\n**正文从这里开始**……' },
         { key: '_imgs', label: '图片', type: 'imgs' }
       ],
       onSubmit: function (v) {
-        var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim(), imgs: pendingModalImgs.slice(0, 6) };
+        var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim(), content: v.content || '', imgs: pendingModalImgs.slice(0, 6) };
         if (item) {
           adminMutate('tech.edit', Object.assign({ id: item.id }, data), '体验已更新 📷');
         } else {
@@ -786,11 +872,12 @@
         { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：C 语言焚诀 · 燃烧你的 CPU' },
         { key: 'category', label: '类目', type: 'select', options: ['教程', '焚诀', '笔记', '杂谈'], value: item ? item.category : '教程' },
         { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
-        { key: 'text', label: '内容', type: 'textarea', required: true, max: 800, rows: 5, placeholder: '教程步骤 / 焚诀心法 / 学习笔记…' },
+        { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括这篇指南…' },
+        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 第一章 · 心法总纲\n\n**正文从这里开始**……' },
         { key: '_imgs', label: '图片', type: 'imgs' }
       ],
       onSubmit: function (v) {
-        var data = { title: v.title.trim(), category: v.category, date: v.date, text: v.text.trim(), imgs: pendingModalImgs.slice(0, 6) };
+        var data = { title: v.title.trim(), category: v.category, date: v.date, text: v.text.trim(), content: v.content || '', imgs: pendingModalImgs.slice(0, 6) };
         if (item) {
           adminMutate('study.edit', Object.assign({ id: item.id }, data), '指南已更新 📚');
         } else {
@@ -879,6 +966,9 @@
         message: '删除后该用户无法再登录，此操作不可撤销。',
         onOk: function () { panelAction('delete', id); }
       }); break;
+      case 'md-tab-edit': mdToggleTab(btn, 'edit'); break;
+      case 'md-tab-prev': mdToggleTab(btn, 'prev'); break;
+      case 'read-item': openReader(btn.getAttribute('data-kind'), btn.getAttribute('data-id')); break;
       case 'qa-moment': $('#qaMenu').classList.remove('open'); openMomentModal(null); break;
       case 'qa-travel': $('#qaMenu').classList.remove('open'); openTravelModal(null); break;
       case 'qa-tech': $('#qaMenu').classList.remove('open'); openTechModal(null); break;
@@ -1005,6 +1095,7 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !$('#modalBackdrop').hidden) closeModal();
     if (e.key === 'Escape' && !$('#lightbox').hidden) closeLightbox();
+    if (e.key === 'Escape' && !$('#reader').hidden) closeReader();
   });
 
   function openLightbox(url) {
@@ -1020,6 +1111,8 @@
   }
   $('#lightbox').addEventListener('click', function () { closeLightbox(); });
   $('.lightbox-close').addEventListener('click', function () { closeLightbox(); });
+  $('#reader').addEventListener('mousedown', function (e) { if (e.target === this) closeReader(); });
+  $('#reader .lightbox-close').addEventListener('click', function () { closeReader(); });
   $('#modalBody').addEventListener('input', function (e) {
     if (e.target.classList) e.target.classList.remove('invalid');
   });
