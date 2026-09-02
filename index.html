@@ -35,6 +35,7 @@
         <a href="#moments" class="nav-link">Talks</a>
         <a href="#travel" class="nav-link">Travel</a>
         <a href="#tech" class="nav-link">Tech &amp; Life</a>
+        <a href="#study" class="nav-link">Study &amp; Guide</a>
         <a href="#guest" class="nav-link">Link &amp; Connect</a>
       </nav>
       <div class="header-actions">
@@ -117,11 +118,26 @@
       </div>
     </section>
 
-    <!-- 04 留言 & 友链 -->
+    <!-- 04 Study & Guide -->
+    <section class="section" id="study">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">04 · Study &amp; Guide</span>
+          <div class="title-row">
+            <h2 class="section-title">Study &amp; Guide</h2>
+            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-study">＋ 添加指南</button>
+          </div>
+          <p class="section-sub">教程、焚诀与学习笔记 —— 一步步点亮技能树。</p>
+        </div>
+        <div class="timeline" id="studyList"></div>
+      </div>
+    </section>
+
+    <!-- 05 留言 & 友链 -->
     <section class="section section-alt" id="guest">
       <div class="container">
         <div class="section-head reveal">
-          <span class="eyebrow">04 · Link &amp; Connect</span>
+          <span class="eyebrow">05 · Link &amp; Connect</span>
           <div class="title-row">
             <h2 class="section-title">Link &amp; Connect</h2>
             <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-friend">＋ 添加友链</button>
@@ -174,7 +190,14 @@
     </div>
   </footer>
 
-  <button id="fab" class="fab" type="button" aria-label="发布一条说说">＋</button>
+  <div class="qa-menu" id="qaMenu" aria-label="快捷新建">
+    <button type="button" data-action="qa-moment">💬 说说</button>
+    <button type="button" data-action="qa-travel">🧳 游记</button>
+    <button type="button" data-action="qa-tech">📷 数码</button>
+    <button type="button" data-action="qa-study">📚 指南</button>
+    <button type="button" data-action="qa-friend">🔗 友链</button>
+  </div>
+  <button id="fab" class="fab" type="button" aria-label="发布新内容">＋</button>
 
   <div class="toast-root" id="toastRoot" aria-live="polite"></div>
 
