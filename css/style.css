@@ -112,13 +112,10 @@ button { font-family: inherit; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; height: 58px; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 11px; }
 .brand-mark {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
-  color: #fff;
-  display: grid; place-items: center;
-  font-family: var(--font-latin); font-weight: 700; font-size: 1rem;
-  letter-spacing: 0.02em;
-  box-shadow: 0 4px 14px rgba(255, 59, 48, 0.35);
+  width: 34px; height: 34px; border-radius: 9px;
+  background-size: cover; background-position: center;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-text b { font-size: 1.02rem; font-weight: 700; letter-spacing: 0.04em; }
@@ -194,22 +191,24 @@ button { font-family: inherit; }
 }
 .hero-title span, .hero-title em { display: block; }
 .ht-l1, .ht-l3 {
-  font-size: clamp(1.7rem, 4.4vw, 3.2rem);
+  font-family: var(--font-sans); /* 黑体 */
+  font-weight: 700;
+  font-size: clamp(1.35rem, 3.4vw, 2.3rem); /* 小于 Fira 字号 */
   color: var(--muted);
   background: linear-gradient(180deg, var(--ink) 60%, color-mix(in srgb, var(--ink) 42%, transparent));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.ht-l1 { align-self: flex-start; text-align: left; transform: rotate(-1.2deg); }
-.ht-l3 { align-self: flex-end; text-align: right; transform: rotate(1.2deg); }
+.ht-l1 { align-self: flex-start; text-align: left; margin-left: 27%; transform: rotate(-1.2deg); }
+.ht-l3 { align-self: flex-end; text-align: right; margin-right: 27%; transform: rotate(1.2deg); }
 .hero-title .ht-mid {
   align-self: center;
-  font-family: var(--font-hand);
+  font-family: var(--font-latin); /* Fira Code */
   font-style: normal;
-  font-size: clamp(3.4rem, 9vw, 6.6rem);
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  font-size: clamp(3.2rem, 8.5vw, 6rem);
+  letter-spacing: -0.01em;
   line-height: 1.15;
-  margin: 2px 0;
-  transform: rotate(-0.8deg);
+  margin: 4px 0;
   background: linear-gradient(95deg, var(--accent), #ff7a5c 60%, var(--gold));
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 10px 26px rgba(255, 59, 48, 0.28));
