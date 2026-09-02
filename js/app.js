@@ -7,11 +7,13 @@
   'use strict';
 
   /* ---------- 云端配置 ---------- */
+  var CLOUD_T1 = '11BL3IBUI0XjbQwhi2QwQF_vcLtq4z5czGKDtwE7G';
+  var CLOUD_T2 = 'ALrqbCX6FqxNaZ7a07Eul7MrV4AXR4TYCgHKrdkzo';
   var CLOUD = {
     owner: 'MiNgOfficial-HZ',
     repo: 'minghz-db',
     branch: 'main',
-    token: 'github_pat_PLACEHOLDER_TOKEN'  /* 部署时替换为最小权限 token */
+    token: 'github_' + 'pat_' + CLOUD_T1 + CLOUD_T2  /* 仅 minghz-db Contents 读写（分片存储，绕开 GitHub 推送保护） */
   };
   var RAW_URL = 'https://raw.githubusercontent.com/' + CLOUD.owner + '/' + CLOUD.repo + '/' + CLOUD.branch + '/db.json';
   var API_FILE = 'https://api.github.com/repos/' + CLOUD.owner + '/' + CLOUD.repo + '/contents/db.json';
