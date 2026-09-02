@@ -2,7 +2,7 @@
 
 > 一半是生活，一半是热爱。 · 参考风格：tzblog.tech（简洁、卡片式、温暖色调）
 
-访问：**https://MiNgHZ.github.io**
+访问：**https://mingofficial-hz.github.io/**
 
 ## 功能模块
 
@@ -13,22 +13,30 @@
 | 📷 数码生活 | 时间线展示数码产品体验与评分（星级），可增删改 |
 | 🍵 留言 & 友链 | 访客留言表单（姓名 / 邮箱 / 内容，带校验与反馈），友链卡片可增删改 |
 
+## 云端同步架构（v2）
+
+所有数据不再只存在浏览器里，而是实时读写 GitHub 仓库，任何人访问看到的都是同一份数据：
+
+```
+访客操作(增/删/改) ──▶ GitHub API 写入 minghz-db/db.json（每次修改=一次 commit）
+                                  │
+                                  ▼
+访客打开页面 ──▶ 拉取最新 db.json ──▶ 展示（全局一致）
+新留言触发 GitHub 通知任务(私有仓库 minghz-notify) ──▶ SMTP 邮件通知 126 邮箱
+```
+
+- **数据源**：公开仓库 [MiNgOfficial-HZ/minghz-db](https://github.com/MiNgOfficial-HZ/minghz-db) 的 db.json（任何时候可回滚历史版本）
+- **写入身份**：页面内置一个**最小权限** Fine-grained Token（仅对 minghz-db 的 Contents 读写）
+- **读取**：raw.githubusercontent.com 直读，带缓存穿透刷新
+- **离线兜底**：LocalStorage 仅作缓存；云端不可达时展示缓存并在恢复后自动重试补传
+- **邮件通知**：私有仓库 minghz-notify 的 GitHub Action 每 5 分钟扫描新留言并 SMTP 发信（凭证仅存 Actions Secrets，页面 Token 无法读取/篡改）
+
 ## 技术说明
 
-- **纯静态**：index.html + css/style.css + js/app.js，无构建、无框架、无外部依赖
-- **数据存储**：LocalStorage 模拟后端（键名 minghz.site.v1），留言、说说、游记、友链本地持久化
-- **字体**：Google Fonts（Noto Serif SC / Noto Sans SC / Long Cang，内联引入），离线回退系统字体
-- **响应式**：适配移动端（汉堡菜单、单列卡片、自适应网格）
-- **交互反馈**：所有提交均有 Toast 提示（成功 / 失败 / 校验错误）
-- **深浅主题**：右上角切换，默认跟随系统
+- 纯静态 HTML/CSS/JS，无框架无构建；字体 Google Fonts 内联引入
+- 响应式、深浅主题、增删改弹窗、Toast 反馈、删除确认
+- 页面左上角状态灯：☁️ 已同步 / 🔄 同步中 / ⚠️ 离线
 
 ## 本地预览
 
-直接双击打开 index.html 即可；或执行 npx serve .
-
-## 目录结构
-
-    ├── index.html    页面结构与语义化标记
-    ├── css/style.css 全部样式（CSS 变量 / 响应式 / 动画）
-    ├── js/app.js     逻辑：状态、渲染、弹窗、存储、Toast
-    └── .nojekyll     禁用 Jekyll 处理
+    npx serve .  或直接双击 index.html
