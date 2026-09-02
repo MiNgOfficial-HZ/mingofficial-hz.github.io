@@ -411,6 +411,7 @@ body.admin-mode .admin-only { display: inline-flex; }
 }
 .modal-backdrop[hidden] { display: none; }
 .modal { width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; padding: 24px 26px; animation: modalIn 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.modal.card:hover { transform: none; box-shadow: var(--shadow-sm); }
 @keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
 .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .modal-head h3 { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; }
