@@ -494,6 +494,20 @@ button { font-family: inherit; }
 @keyframes qaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (max-width: 640px) { .qa-menu { right: 16px; bottom: 84px; } }
 
+/* ---------- 游客提示 ---------- */
+.guest-hint {
+  position: fixed; left: 20px; bottom: 20px; z-index: 55;
+  padding: 10px 16px; border-radius: 999px;
+  border: 1px solid var(--line-strong); cursor: pointer;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  color: var(--muted); font-size: 0.8rem; font-weight: 600;
+  transition: 0.2s; box-shadow: var(--shadow-sm);
+}
+.guest-hint:hover { color: var(--accent); border-color: var(--accent); }
+.guest-hint[hidden] { display: none; }
+@media (max-width: 640px) { .guest-hint { left: 12px; bottom: 12px; font-size: 0.72rem; padding: 8px 12px; } }
+
 /* ---------- Toast ---------- */
 .toast-root { position: fixed; top: 72px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; max-width: min(340px, calc(100vw - 40px)); }
 .toast {
