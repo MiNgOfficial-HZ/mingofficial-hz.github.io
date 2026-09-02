@@ -1,64 +1,71 @@
 /* ============================================================
    MiNgHZ 的小站 · app.js
-   云端同步版：数据实时读写 GitHub 仓库 minghz-db/db.json
-   本地 LocalStorage 仅作离线缓存；所有修改即时云端提交
+   云端同步版：读取 GitHub minghz-db/db.json；
+   所有写入经 Cloudflare Worker 代理（/api/msg, /api/admin），
+   页面不携带 GitHub Token / 管理密码等任何密钥
    ============================================================ */
 (function () {
   'use strict';
 
   /* ---------- 云端配置 ---------- */
-  var CLOUD_T1 = '11BL3IBUI0XjbQwhi2QwQF_vcLtq4z5czGKDtwE7G';
-  var CLOUD_T2 = 'ALrqbCX6FqxNaZ7a07Eul7MrV4AXR4TYCgHKrdkzo';
-  var CLOUD = {
-    owner: 'MiNgOfficial-HZ',
-    repo: 'minghz-db',
-    branch: 'main',
-    token: 'github_' + 'pat_' + CLOUD_T1 + CLOUD_T2  /* 仅 minghz-db Contents 读写（分片存储，绕开 GitHub 推送保护） */
-  };
-  var RAW_URL = 'https://raw.githubusercontent.com/' + CLOUD.owner + '/' + CLOUD.repo + '/' + CLOUD.branch + '/db.json';
-  var API_FILE = 'https://api.github.com/repos/' + CLOUD.owner + '/' + CLOUD.repo + '/contents/db.json';
+  var WORKER = 'https://minghz-api.mingsite.workers.dev';
+  var RAW_URL = 'https://raw.githubusercontent.com/MiNgOfficial-HZ/minghz-db/main/db.json';
   var CACHE_KEY = 'minghz.site.cache.v2';
   var THEME_KEY = 'minghz.theme';
 
-  /* ---------- 管理模式（游客只读可留言，解锁后才能增删改） ---------- */
-  var ADMIN_HASH = 'bf36d9cc96a1bcb36df99942755650bc5d180cb15d8d97aa7bf6cfbb5cdb1833'; /* SHA-256(管理密码)，明文密码不入库 */
-  var ADMIN_KEY = 'minghz.admin.v1';
-  var isAdmin = (function () { try { return localStorage.getItem(ADMIN_KEY) === '1'; } catch (e) { return false; } })();
+  /* ---------- 管理模式（会话由 Worker 签发，12 小时有效） ---------- */
+  var SESSION_KEY = 'minghz.admin.session.v2';
+  var isAdmin = (function () { try { return !!localStorage.getItem(SESSION_KEY); } catch (e) { return false; } })();
 
-  function sha256hex(s) {
-    if (!window.crypto || !window.crypto.subtle) return Promise.resolve('');
-    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function (buf) {
-      var a = new Uint8Array(buf), out = '';
-      for (var i = 0; i < a.length; i++) out += ('0' + a[i].toString(16)).slice(-2);
-      return out;
-    });
+  function getSession() { try { return localStorage.getItem(SESSION_KEY) || ''; } catch (e) { return ''; } }
+  function setSession(s) { try { if (s) localStorage.setItem(SESSION_KEY, s); else localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+
+  function logoutAdmin(msg) {
+    isAdmin = false;
+    setSession('');
+    renderAll();
+    syncAdminUI();
+    toast(msg || '已退出管理模式', 'info');
   }
 
   function syncAdminUI() {
     document.body.classList.toggle('admin-mode', isAdmin);
     var fab = $('#fab'); if (fab) fab.style.display = isAdmin ? '' : 'none';
     var btn = $('#adminBtn'); if (btn) btn.textContent = isAdmin ? '🔓 退出管理' : '🔐 管理';
-    var hint = $('#adminHint'); if (hint) hint.style.display = isAdmin ? '' : 'none';
+  }
+
+  function apiPost(path, body) {
+    return fetch(WORKER + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        return { ok: r.ok, status: r.status, json: j };
+      }).catch(function () {
+        return { ok: false, status: r.status, json: {} };
+      });
+    });
   }
 
   function openAdminModal() {
     openModal({
       title: '🔐 管理员解锁',
       submitText: '解锁',
-      fields: [{ key: 'password', label: '管理密码', type: 'password', required: true, placeholder: '请输入管理密码…', hint: '只有站点主人知道；解锁后才能增删改内容。' }],
+      fields: [{ key: 'password', label: '管理密码', type: 'password', required: true, placeholder: '请输入管理密码…', hint: '密码校验在云端代理完成；解锁后 12 小时内有效。' }],
       onSubmit: function (v) {
-        sha256hex(v.password).then(function (h) {
-          if (h === ADMIN_HASH) {
+        apiPost('/api/admin', { op: 'verify', password: v.password }).then(function (res) {
+          if (res.ok && res.json.session) {
+            setSession(res.json.session);
             isAdmin = true;
-            try { localStorage.setItem(ADMIN_KEY, '1'); } catch (e) {}
             closeModal();
             renderAll();
             syncAdminUI();
             toast('欢迎回来 🔓 已进入管理模式');
           } else {
-            toast('密码不正确，请重试', 'error');
+            toast(res.json.error || '服务暂时不可用', 'error');
           }
-        });
+        }).catch(function () { toast('网络异常，请稍后重试', 'error'); });
         return false;
       }
     });
@@ -79,7 +86,6 @@
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   };
   var daysAgo = function (n) { var d = new Date(); d.setDate(d.getDate() - n); return d; };
-  var b64 = function (s) { return btoa(unescape(encodeURIComponent(s))); };
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   /* ---------- Toast ---------- */
@@ -96,7 +102,7 @@
   /* ---------- 数据 ---------- */
   var S = { moments: [], travels: [], tech: [], friends: [], messages: [] };
   var cloudOk = false;
-  var pendingMsg = '';
+  var pendingOp = null;
 
   function seed() {
     return {
@@ -140,49 +146,27 @@
       });
   }
 
-  function getRemoteMeta() {
-    return fetch(API_FILE, { headers: { Authorization: 'Bearer ' + CLOUD.token } })
-      .then(function (r) {
-        if (r.status === 404) return null;
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      });
-  }
-
-  function putCloud(commitMsg, tries) {
-    tries = tries == null ? 4 : tries;
-    return getRemoteMeta().then(function (meta) {
-      var payload = {
-        message: commitMsg,
-        content: b64(JSON.stringify(Object.assign({ version: 1, updatedAt: nowStamp() }, S))),
-        branch: CLOUD.branch
-      };
-      if (meta && meta.sha) payload.sha = meta.sha;
-      return fetch(API_FILE, {
-        method: 'PUT',
-        headers: { Authorization: 'Bearer ' + CLOUD.token, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function (r) {
-        if ((r.status === 409 || r.status === 422) && tries > 0) return putCloud(commitMsg, tries - 1);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      });
-    });
-  }
-
-  function syncCommit(commitMsg) {
-    pendingMsg = commitMsg || ('update|views|refresh');
-    setSync('syncing', '🔄 同步中…');
-    return putCloud(pendingMsg).then(function () {
+  function adminMutate(action, item, okToast, silent) {
+    pendingOp = { action: action, item: item };
+    if (!silent) setSync('syncing', '🔄 同步中…');
+    return apiPost('/api/admin', { op: 'mutate', session: getSession(), action: action, item: item }).then(function (res) {
+      if (res.status === 401 || res.status === 403) {
+        logoutAdmin((res.json && res.json.error) || '会话已过期，请重新解锁');
+        throw new Error('need-login');
+      }
+      if (!res.ok) throw new Error((res.json && res.json.error) || ('HTTP ' + res.status));
+      S = normalize(res.json.db);
       cloudOk = true;
-      pendingMsg = '';
+      pendingOp = null;
       setSync('cloud', '☁️ 已同步');
       writeCache();
+      renderAll();
+      if (okToast && !silent) toast(okToast);
       return true;
     }).catch(function (e) {
       cloudOk = false;
-      setSync('offline', '⚠️ 同步失败');
-      toast('云端同步失败（' + e.message + '），已自动重试', 'error');
+      if (e.message !== 'need-login') setSync('offline', '⚠️ 同步失败');
+      if (!silent) toast('操作未生效：' + e.message + '（将自动重试）', 'error');
       return false;
     });
   }
@@ -206,14 +190,15 @@
       } else {
         S = seed();
         renderAll();
-        syncCommit('init: seed database');
+        setSync('offline', '⚠️ 离线（本地）');
+        toast('云端暂不可达，已进入离线模式', 'info');
       }
     });
   }
 
-  /* 断网自动补传（每 20 秒尝试一次） */
+  /* 断网/失败自动重试（每 20 秒一次） */
   setInterval(function () {
-    if (pendingMsg && !cloudOk) syncCommit(pendingMsg);
+    if (pendingOp && !cloudOk) adminMutate(pendingOp.action, pendingOp.item, null, true);
   }, 20000);
 
   /* ---------- 渲染 ---------- */
@@ -457,14 +442,9 @@
       ],
       onSubmit: function (v) {
         if (item) {
-          item.text = v.text.trim();
-          item.emoji = v.emoji.trim();
-          toast('说说已更新 ✨');
-          syncCommit('update|moments|edit');
+          adminMutate('moment.edit', { id: item.id, text: v.text.trim(), emoji: v.emoji.trim() }, '说说已更新 ✨');
         } else {
-          S.moments.push({ id: uid(), text: v.text.trim(), emoji: v.emoji.trim(), time: nowStamp() });
-          toast('发布成功 ✨');
-          syncCommit('update|moments|add');
+          adminMutate('moment.add', { id: uid(), text: v.text.trim(), emoji: v.emoji.trim(), time: nowStamp() }, '发布成功 ✨');
         }
         return true;
       }
@@ -486,13 +466,9 @@
       onSubmit: function (v) {
         var tags = v.tags.split(/[,，、]/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 5);
         if (item) {
-          Object.assign(item, { title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags });
-          toast('游记已更新 🧳');
-          syncCommit('update|travels|edit');
+          adminMutate('travel.edit', { id: item.id, title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags }, '游记已更新 🧳');
         } else {
-          S.travels.push({ id: uid(), title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim() || '🌏', grad: Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags });
-          toast('游记已添加 🧳');
-          syncCommit('update|travels|add');
+          adminMutate('travel.add', { id: uid(), title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim() || '🌏', grad: Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags }, '游记已添加 🧳');
         }
         return true;
       }
@@ -513,13 +489,9 @@
       onSubmit: function (v) {
         var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim() };
         if (item) {
-          Object.assign(item, data);
-          toast('体验已更新 📷');
-          syncCommit('update|tech|edit');
+          adminMutate('tech.edit', Object.assign({ id: item.id }, data), '体验已更新 📷');
         } else {
-          S.tech.push(Object.assign({ id: uid() }, data));
-          toast('体验已添加 📷');
-          syncCommit('update|tech|add');
+          adminMutate('tech.add', Object.assign({ id: uid() }, data), '体验已添加 📷');
         }
         return true;
       }
@@ -541,13 +513,9 @@
         if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
         var data = { name: v.name.trim(), url: url, desc: v.desc.trim(), emoji: v.emoji.trim() || '🌐' };
         if (item) {
-          Object.assign(item, data);
-          toast('友链已更新 🔗');
-          syncCommit('update|friends|edit');
+          adminMutate('friend.edit', Object.assign({ id: item.id }, data), '友链已更新 🔗');
         } else {
-          S.friends.push(Object.assign({ id: uid() }, data));
-          toast('友链已添加 🔗');
-          syncCommit('update|friends|add');
+          adminMutate('friend.add', Object.assign({ id: uid() }, data), '友链已添加 🔗');
         }
         return true;
       }
@@ -560,15 +528,12 @@
   }
 
   /* ---------- 删除 ---------- */
-  function confirmDel(kind, id, label) {
+  function confirmDel(kindRaw, id, label) {
     openConfirm({
       title: '删除这条' + label + '？',
       message: '删除后会同步到云端，所有访客都将看不到它。',
       onOk: function () {
-        S[kind] = S[kind].filter(function (x) { return x.id !== id; });
-        renderAll();
-        toast('已删除' + label, 'info');
-        syncCommit('update|' + kind + '|del');
+        adminMutate(kindRaw + '.del', { id: id }, '已删除' + label);
       }
     });
   }
@@ -593,17 +558,17 @@
       }
       case 'add-moment': openMomentModal(null); break;
       case 'edit-moment': openMomentModal(find('moments')); break;
-      case 'del-moment': confirmDel('moments', id, '说说'); break;
+      case 'del-moment': confirmDel('moment', id, '说说'); break;
       case 'add-travel': openTravelModal(null); break;
       case 'edit-travel': openTravelModal(find('travels')); break;
-      case 'del-travel': confirmDel('travels', id, '游记'); break;
+      case 'del-travel': confirmDel('travel', id, '游记'); break;
       case 'add-tech': openTechModal(null); break;
       case 'edit-tech': openTechModal(find('tech')); break;
       case 'del-tech': confirmDel('tech', id, '体验'); break;
       case 'add-friend': openFriendModal(null); break;
       case 'edit-friend': openFriendModal(find('friends')); break;
-      case 'del-friend': confirmDel('friends', id, '友链'); break;
-      case 'del-msg': confirmDel('messages', id, '留言'); break;
+      case 'del-friend': confirmDel('friend', id, '友链'); break;
+      case 'del-msg': confirmDel('msg', id, '留言'); break;
     }
   });
 
@@ -614,10 +579,6 @@
     el.focus();
   }
 
-  function cleanField(s) {
-    return String(s || '').replace(/\|/g, '/').replace(/[\r\n]+/g, ' ').trim();
-  }
-
   $('#msgForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var nameEl = $('#msgName'), emailEl = $('#msgEmail'), textEl = $('#msgText');
@@ -626,13 +587,17 @@
     if (!name) return markInvalid(nameEl, '请填写你的名字');
     if (!EMAIL_RE.test(email)) return markInvalid(emailEl, '邮箱格式不正确');
     if (!text) return markInvalid(textEl, '写点什么再发送吧');
-    var m = { id: uid(), name: name, email: email, text: text, time: nowStamp() };
-    S.messages.push(m);
-    renderAll();
-    e.target.reset();
-    toast('留言成功 🎉 已同步到云端');
-    var msg = 'guestbook|' + m.id + '|' + cleanField(name) + '|' + cleanField(email) + '|' + m.time;
-    syncCommit(msg);
+    apiPost('/api/msg', { name: name, email: email, text: text }).then(function (res) {
+      if (res.ok) {
+        if (res.json.db) { S = normalize(res.json.db); writeCache(); renderAll(); }
+        e.target.reset();
+        toast('留言成功 🎉 已同步到云端');
+      } else {
+        toast(res.json.error || '发送失败，请稍后重试', 'error');
+      }
+    }).catch(function () {
+      toast('网络异常，发送失败', 'error');
+    });
   });
 
   /* ---------- 主题 ---------- */
@@ -695,15 +660,8 @@
 
   /* ---------- 管理入口 ---------- */
   $('#adminBtn').addEventListener('click', function () {
-    if (isAdmin) {
-      isAdmin = false;
-      try { localStorage.removeItem(ADMIN_KEY); } catch (e) {}
-      renderAll();
-      syncAdminUI();
-      toast('已退出管理模式', 'info');
-    } else {
-      openAdminModal();
-    }
+    if (isAdmin) logoutAdmin();
+    else openAdminModal();
   });
 
   /* ---------- 页脚年份 & FAB ---------- */
