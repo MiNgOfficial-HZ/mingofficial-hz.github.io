@@ -20,6 +20,50 @@
   var CACHE_KEY = 'minghz.site.cache.v2';
   var THEME_KEY = 'minghz.theme';
 
+  /* ---------- 管理模式（游客只读可留言，解锁后才能增删改） ---------- */
+  var ADMIN_HASH = 'bf36d9cc96a1bcb36df99942755650bc5d180cb15d8d97aa7bf6cfbb5cdb1833'; /* SHA-256(管理密码)，明文密码不入库 */
+  var ADMIN_KEY = 'minghz.admin.v1';
+  var isAdmin = (function () { try { return localStorage.getItem(ADMIN_KEY) === '1'; } catch (e) { return false; } })();
+
+  function sha256hex(s) {
+    if (!window.crypto || !window.crypto.subtle) return Promise.resolve('');
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function (buf) {
+      var a = new Uint8Array(buf), out = '';
+      for (var i = 0; i < a.length; i++) out += ('0' + a[i].toString(16)).slice(-2);
+      return out;
+    });
+  }
+
+  function syncAdminUI() {
+    document.body.classList.toggle('admin-mode', isAdmin);
+    var fab = $('#fab'); if (fab) fab.style.display = isAdmin ? '' : 'none';
+    var btn = $('#adminBtn'); if (btn) btn.textContent = isAdmin ? '🔓 退出管理' : '🔐 管理';
+    var hint = $('#adminHint'); if (hint) hint.style.display = isAdmin ? '' : 'none';
+  }
+
+  function openAdminModal() {
+    openModal({
+      title: '🔐 管理员解锁',
+      submitText: '解锁',
+      fields: [{ key: 'password', label: '管理密码', type: 'password', required: true, placeholder: '请输入管理密码…', hint: '只有站点主人知道；解锁后才能增删改内容。' }],
+      onSubmit: function (v) {
+        sha256hex(v.password).then(function (h) {
+          if (h === ADMIN_HASH) {
+            isAdmin = true;
+            try { localStorage.setItem(ADMIN_KEY, '1'); } catch (e) {}
+            closeModal();
+            renderAll();
+            syncAdminUI();
+            toast('欢迎回来 🔓 已进入管理模式');
+          } else {
+            toast('密码不正确，请重试', 'error');
+          }
+        });
+        return false;
+      }
+    });
+  }
+
   /* ---------- 小工具 ---------- */
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -144,6 +188,7 @@
   }
 
   function boot() {
+    syncAdminUI();
     setSync('syncing', '🔄 同步中…');
     cloudFetch().then(function (data) {
       S = normalize(data);
@@ -187,6 +232,7 @@
   }
 
   function actionsHTML(kind, id) {
+    if (!isAdmin) return '';
     return '<div class="item-actions">' +
       '<button class="act-btn" type="button" data-action="edit-' + kind + '" data-id="' + id + '" aria-label="编辑">✎</button>' +
       '<button class="act-btn danger" type="button" data-action="del-' + kind + '" data-id="' + id + '" aria-label="删除">✕</button>' +
@@ -217,10 +263,10 @@
           '<span class="t-emoji">' + esc(t.emoji || '🌏') + '</span>' +
           '<span class="t-date">' + esc(t.date) + '</span>' +
           '<span class="t-loc">📍 ' + esc(t.location || '在路上') + '</span>' +
-          '<div class="t-actions">' +
+          (isAdmin ? '<div class="t-actions">' +
             '<button class="act-btn" type="button" data-action="edit-travel" data-id="' + t.id + '" aria-label="编辑">✎</button>' +
             '<button class="act-btn danger" type="button" data-action="del-travel" data-id="' + t.id + '" aria-label="删除">✕</button>' +
-          '</div>' +
+          '</div>' : '') +
         '</div>' +
         '<div class="t-body">' +
           '<h3 class="t-title">' + esc(t.title) + '</h3>' +
@@ -264,10 +310,10 @@
           '<span class="f-meta"><span class="f-name">' + esc(f.name) + '</span><span class="f-desc">' + esc(f.desc || '') + '</span></span>' +
           '<span class="f-arrow">↗</span>' +
         '</a>' +
-        '<div class="item-actions">' +
+        (isAdmin ? '<div class="item-actions">' +
           '<button class="act-btn" type="button" data-action="edit-friend" data-id="' + f.id + '" aria-label="编辑">✎</button>' +
           '<button class="act-btn danger" type="button" data-action="del-friend" data-id="' + f.id + '" aria-label="删除">✕</button>' +
-        '</div>' +
+        '</div>' : '') +
       '</div>';
     }).join('');
   }
@@ -281,7 +327,7 @@
         '<div class="m-avatar">' + esc(initial) + '</div>' +
         '<div class="m-body">' +
           '<div class="m-head"><span class="m-name">' + esc(m.name) + '</span><time>' + esc(m.time) + '</time>' +
-          '<button class="act-btn danger" type="button" data-action="del-msg" data-id="' + m.id + '" aria-label="删除">✕</button></div>' +
+          (isAdmin ? '<button class="act-btn danger" type="button" data-action="del-msg" data-id="' + m.id + '" aria-label="删除">✕</button>' : '') + '</div>' +
           '<p class="m-text">' + esc(m.text) + '</p>' +
         '</div>' +
       '</article>';
@@ -645,6 +691,19 @@
   });
   $('#modalBody').addEventListener('input', function (e) {
     if (e.target.classList) e.target.classList.remove('invalid');
+  });
+
+  /* ---------- 管理入口 ---------- */
+  $('#adminBtn').addEventListener('click', function () {
+    if (isAdmin) {
+      isAdmin = false;
+      try { localStorage.removeItem(ADMIN_KEY); } catch (e) {}
+      renderAll();
+      syncAdminUI();
+      toast('已退出管理模式', 'info');
+    } else {
+      openAdminModal();
+    }
   });
 
   /* ---------- 页脚年份 & FAB ---------- */
