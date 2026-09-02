@@ -1,9 +1,22 @@
 /* ============================================================
    MiNgHZ 的小站 · app.js
-   纯原生 JS · LocalStorage 模拟后端 · 零依赖
+   云端同步版：数据实时读写 GitHub 仓库 minghz-db/db.json
+   本地 LocalStorage 仅作离线缓存；所有修改即时云端提交
    ============================================================ */
 (function () {
   'use strict';
+
+  /* ---------- 云端配置 ---------- */
+  var CLOUD = {
+    owner: 'MiNgOfficial-HZ',
+    repo: 'minghz-db',
+    branch: 'main',
+    token: 'github_pat_PLACEHOLDER_TOKEN'  /* 部署时替换为最小权限 token */
+  };
+  var RAW_URL = 'https://raw.githubusercontent.com/' + CLOUD.owner + '/' + CLOUD.repo + '/' + CLOUD.branch + '/db.json';
+  var API_FILE = 'https://api.github.com/repos/' + CLOUD.owner + '/' + CLOUD.repo + '/contents/db.json';
+  var CACHE_KEY = 'minghz.site.cache.v2';
+  var THEME_KEY = 'minghz.theme';
 
   /* ---------- 小工具 ---------- */
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
@@ -15,19 +28,15 @@
   };
   var uid = function () { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); };
   var pad = function (n) { return String(n).padStart(2, '0'); };
-  var toStamp = function (d) {
+  var nowStamp = function () {
+    var d = new Date();
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   };
-  var nowStamp = function () { return toStamp(new Date()); };
   var daysAgo = function (n) { var d = new Date(); d.setDate(d.getDate() - n); return d; };
-  var daysAgoStamp = function (n, h, m) { var d = daysAgo(n); d.setHours(h == null ? 12 : h, m == null ? 0 : m, 0, 0); return toStamp(d); };
-  var daysAgoDate = function (n) { var d = daysAgo(n); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
-  var sortDesc = function (list, key) {
-    return list.slice().sort(function (a, b) { return String(a[key]) > String(b[key]) ? -1 : 1; });
-  };
+  var b64 = function (s) { return btoa(unescape(encodeURIComponent(s))); };
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  /* ---------- Toast 反馈 ---------- */
+  /* ---------- Toast ---------- */
   function toast(msg, type) {
     type = type || 'success';
     var icons = { success: '✅', error: '⚠️', info: '💡' };
@@ -38,73 +47,127 @@
     setTimeout(function () { el.classList.add('out'); setTimeout(function () { el.remove(); }, 280); }, 2600);
   }
 
-  /* ---------- 数据（LocalStorage 模拟后端） ---------- */
-  var KEY = 'minghz.site.v1';
-  var THEME_KEY = 'minghz.theme';
+  /* ---------- 数据 ---------- */
+  var S = { moments: [], travels: [], tech: [], friends: [], messages: [] };
+  var cloudOk = false;
+  var pendingMsg = '';
 
   function seed() {
     return {
       moments: [
-        { id: uid(), emoji: '🎉', text: '小站上线啦！从今天起，把生活里的小碎片都捡起来。', time: daysAgoStamp(0, 21, 14) },
-        { id: uid(), emoji: '🌅', text: '傍晚在江边走了很久，风把一整天的疲惫都吹跑了。', time: daysAgoStamp(1, 19, 32) },
-        { id: uid(), emoji: '📖', text: '读完《夜晚的潜水艇》，像做了一场漫长的梦。', time: daysAgoStamp(3, 23, 5) },
-        { id: uid(), emoji: '🪴', text: '把阳台的绿萝重新挪了位置，春天好像住进了房间。', time: daysAgoStamp(5, 10, 22) },
-        { id: uid(), emoji: '💻', text: '给新电脑装好了环境，一切准备就绪，开工！', time: daysAgoStamp(7, 14, 47) },
-        { id: uid(), emoji: '🌧️', text: '雨后的空气里有青草的味道，想带相机出门。', time: daysAgoStamp(10, 8, 15) }
+        { id: uid(), emoji: '🌅', text: '傍晚在江边走了很久，风把一整天的疲惫都吹跑了。', time: nowStamp() }
       ],
-      travels: [
-        { id: uid(), title: '杭州 · 西湖散记', date: daysAgoDate(20), location: '浙江 · 杭州', emoji: '🌊', grad: 1, tags: ['江南', '慢游'], summary: '五月初的西湖，柳浪闻莺。沿着苏堤走了一整天，风是软的，水是绿的，连脚步都不舍得快。' },
-        { id: uid(), title: '重庆 · 山城夜行', date: daysAgoDate(46), location: '重庆', emoji: '🏙️', grad: 4, tags: ['美食', '夜景'], summary: '洪崖洞的灯火和火锅的辣意一样浓烈。轻轨穿楼而过，这座城市有种奇妙的魔幻感。' },
-        { id: uid(), title: '大理 · 洱海骑行', date: daysAgoDate(120), location: '云南 · 大理', emoji: '🚲', grad: 6, tags: ['骑行', '治愈'], summary: '环洱海骑行 120 公里，走走停停。天很蓝，海很宽，心很静。' },
-        { id: uid(), title: '京都 · 红叶季', date: daysAgoDate(180), location: '日本 · 京都', emoji: '🍁', grad: 2, tags: ['红叶', '温泉'], summary: '被枫叶染红的寺庙，一步一景。晚上泡进温泉里，看月亮慢慢升起。' }
-      ],
-      tech: [
-        { id: uid(), title: 'iPhone 16 Pro 半年体验', category: '手机', rating: 4.5, date: daysAgoDate(90).slice(0, 7), text: '影像系统是真惊喜，长焦微距随手出片；续航中规中矩，信号还是一般。整体瑕不掩瑜。' },
-        { id: uid(), title: 'SONY WH-1000XM5', category: '耳机', rating: 5, date: daysAgoDate(150).slice(0, 7), text: '降噪天花板，戴上就是另一个世界。续航也够顶，通勤路上的幸福感直接拉满。' },
-        { id: uid(), title: '机械键盘：客制化初体验', category: '桌面', rating: 4, date: daysAgoDate(168).slice(0, 7), text: '用的是 75 配列 + 线性轴体，打字声像雨点落在木板上。唯一的缺点是：会忍不住多打几行字。' },
-        { id: uid(), title: '富士 X-T30 II 扫街', category: '相机', rating: 4.5, date: daysAgoDate(210).slice(0, 7), text: '直出色彩玄学名不虚传，胶片模拟让后期都省了。小巧轻便，适合挂在脖子上从早走到晚。' }
-      ],
-      friends: [
-        { id: uid(), name: 'TZ Blog', url: 'https://tzblog.tech', desc: '简约里藏着思考的技术博客', emoji: '✨' },
-        { id: uid(), name: '阮一峰的网络日志', url: 'https://www.ruanyifeng.com/blog/', desc: '每周五更新的科技爱好者周刊', emoji: '📮' },
-        { id: uid(), name: '酷壳 CoolShell', url: 'https://coolshell.cn', desc: '左手技术，右手人生', emoji: '🎯' }
-      ],
-      messages: [
-        { id: uid(), name: '小鹿', email: 'lu@example.com', text: '首页的橙色好温暖！已经常驻啦，期待更多旅行故事 ✨', time: daysAgoStamp(4, 16, 40) },
-        { id: uid(), name: '阿哲', email: 'az@example.com', text: '说说墙的设计很治愈，感觉像在翻一本心情手账。', time: daysAgoStamp(6, 22, 3) }
-      ]
+      travels: [],
+      tech: [],
+      friends: [],
+      messages: []
     };
   }
 
-  var S = { moments: [], travels: [], tech: [], friends: [], messages: [] };
-
-  function save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(S));
-    } catch (e) {
-      toast('保存失败：浏览器存储不可用', 'error');
-    }
+  function normalize(data) {
+    var out = { moments: [], travels: [], tech: [], friends: [], messages: [] };
+    Object.keys(out).forEach(function (k) {
+      if (data && Array.isArray(data[k])) out[k] = data[k];
+    });
+    return out;
   }
 
-  function load() {
-    try {
-      var raw = localStorage.getItem(KEY);
-      if (!raw) {
-        S = seed();
-        save();
-        return;
-      }
-      var data = JSON.parse(raw);
-      Object.keys(S).forEach(function (k) {
-        if (Array.isArray(data[k])) S[k] = data[k];
+  function readCache() {
+    try { var raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+  }
+  function writeCache() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(S)); } catch (e) {}
+  }
+
+  function setSync(state, text) {
+    var chip = $('#syncChip');
+    if (!chip) return;
+    chip.className = 'sync-chip ' + state;
+    chip.textContent = text;
+  }
+
+  function cloudFetch() {
+    return fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
       });
-    } catch (e) {
-      try { localStorage.removeItem(KEY); } catch (e2) {}
-      S = seed();
-      save();
-      toast('本地数据读取异常，已恢复为示例内容', 'info');
-    }
   }
+
+  function getRemoteMeta() {
+    return fetch(API_FILE, { headers: { Authorization: 'Bearer ' + CLOUD.token } })
+      .then(function (r) {
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+  }
+
+  function putCloud(commitMsg, tries) {
+    tries = tries == null ? 4 : tries;
+    return getRemoteMeta().then(function (meta) {
+      var payload = {
+        message: commitMsg,
+        content: b64(JSON.stringify(Object.assign({ version: 1, updatedAt: nowStamp() }, S))),
+        branch: CLOUD.branch
+      };
+      if (meta && meta.sha) payload.sha = meta.sha;
+      return fetch(API_FILE, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + CLOUD.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        if ((r.status === 409 || r.status === 422) && tries > 0) return putCloud(commitMsg, tries - 1);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+    });
+  }
+
+  function syncCommit(commitMsg) {
+    pendingMsg = commitMsg || ('update|views|refresh');
+    setSync('syncing', '🔄 同步中…');
+    return putCloud(pendingMsg).then(function () {
+      cloudOk = true;
+      pendingMsg = '';
+      setSync('cloud', '☁️ 已同步');
+      writeCache();
+      return true;
+    }).catch(function (e) {
+      cloudOk = false;
+      setSync('offline', '⚠️ 同步失败');
+      toast('云端同步失败（' + e.message + '），已自动重试', 'error');
+      return false;
+    });
+  }
+
+  function boot() {
+    setSync('syncing', '🔄 同步中…');
+    cloudFetch().then(function (data) {
+      S = normalize(data);
+      cloudOk = true;
+      writeCache();
+      setSync('cloud', '☁️ 已同步');
+      renderAll();
+    }).catch(function () {
+      var cached = readCache();
+      if (cached) {
+        S = normalize(cached);
+        setSync('offline', '⚠️ 离线（本地缓存）');
+        toast('云端暂不可达，当前展示本地缓存数据', 'info');
+        renderAll();
+      } else {
+        S = seed();
+        renderAll();
+        syncCommit('init: seed database');
+      }
+    });
+  }
+
+  /* 断网自动补传（每 20 秒尝试一次） */
+  setInterval(function () {
+    if (pendingMsg && !cloudOk) syncCommit(pendingMsg);
+  }, 20000);
 
   /* ---------- 渲染 ---------- */
   function emptyHTML(msg) { return '<div class="empty">' + msg + '</div>'; }
@@ -233,6 +296,10 @@
     bindReveal();
   }
 
+  function sortDesc(list, key) {
+    return list.slice().sort(function (a, b) { return String(a[key]) > String(b[key]) ? -1 : 1; });
+  }
+
   /* ---------- 进场动画 ---------- */
   function bindReveal() {
     var els = $$('.reveal:not([data-bound])');
@@ -315,7 +382,6 @@
     });
     if (firstErr) { toast(firstErr, 'error'); return; }
     if (currentSubmit(values) !== false) {
-      save();
       renderAll();
       closeModal();
     }
@@ -332,7 +398,7 @@
     document.body.style.overflow = 'hidden';
   }
 
-  /* ---------- 各模块的编辑弹窗 ---------- */
+  /* ---------- 各模块编辑弹窗 ---------- */
   function openMomentModal(item) {
     openModal({
       title: item ? '编辑说说' : '写一条说说',
@@ -346,9 +412,11 @@
           item.text = v.text.trim();
           item.emoji = v.emoji.trim();
           toast('说说已更新 ✨');
+          syncCommit('update|moments|edit');
         } else {
           S.moments.push({ id: uid(), text: v.text.trim(), emoji: v.emoji.trim(), time: nowStamp() });
           toast('发布成功 ✨');
+          syncCommit('update|moments|add');
         }
         return true;
       }
@@ -361,7 +429,7 @@
       submitText: item ? '保存修改' : '添加 ✨',
       fields: [
         { key: 'title', label: '标题', required: true, max: 40, placeholder: '如：杭州 · 西湖散记' },
-        { key: 'date', label: '日期', type: 'date', required: true, value: item ? item.date : daysAgoDate(0) },
+        { key: 'date', label: '日期', type: 'date', required: true, value: item ? item.date : dateStr(0) },
         { key: 'location', label: '地点', max: 30, placeholder: '如：浙江 · 杭州' },
         { key: 'emoji', label: '封面表情', max: 4, placeholder: '🌊' },
         { key: 'summary', label: '摘要', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '用两三句话记录这趟旅程…' },
@@ -372,9 +440,11 @@
         if (item) {
           Object.assign(item, { title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags });
           toast('游记已更新 🧳');
+          syncCommit('update|travels|edit');
         } else {
           S.travels.push({ id: uid(), title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim() || '🌏', grad: Math.floor(Math.random() * 8), summary: v.summary.trim(), tags: tags });
           toast('游记已添加 🧳');
+          syncCommit('update|travels|add');
         }
         return true;
       }
@@ -389,13 +459,20 @@
         { key: 'title', label: '名称', required: true, max: 40, placeholder: '如：iPhone 16 Pro 半年体验' },
         { key: 'category', label: '分类', type: 'select', options: ['手机', '电脑', '耳机', '相机', '桌面', '智能家居', '其他'], value: item ? item.category : '手机' },
         { key: 'rating', label: '评分', type: 'select', options: ['5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1'], value: item ? String(item.rating) : '4.5' },
-        { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : daysAgoDate(0).slice(0, 7) },
+        { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
         { key: 'text', label: '体验感受', type: 'textarea', required: true, max: 500, rows: 4, placeholder: '真实的使用感受，优缺点都可以说…' }
       ],
       onSubmit: function (v) {
         var data = { title: v.title.trim(), category: v.category, rating: Number(v.rating), date: v.date, text: v.text.trim() };
-        if (item) { Object.assign(item, data); toast('体验已更新 📷'); }
-        else { S.tech.push(Object.assign({ id: uid() }, data)); toast('体验已添加 📷'); }
+        if (item) {
+          Object.assign(item, data);
+          toast('体验已更新 📷');
+          syncCommit('update|tech|edit');
+        } else {
+          S.tech.push(Object.assign({ id: uid() }, data));
+          toast('体验已添加 📷');
+          syncCommit('update|tech|add');
+        }
         return true;
       }
     });
@@ -415,23 +492,35 @@
         var url = v.url.trim();
         if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
         var data = { name: v.name.trim(), url: url, desc: v.desc.trim(), emoji: v.emoji.trim() || '🌐' };
-        if (item) { Object.assign(item, data); toast('友链已更新 🔗'); }
-        else { S.friends.push(Object.assign({ id: uid() }, data)); toast('友链已添加 🔗'); }
+        if (item) {
+          Object.assign(item, data);
+          toast('友链已更新 🔗');
+          syncCommit('update|friends|edit');
+        } else {
+          S.friends.push(Object.assign({ id: uid() }, data));
+          toast('友链已添加 🔗');
+          syncCommit('update|friends|add');
+        }
         return true;
       }
     });
+  }
+
+  function dateStr(n) {
+    var d = daysAgo(n);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
 
   /* ---------- 删除 ---------- */
   function confirmDel(kind, id, label) {
     openConfirm({
       title: '删除这条' + label + '？',
-      message: '删除后无法恢复哦（仅影响本浏览器的本地数据）。',
+      message: '删除后会同步到云端，所有访客都将看不到它。',
       onOk: function () {
         S[kind] = S[kind].filter(function (x) { return x.id !== id; });
-        save();
         renderAll();
         toast('已删除' + label, 'info');
+        syncCommit('update|' + kind + '|del');
       }
     });
   }
@@ -477,6 +566,10 @@
     el.focus();
   }
 
+  function cleanField(s) {
+    return String(s || '').replace(/\|/g, '/').replace(/[\r\n]+/g, ' ').trim();
+  }
+
   $('#msgForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var nameEl = $('#msgName'), emailEl = $('#msgEmail'), textEl = $('#msgText');
@@ -485,11 +578,13 @@
     if (!name) return markInvalid(nameEl, '请填写你的名字');
     if (!EMAIL_RE.test(email)) return markInvalid(emailEl, '邮箱格式不正确');
     if (!text) return markInvalid(textEl, '写点什么再发送吧');
-    S.messages.push({ id: uid(), name: name, email: email, text: text, time: nowStamp() });
-    save();
+    var m = { id: uid(), name: name, email: email, text: text, time: nowStamp() };
+    S.messages.push(m);
     renderAll();
     e.target.reset();
-    toast('留言成功 🎉 谢谢你的到访');
+    toast('留言成功 🎉 已同步到云端');
+    var msg = 'guestbook|' + m.id + '|' + cleanField(name) + '|' + cleanField(email) + '|' + m.time;
+    syncCommit(msg);
   });
 
   /* ---------- 主题 ---------- */
@@ -555,6 +650,5 @@
   $('#fab').addEventListener('click', function () { openMomentModal(null); });
 
   /* ---------- 启动 ---------- */
-  load();
-  renderAll();
+  boot();
 })();
