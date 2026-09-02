@@ -150,6 +150,10 @@
         </div>
         <div class="guest-grid">
           <div class="guest-main">
+            <div class="card guest-gate" id="guestGate" hidden>
+              <p>🛡️ 留言功能当前仅对<b>已登录访客</b>开放。<br/><span class="field-hint">站长可在管理面板「权限管理」中开启游客留言。</span></p>
+              <button class="btn btn-soft btn-small" type="button" data-action="guest-login">登录后留言 →</button>
+            </div>
             <form class="card msg-form reveal" id="msgForm" novalidate>
               <h3 class="card-title">✉️ 给我留言</h3>
               <p class="card-sub">留下你的名字与想说的话（数据保存在本地浏览器）。</p>
