@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiNgHZ 的小站 · 说说 · 旅行 · 数码 · 友链</title>
+  <meta name="description" content="MiNgHZ 的个人小站：说说墙、旅行日志、数码生活与留言友链。一半是生活，一半是热爱。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf7f2" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1b1b1e" />
+  <meta property="og:title" content="MiNgHZ 的小站" />
+  <meta property="og:description" content="一半是生活，一半是热爱。" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23DA532C'/%3E%3Ctext x='32' y='45' font-size='38' text-anchor='middle' fill='%23FFFFFF' font-family='Georgia,serif' font-weight='700'%3EM%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=Noto+Sans+SC:wght@400;500;700&family=Long+Cang&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true">
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
+    <div class="blob blob-c"></div>
+    <div class="dot-grid"></div>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="#top">
+        <span class="brand-mark">M</span>
+        <span class="brand-text">MiNgHZ<small>的小站</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="#moments" class="nav-link">💬 说说墙</a>
+        <a href="#travel" class="nav-link">🧳 旅行日志</a>
+        <a href="#tech" class="nav-link">📷 数码生活</a>
+        <a href="#guest" class="nav-link">🍵 留言友链</a>
+      </nav>
+      <div class="header-actions">
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <p class="hero-kicker">HELLO · WELCOME TO MY CORNER 🌿</p>
+        <h1 class="hero-title">这里是 <em>MiNgHZ</em> 的小站</h1>
+        <p class="hero-sub">一半是生活，一半是热爱 —— 说说、旅行、数码与朋友，都安放在这里。</p>
+        <div class="hero-stats" id="heroStats"></div>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#moments">和我说说话 ☁️</a>
+          <a class="btn btn-ghost" href="#guest">给我留言 🍵</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 01 说说墙 -->
+    <section class="section" id="moments">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">01 · Moments</span>
+          <h2 class="section-title">说说墙</h2>
+          <p class="section-sub">零碎的心情与灵感，都值得被记住 —— 点右下角的 <b class="inline-plus">＋</b> 随时写一条。</p>
+        </div>
+        <div class="timeline" id="momentList"></div>
+      </div>
+    </section>
+
+    <!-- 02 旅行日志 -->
+    <section class="section section-alt" id="travel">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">02 · Travel</span>
+          <div class="title-row">
+            <h2 class="section-title">旅行日志</h2>
+            <button class="btn btn-small btn-soft" type="button" data-action="add-travel">＋ 添加游记</button>
+          </div>
+          <p class="section-sub">走过的路、看过的风景，用卡片收藏成册。</p>
+        </div>
+        <div class="travel-grid" id="travelGrid"></div>
+      </div>
+    </section>
+
+    <!-- 03 数码生活 -->
+    <section class="section" id="tech">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">03 · Digital Life</span>
+          <div class="title-row">
+            <h2 class="section-title">数码生活</h2>
+            <button class="btn btn-small btn-soft" type="button" data-action="add-tech">＋ 添加体验</button>
+          </div>
+          <p class="section-sub">新玩具的第一印象，与长期使用的真实感受。</p>
+        </div>
+        <div class="timeline" id="techList"></div>
+      </div>
+    </section>
+
+    <!-- 04 留言 & 友链 -->
+    <section class="section section-alt" id="guest">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">04 · Guestbook</span>
+          <div class="title-row">
+            <h2 class="section-title">留言 &amp; 友链</h2>
+            <button class="btn btn-small btn-soft" type="button" data-action="add-friend">＋ 添加友链</button>
+          </div>
+          <p class="section-sub">来过、聊过、交换过链接，就是朋友。</p>
+        </div>
+        <div class="guest-grid">
+          <div class="guest-main">
+            <form class="card msg-form reveal" id="msgForm" novalidate>
+              <h3 class="card-title">✉️ 给我留言</h3>
+              <p class="card-sub">留下你的名字与想说的话（数据保存在本地浏览器）。</p>
+              <div class="form-row">
+                <div class="field">
+                  <label for="msgName">姓名 *</label>
+                  <input id="msgName" name="name" type="text" maxlength="20" placeholder="怎么称呼你？" required />
+                </div>
+                <div class="field">
+                  <label for="msgEmail">邮箱 *</label>
+                  <input id="msgEmail" name="email" type="email" maxlength="60" placeholder="you@example.com" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="msgText">想说的话 *</label>
+                <textarea id="msgText" name="text" rows="4" maxlength="300" placeholder="随便写点什么吧～" required></textarea>
+              </div>
+              <button class="btn btn-primary btn-block" type="submit">发送留言 ✨</button>
+            </form>
+            <div class="msg-list" id="msgList"></div>
+          </div>
+          <aside class="guest-side">
+            <div class="card friends-card reveal">
+              <div class="friends-head">
+                <h3 class="card-title">🔗 友情链接</h3>
+                <span class="friends-count" id="friendCount"></span>
+              </div>
+              <p class="card-sub">交换链接请留言，徽信会告诉你加入啦。</p>
+              <div id="friendList"></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">MiNgHZ<span>·</span>小站</p>
+      <p class="footer-line">一半是生活，一半是热爱。© <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint">数据保存在你的浏览器 LocalStorage · <a href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener">GitHub</a></p>
+    </div>
+  </footer>
+
+  <button id="fab" class="fab" type="button" aria-label="发布一条说说">＋</button>
+
+  <div class="toast-root" id="toastRoot" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle"></h3>
+        <button class="icon-btn" type="button" data-action="close-modal" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
