@@ -202,6 +202,12 @@ button { font-family: inherit; }
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .hero-sub { max-width: 620px; margin: 22px auto 0; color: var(--muted); font-size: 1.02rem; line-height: 1.9; }
+.hero-sub .warn-en {
+  display: inline-block; margin-top: 10px;
+  font-family: var(--font-latin); font-weight: 700;
+  font-size: 0.72em; letter-spacing: 0.34em;
+  text-transform: uppercase; color: var(--accent);
+}
 .hero-stats { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 .stat-chip {
   display: inline-flex; align-items: baseline; gap: 9px;
