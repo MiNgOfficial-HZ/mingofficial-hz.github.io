@@ -21,10 +21,9 @@
   function setSession(s) { try { if (s) localStorage.setItem(SESSION_KEY, s); else localStorage.removeItem(SESSION_KEY); } catch (e) {} }
 
   function logoutAdmin(msg) {
-    isAdmin = false;
     setSession('');
+    refreshAdminState();
     renderAll();
-    syncAdminUI();
     toast(msg || '已退出管理模式', 'info');
   }
 
@@ -32,6 +31,11 @@
     document.body.classList.toggle('admin-mode', isAdmin);
     var fab = $('#fab'); if (fab) fab.style.display = isAdmin ? '' : 'none';
     var btn = $('#adminBtn'); if (btn) btn.textContent = isAdmin ? '🔓 退出管理' : '🔐 管理';
+    var ub = $('#userBtn');
+    if (ub) {
+      ub.textContent = myUser ? '😊' : '👤';
+      ub.setAttribute('aria-label', myUser ? '我的账户（' + (myUser.nick || '') + '）' : '登录 / 注册');
+    }
   }
 
   function apiPost(path, body) {
@@ -57,10 +61,9 @@
         apiPost('/api/admin', { op: 'verify', password: v.password }).then(function (res) {
           if (res.ok && res.json.session) {
             setSession(res.json.session);
-            isAdmin = true;
+            refreshAdminState();
             closeModal();
             renderAll();
-            syncAdminUI();
             toast('欢迎回来 🔓 已进入管理模式');
           } else {
             toast(res.json.error || '服务暂时不可用', 'error');
@@ -68,6 +71,199 @@
         }).catch(function () { toast('网络异常，请稍后重试', 'error'); });
         return false;
       }
+    });
+  }
+
+  /* ---------- 用户系统（邮箱验证码 / 密码 / 会话 / 管理面板） ---------- */
+  var USER_LS = 'minghz.user.v1';
+  var mySession = (function () { try { return localStorage.getItem(USER_LS) || ''; } catch (e) { return ''; } })();
+  var myUser = null;
+  var codeCooldown = 0;
+  var codeTimer = null;
+
+  function saveUserSession(s) {
+    mySession = s || '';
+    try { if (s) localStorage.setItem(USER_LS, s); else localStorage.removeItem(USER_LS); } catch (e) {}
+  }
+  function hasAdminRole() { return !!myUser && (myUser.role === 'owner' || myUser.role === 'admin'); }
+  function refreshAdminState() {
+    isAdmin = !!getSession() || hasAdminRole();
+    syncAdminUI();
+  }
+
+  function logoutUser() {
+    saveUserSession('');
+    myUser = null;
+    refreshAdminState();
+    renderAll();
+    toast('已退出登录', 'info');
+  }
+
+  function authBodyHTML(tabCode) {
+    return '<div class="m-tabs">' +
+      '<button type="button" class="m-tab' + (tabCode ? ' on' : '') + '" data-action="auth-tab-code">验证码登录</button>' +
+      '<button type="button" class="m-tab' + (tabCode ? '' : ' on') + '" data-action="auth-tab-pw">邮箱密码登录</button>' +
+      '</div>' +
+      '<div class="field"><label>邮箱</label><input id="authEmail" type="email" maxlength="60" placeholder="you@example.com" /></div>' +
+      (tabCode ?
+        '<div class="field"><label>验证码</label><div class="code-row"><input id="authCode" type="text" inputmode="numeric" maxlength="6" placeholder="6 位数字" /><button class="btn btn-soft" type="button" data-action="send-code" id="authSend">获取验证码</button></div><p class="field-hint">验证码由站长邮箱发出，10 分钟内有效，无需密码即可注册</p></div>' :
+        '<div class="field"><label>密码</label><input id="authPw" type="password" maxlength="64" placeholder="登录密码（先用验证码登录后可设置）" /></div>');
+  }
+
+  function openAuthModal(tabCode) {
+    tabCode = tabCode !== 'pw';
+    $('#modalTitle').textContent = '👤 登录 / 注册';
+    $('#modalBody').innerHTML = authBodyHTML(tabCode);
+    $('#modalFoot').innerHTML =
+      '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>' +
+      '<button class="btn btn-primary" type="button" data-action="submit-auth">' + (tabCode ? '登录 / 注册' : '登录') + '</button>';
+    $('#modalBackdrop').hidden = false;
+    document.body.style.overflow = 'hidden';
+    var em = $('#authEmail'); if (em) em.focus();
+  }
+
+  function sendCode() {
+    var emEl = $('#authEmail');
+    var email = ((emEl && emEl.value) || '').trim();
+    if (!EMAIL_RE.test(email)) { toast('请先填写正确的邮箱', 'error'); if (emEl) emEl.focus(); return; }
+    if (codeCooldown > 0) { toast('请 ' + codeCooldown + ' 秒后再获取', 'info'); return; }
+    var btn = $('#authSend');
+    if (btn) { btn.disabled = true; btn.textContent = '发送中…'; }
+    apiPost('/api/auth/request-code', { email: email }).then(function (res) {
+      if (res.ok) {
+        toast('验证码已发送，请查收 📮');
+        codeCooldown = 60;
+        codeTimer = setInterval(function () {
+          codeCooldown--;
+          var b = $('#authSend');
+          if (b) b.textContent = codeCooldown > 0 ? '重新发送(' + codeCooldown + 's)' : '获取验证码';
+          if (codeCooldown <= 0) {
+            clearInterval(codeTimer);
+            var b2 = $('#authSend');
+            if (b2) { b2.disabled = false; b2.textContent = '获取验证码'; }
+          }
+        }, 1000);
+      } else {
+        toast(res.json.error || '发送失败，请稍后重试', 'error');
+        var b3 = $('#authSend'); if (b3) { b3.disabled = false; b3.textContent = '获取验证码'; }
+      }
+    });
+  }
+
+  function submitAuth() {
+    var email = ((($('#authEmail') || {}).value) || '').trim();
+    if (!EMAIL_RE.test(email)) { toast('邮箱格式不正确', 'error'); return; }
+    if ($('#authCode')) {
+      var code = ((($('#authCode') || {}).value) || '').trim();
+      if (!/^\d{6}$/.test(code)) { toast('请输入 6 位数字验证码', 'error'); return; }
+      apiPost('/api/auth/verify-code', { email: email, code: code }).then(function (res) {
+        if (res.ok) completeLogin(res.json);
+        else toast(res.json.error || '登录失败', 'error');
+      });
+    } else {
+      var pw = ((($('#authPw') || {}).value) || '');
+      if (!pw) { toast('请输入密码', 'error'); return; }
+      apiPost('/api/auth/login-password', { email: email, password: pw }).then(function (res) {
+        if (res.ok) completeLogin(res.json);
+        else toast(res.json.error || '登录失败', 'error');
+      });
+    }
+  }
+
+  function completeLogin(res) {
+    saveUserSession(res.session);
+    myUser = res.user;
+    refreshAdminState();
+    closeModal();
+    renderAll();
+    toast('欢迎回来，' + (res.user.nick || '朋友') + ' 👋');
+  }
+
+  function openMineModal() {
+    if (!myUser) { openAuthModal('code'); return; }
+    var roleCls = myUser.role === 'owner' ? 'owner' : (myUser.role === 'admin' ? 'admin' : '');
+    var roleLabel = myUser.role === 'owner' ? '站点所有者' : (myUser.role === 'admin' ? '管理员' : '注册用户');
+    $('#modalTitle').textContent = '👤 我的账户';
+    $('#modalBody').innerHTML =
+      '<div class="mine-card">' +
+        '<div class="pu-avatar" style="width:46px;height:46px;font-size:1.1rem">' + esc((myUser.nick || '友')[0]) + '</div>' +
+        '<div><div class="pu-name">' + esc(myUser.nick) + '</div>' +
+        '<div class="pu-sub">' + esc(myUser.email || '') + '</div>' +
+        '<div class="pu-role ' + roleCls + '">' + roleLabel + '</div></div>' +
+      '</div>' +
+      '<div class="mine-actions">' +
+        '<button class="btn btn-soft btn-block" type="button" data-action="open-pw">' + (myUser.hasPw ? '修改密码' : '设置密码') + '</button>' +
+        (myUser.role === 'admin' || myUser.role === 'owner' ? '<button class="btn btn-soft btn-block" type="button" data-action="open-panel">🛡️ 管理面板（用户）</button>' : '') +
+        '<button class="btn btn-ghost btn-block" type="button" data-action="logout-user">退出登录</button>' +
+      '</div>';
+    $('#modalFoot').innerHTML = '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>';
+    $('#modalBackdrop').hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openPwModal() {
+    openModal({
+      title: '🔑 ' + (myUser && myUser.hasPw ? '修改密码' : '设置密码'),
+      submitText: '保存',
+      fields: [
+        { key: 'password', label: '新密码', type: 'password', required: true, max: 64, placeholder: '6-64 位' },
+        { key: 'password2', label: '确认新密码', type: 'password', required: true, max: 64, placeholder: '再输一遍' }
+      ],
+      onSubmit: function (v) {
+        if (String(v.password).length < 6) { toast('密码至少 6 位', 'error'); return false; }
+        if (v.password !== v.password2) { toast('两次输入的密码不一致', 'error'); return false; }
+        apiPost('/api/auth/password', { session: mySession, current: '', password: v.password }).then(function (res) {
+          if (res.ok) { myUser.hasPw = true; toast('密码已保存 🔑'); closeModal(); }
+          else if (res.status === 400 && res.json.error) { toast(res.json.error, 'error'); }
+          else { toast('保存失败，请重试', 'error'); }
+        });
+        return false;
+      }
+    });
+  }
+
+  function openPanelModal() {
+    $('#modalTitle').textContent = '🛡️ 管理面板 · 用户';
+    $('#modalBody').innerHTML = '<p class="confirm-text">加载中…</p>';
+    $('#modalFoot').innerHTML = '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>';
+    $('#modalBackdrop').hidden = false;
+    document.body.style.overflow = 'hidden';
+    apiPost('/api/users/list', { session: mySession }).then(function (res) {
+      if (!res.ok) { $('#modalBody').innerHTML = '<p class="confirm-text">' + esc(res.json.error || '加载失败') + '</p>'; return; }
+      var rows = (res.json.users || []).map(function (u) {
+        var rc = u.role === 'owner' ? 'owner' : (u.role === 'admin' ? 'admin' : '');
+        var rl = u.role === 'owner' ? '所有者' : (u.role === 'admin' ? '管理员' : '用户');
+        var acts = '';
+        if (myUser && myUser.role === 'owner' && u.role !== 'owner') {
+          acts = '<button class="act-btn" type="button" data-action="panel-role" data-id="' + u.id + '" data-role="' + (u.role === 'admin' ? 'user' : 'admin') + '">' + (u.role === 'admin' ? '取消管理' : '设为管理') + '</button>' +
+                 '<button class="act-btn danger" type="button" data-action="panel-del" data-id="' + u.id + '">删</button>';
+        }
+        return '<div class="panel-user">' +
+          '<div class="pu-avatar">' + esc((u.nick || '友')[0]) + '</div>' +
+          '<div class="pu-meta">' +
+            '<div class="pu-name">' + esc(u.nick) + ' <span class="pu-role ' + rc + '">' + rl + '</span></div>' +
+            '<div class="pu-sub">' + esc(u.email || '') + (u.hasPw ? ' · 已设密码' : ' · 未设密码') + '</div>' +
+            '<div class="pu-sub">注册 ' + esc(u.c || '-') + (u.l ? ' · 最近 ' + esc(u.l) : '') + '</div>' +
+          '</div>' + acts + '</div>';
+      }).join('');
+      $('#modalBody').innerHTML = (rows || '<p class="confirm-text">还没有注册用户</p>') +
+        '<p class="panel-tip">提示：任何人邮箱验证码登录即自动注册；你（giraffeming@126.com）是所有者，可授权/移除管理员。</p>';
+    });
+  }
+
+  function panelAction(op, id, role) {
+    apiPost('/api/users/action', { session: mySession, op: op, id: id, role: role }).then(function (res) {
+      if (res.ok) { toast('已更新 ✔'); openPanelModal(); }
+      else { toast(res.json.error || '操作失败', 'error'); }
+    });
+  }
+
+  function restoreUser() {
+    if (!mySession) { refreshAdminState(); return; }
+    apiPost('/api/auth/me', { session: mySession }).then(function (res) {
+      if (res.ok) { myUser = res.json.user; }
+      else { saveUserSession(''); myUser = null; }
+      refreshAdminState();
     });
   }
 
@@ -172,6 +368,7 @@
   }
 
   function boot() {
+    restoreUser();
     syncAdminUI();
     setSync('syncing', '🔄 同步中…');
     cloudFetch().then(function (data) {
@@ -556,6 +753,19 @@
         if (cb) cb();
         break;
       }
+      case 'auth-tab-code': openAuthModal('code'); break;
+      case 'auth-tab-pw': openAuthModal('pw'); break;
+      case 'send-code': sendCode(); break;
+      case 'submit-auth': submitAuth(); break;
+      case 'open-pw': openPwModal(); break;
+      case 'open-panel': openPanelModal(); break;
+      case 'logout-user': logoutUser(); break;
+      case 'panel-role': panelAction('setRole', id, btn.getAttribute('data-role')); break;
+      case 'panel-del': openConfirm({
+        title: '删除这个用户？',
+        message: '删除后该用户无法再登录，此操作不可撤销。',
+        onOk: function () { panelAction('delete', id); }
+      }); break;
       case 'add-moment': openMomentModal(null); break;
       case 'edit-moment': openMomentModal(find('moments')); break;
       case 'del-moment': confirmDel('moment', id, '说说'); break;
@@ -656,6 +866,12 @@
   });
   $('#modalBody').addEventListener('input', function (e) {
     if (e.target.classList) e.target.classList.remove('invalid');
+  });
+
+  /* ---------- 用户入口 ---------- */
+  $('#userBtn').addEventListener('click', function () {
+    if (myUser) openMineModal();
+    else openAuthModal('code');
   });
 
   /* ---------- 管理入口 ---------- */
