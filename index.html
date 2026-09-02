@@ -38,6 +38,7 @@
       </nav>
       <div class="header-actions">
         <span id="syncChip" class="sync-chip syncing" role="status" title="数据云端同步状态">🔄 同步中…</span>
+        <button id="adminBtn" class="admin-btn" type="button" aria-label="管理模式">🔐 管理</button>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
         <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
       </div>
@@ -78,7 +79,7 @@
           <span class="eyebrow">02 · Travel</span>
           <div class="title-row">
             <h2 class="section-title">旅行日志</h2>
-            <button class="btn btn-small btn-soft" type="button" data-action="add-travel">＋ 添加游记</button>
+            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-travel">＋ 添加游记</button>
           </div>
           <p class="section-sub">走过的路、看过的风景，用卡片收藏成册。</p>
         </div>
@@ -93,7 +94,7 @@
           <span class="eyebrow">03 · Digital Life</span>
           <div class="title-row">
             <h2 class="section-title">数码生活</h2>
-            <button class="btn btn-small btn-soft" type="button" data-action="add-tech">＋ 添加体验</button>
+            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-tech">＋ 添加体验</button>
           </div>
           <p class="section-sub">新玩具的第一印象，与长期使用的真实感受。</p>
         </div>
@@ -108,7 +109,7 @@
           <span class="eyebrow">04 · Guestbook</span>
           <div class="title-row">
             <h2 class="section-title">留言 &amp; 友链</h2>
-            <button class="btn btn-small btn-soft" type="button" data-action="add-friend">＋ 添加友链</button>
+            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-friend">＋ 添加友链</button>
           </div>
           <p class="section-sub">来过、聊过、交换过链接，就是朋友。</p>
         </div>
