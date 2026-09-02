@@ -356,10 +356,7 @@ button { font-family: inherit; }
 .stars-fill { position: absolute; top: 0; left: 0; overflow: hidden; white-space: nowrap; color: var(--gold); }
 
 /* ---------- 条目操作 ---------- */
-.item-actions { display: inline-flex; gap: 6px; margin-left: auto; opacity: 0; transition: opacity 0.2s; }
-.moment-card:hover .item-actions, .tech-card:hover .item-actions, .travel-card:hover .item-actions,
-.friend-row:hover .item-actions, .msg-item:hover .item-actions { opacity: 1; }
-@media (hover: none) { .item-actions { opacity: 1; } }
+.item-actions { display: inline-flex; gap: 6px; margin-left: auto; }
 .act-btn {
   width: 27px; height: 27px; border-radius: 8px; border: 1px solid var(--line-strong);
   background: transparent; color: var(--muted); cursor: pointer; font-size: 0.72rem;
@@ -395,9 +392,7 @@ button { font-family: inherit; }
 }
 .t-date { top: 12px; left: 12px; }
 .t-loc { bottom: 12px; left: 12px; }
-.t-actions { position: absolute; top: 10px; right: 10px; z-index: 3; display: inline-flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
-.travel-card:hover .t-actions { opacity: 1; }
-@media (hover: none) { .t-actions { opacity: 1; } }
+.t-actions { position: absolute; top: 10px; right: 10px; z-index: 3; display: inline-flex; gap: 6px; }
 .t-body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
 .t-title { font-size: 1.08rem; font-weight: 700; line-height: 1.45; }
 .t-summary { color: var(--muted); font-size: 0.88rem; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -677,6 +672,21 @@ body.admin-mode .admin-only { display: inline-flex; }
 .md-body img { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); margin: 10px 0; }
 .md-body a { color: var(--accent); }
 .md-body hr { border: none; border-top: 1px solid var(--line-strong); margin: 22px 0; }
+
+/* ---------- 权限管理滑块 & 留言门槛 ---------- */
+.guest-gate { padding: 30px 28px; margin-bottom: 22px; text-align: center; color: var(--muted); }
+.guest-gate .btn { margin-top: 14px; }
+.perm-block { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-2); }
+.perm-block h4 { font-size: 0.94rem; margin-bottom: 10px; }
+.perm-group { margin: 10px 0 4px; color: var(--muted); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.switch-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 0.88rem; font-weight: 600; }
+.switch-row:last-child { border-bottom: none; }
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line-strong); transition: 0.2s; }
+.slider::before { content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%; left: 3px; top: 3px; background: var(--muted); transition: 0.2s; }
+.switch input:checked + .slider { background: var(--accent-soft); border-color: var(--accent); }
+.switch input:checked + .slider::before { transform: translateX(18px); background: var(--accent); }
 
 /* ---------- 进场动画 ---------- */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s ease; transition-delay: var(--rd, 0ms); }
