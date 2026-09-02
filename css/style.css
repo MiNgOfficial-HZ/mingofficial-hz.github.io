@@ -458,6 +458,7 @@ button { font-family: inherit; }
 .footer-line { color: var(--muted); font-size: 0.84rem; margin-top: 10px; letter-spacing: 0.06em; }
 .footer-hint { color: var(--muted); font-size: 0.78rem; margin-top: 5px; }
 .footer-hint a { color: var(--accent); }
+.footer-credit { margin-top: 10px; font-family: var(--font-tech); font-weight: 600; font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; }
 
 /* ---------- 悬浮按钮 ---------- */
 .fab {
