@@ -70,6 +70,7 @@
     return false;
   }
   function hasPanelRight() { return !!myUser && (myUser.role === 'owner' || myUser.role === 'admin'); }
+  function isOwnerRole() { return !!myUser && myUser.role === 'owner'; }
   function refreshAdminState() {
     isAdmin = canEditAny();
     syncAdminUI();
@@ -559,11 +560,18 @@
     if (!S.messages.length) { list.innerHTML = emptyHTML('还没有留言，来抢沙发吧 🛋️'); return; }
     list.innerHTML = sortDesc(S.messages, 'time').map(function (m) {
       var initial = Array.from(m.name || '友')[0] || '友';
+      var ownerMail = '';
+      if (isOwnerRole() && m.email) {
+        var mailSubject = encodeURIComponent('回复：' + (m.name || '访客') + ' 在 MiNgHZ 的留言');
+        var mailBody = encodeURIComponent('\n\n——\n原留言：' + (m.text || ''));
+        ownerMail = '<div class="m-contact"><a class="m-mailto" href="mailto:' + esc(m.email) + '?subject=' + mailSubject + '&amp;body=' + mailBody + '" title="点击后在 Outlook 中回复此留言">📧 ' + esc(m.email) + ' · 回复</a></div>';
+      }
       return '<article class="msg-item card reveal" data-id="' + m.id + '">' +
         '<div class="m-avatar">' + esc(initial) + '</div>' +
         '<div class="m-body">' +
           '<div class="m-head"><span class="m-name">' + esc(m.name) + '</span><time>' + esc(m.time) + '</time>' +
           (permFor('msg') ? '<button class="act-btn danger" type="button" data-action="del-msg" data-id="' + m.id + '" aria-label="删除">✕</button>' : '') + '</div>' +
+          ownerMail +
           '<p class="m-text">' + esc(m.text) + '</p>' +
         '</div>' +
       '</article>';
