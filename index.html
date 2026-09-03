@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://minghz-api.mingsite.workers.dev https://raw.githubusercontent.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MiNg Official Website</title>
   <meta name="description" content="MiNgHZ 的个人小站：说说墙、旅行日志、数码生活与留言友链。一半是生活，一半是热爱。" />
@@ -14,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Fira+Code:wght@700&family=LXGW+WenKai+TC:wght@700&family=Long+Cang&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=20260903a" />
 </head>
 <body>
   <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
@@ -195,8 +196,8 @@
       <p class="footer-brand">Minghz<span>▲</span></p>
       <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
       <p class="footer-hint"><span class="credit-copy" data-tip="实时写入GitHub，若您在本网页活动，则默认允许此写入与日志记录">数据实时云端同步（GitHub）</span> · 新留言将邮件通知站长</p>
-      <p class="footer-hint footer-credit">Powered by <a href="https://www.cloudflare.com" target="_blank" rel="noopener">Cloudflare</a> · Workers &amp; Pages ⚡ · <a href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener">GitHub</a></p>
-      <p class="footer-hint footer-credit">Co-pilot by <a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek V4-flash</a></p>
+      <p class="footer-hint footer-credit">Powered by <a href="https://www.cloudflare.com" target="_blank" rel="noopener noreferrer">Cloudflare</a> · Workers &amp; Pages ⚡ · Hosted by <a href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+      <p class="footer-hint footer-credit">Co-pilot by <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">DeepSeek V4-flash</a></p>
       <p class="footer-hint footer-credit credit-copy" data-tip="除特殊标注，本网站内容遵循国际知识共享署名CC4.0协议">© 2026 MiNg · 保留部分权利。</p>
     </div>
   </footer>
@@ -238,6 +239,6 @@
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260903a"></script>
 </body>
 </html>

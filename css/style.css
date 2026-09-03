@@ -405,6 +405,7 @@ button { font-family: inherit; }
 
 /* ---------- 留言 & 友链 ---------- */
 .guest-grid { display: grid; grid-template-columns: 1.12fr 0.88fr; gap: 26px; align-items: start; }
+.guest-gate[hidden], .msg-form[hidden] { display: none; }
 .msg-form { padding: 26px 28px; margin-bottom: 22px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .field { margin-bottom: 15px; }

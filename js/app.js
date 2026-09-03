@@ -388,9 +388,14 @@
   }
 
   function boot() {
-    restoreUser();
     syncAdminUI();
     setSync('syncing', '🔄 同步中…');
+    var cached = readCache();
+    if (cached) {
+      S = normalize(cached);
+      renderAll();
+    }
+    restoreUser();
     cloudFetch().then(function (data) {
       S = normalize(data);
       cloudOk = true;
@@ -398,12 +403,9 @@
       setSync('cloud', '☁️ 已同步');
       renderAll();
     }).catch(function () {
-      var cached = readCache();
       if (cached) {
-        S = normalize(cached);
         setSync('offline', '⚠️ 离线（本地缓存）');
         toast('云端暂不可达，当前展示本地缓存数据', 'info');
-        renderAll();
       } else {
         S = seed();
         renderAll();
@@ -483,9 +485,9 @@
 
   function galleryHTML(imgs, title) {
     if (!imgs || !imgs.length) return '';
-    var cover = '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(imgs[0]) + '"><img src="' + esc(imgs[0]) + '" alt="' + esc(title) + '" loading="lazy" /></button>';
+    var cover = '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(imgs[0]) + '"><img src="' + esc(imgs[0]) + '" alt="' + esc(title) + '" loading="lazy" decoding="async" /></button>';
     var thumbs = imgs.slice(1, 6).map(function (u) {
-      return '<button class="tg-thumb" type="button" data-action="open-img" data-url="' + esc(u) + '"><img src="' + esc(u) + '" alt="' + esc(title) + '" loading="lazy" /></button>';
+      return '<button class="tg-thumb" type="button" data-action="open-img" data-url="' + esc(u) + '"><img src="' + esc(u) + '" alt="' + esc(title) + '" loading="lazy" decoding="async" /></button>';
     }).join('');
     return '<div class="tech-gallery">' + cover + thumbs + '</div>';
   }
@@ -586,8 +588,8 @@
     var canPost = false;
     if (myUser) canPost = myUser.role === 'owner' || myUser.role === 'admin' || !!S.perms.member.canMsg;
     else canPost = !!S.perms.guest.canMsg;
-    f.style.display = canPost ? '' : 'none';
-    g.style.display = canPost ? 'none' : '';
+    f.hidden = !canPost;
+    g.hidden = canPost;
   }
 
   function sortDesc(list, key) {
@@ -612,8 +614,14 @@
   /* ---------- 轻量 Markdown 渲染（先转义后转换，安全无忧） ---------- */
   var MD_FENCE = String.fromCharCode(96, 96, 96);
   function mdInline(s) {
-    s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />');
-    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (m, alt, url) {
+      if (!/^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,)/i.test(url)) return m;
+      return '<img src="' + url + '" alt="' + alt + '" loading="lazy" decoding="async" />';
+    });
+    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, label, url) {
+      if (!/^(https?:\/\/|mailto:)/i.test(url)) return m;
+      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + label + '</a>';
+    });
     s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
     s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
@@ -833,7 +841,7 @@
     var list = $('#imgList');
     if (!list) return;
     list.innerHTML = pendingModalImgs.map(function (u) {
-      return '<div class="img-thumb"><img src="' + esc(u) + '" alt="图片" loading="lazy" /><button class="img-rm" type="button" data-action="img-remove" data-url="' + esc(u) + '" aria-label="移除">✕</button></div>';
+      return '<div class="img-thumb"><img src="' + esc(u) + '" alt="图片" loading="lazy" decoding="async" /><button class="img-rm" type="button" data-action="img-remove" data-url="' + esc(u) + '" aria-label="移除">✕</button></div>';
     }).join('');
     var lbl = $('#imgAddLabel');
     if (lbl) lbl.style.display = pendingModalImgs.length >= 6 ? 'none' : '';

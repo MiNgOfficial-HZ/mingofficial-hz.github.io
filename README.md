@@ -30,7 +30,7 @@ GitHub minghz-db/db.json（内容数据 + 账号数据[密码 PBKDF2 哈希]）
 
 ## 账号与权限
 
-- 站长：MiNgAltair / woshihuangyanming（种子账号，可自行改密）
+- 站长：MiNgAltair（种子账号，请部署后立即修改初始密码；切勿把真实密码写进公开仓库）
 - 角色：owner（站长）> admin（管理员）> edit（可编辑）> view（仅查看）
 - 登录限流：每 IP 每小时 12 次尝试；密码 PBKDF2-SHA256（60000 迭代+随机盐）
 - 管理面板仅 owner 可创建/授权/删除；admin 可查看账号列表
