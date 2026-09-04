@@ -282,6 +282,14 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   };
+  var MEDIA_PREFIX = 'https://raw.githubusercontent.com/MiNgOfficial-HZ/minghz-db/main/uploads/';
+  var mediaUrl = function (u) {
+    u = String(u == null ? '' : u);
+    if (u.indexOf(MEDIA_PREFIX) === 0) {
+      return WORKER + '/api/img?p=' + encodeURIComponent(u.slice(MEDIA_PREFIX.length));
+    }
+    return u;
+  };
   var uid = function () { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); };
   var pad = function (n) { return String(n).padStart(2, '0'); };
   var nowStamp = function () {
@@ -512,9 +520,9 @@
 
   function galleryHTML(imgs, title) {
     if (!imgs || !imgs.length) return '';
-    var cover = '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(imgs[0]) + '"><img src="' + esc(imgs[0]) + '" alt="' + esc(title) + '" loading="lazy" decoding="async" /></button>';
+    var cover = '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(mediaUrl(imgs[0])) + '"><img src="' + esc(mediaUrl(imgs[0])) + '" alt="' + esc(title) + '" loading="lazy" decoding="async" /></button>';
     var thumbs = imgs.slice(1, 6).map(function (u) {
-      return '<button class="tg-thumb" type="button" data-action="open-img" data-url="' + esc(u) + '"><img src="' + esc(u) + '" alt="' + esc(title) + '" loading="lazy" decoding="async" /></button>';
+      return '<button class="tg-thumb" type="button" data-action="open-img" data-url="' + esc(mediaUrl(u)) + '"><img src="' + esc(mediaUrl(u)) + '" alt="' + esc(title) + '" loading="lazy" decoding="async" /></button>';
     }).join('');
     return '<div class="tech-gallery">' + cover + thumbs + '</div>';
   }
@@ -650,7 +658,7 @@
   function mdInline(s) {
     s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (m, alt, url) {
       if (!/^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,)/i.test(url)) return m;
-      return '<img src="' + url + '" alt="' + alt + '" loading="lazy" decoding="async" />';
+      return '<img src="' + mediaUrl(url) + '" alt="' + alt + '" loading="lazy" decoding="async" />';
     });
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, label, url) {
       if (!/^(https?:\/\/|mailto:)/i.test(url)) return m;
@@ -875,7 +883,7 @@
     var list = $('#imgList');
     if (!list) return;
     list.innerHTML = pendingModalImgs.map(function (u) {
-      return '<div class="img-thumb"><img src="' + esc(u) + '" alt="图片" loading="lazy" decoding="async" /><button class="img-rm" type="button" data-action="img-remove" data-url="' + esc(u) + '" aria-label="移除">✕</button></div>';
+      return '<div class="img-thumb"><img src="' + esc(mediaUrl(u)) + '" alt="图片" loading="lazy" decoding="async" /><button class="img-rm" type="button" data-action="img-remove" data-url="' + esc(u) + '" aria-label="移除">✕</button></div>';
     }).join('');
     var lbl = $('#imgAddLabel');
     if (lbl) lbl.style.display = pendingModalImgs.length >= 6 ? 'none' : '';
