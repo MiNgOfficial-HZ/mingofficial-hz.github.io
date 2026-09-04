@@ -1172,7 +1172,7 @@
   (function initTheme() {
     var t = null;
     try { t = localStorage.getItem(THEME_KEY); } catch (e) {}
-    if (!t) t = 'dark'; /* 科技风默认暗色，可随时切换 */
+    if (!t) t = 'light'; /* Apple 设计默认浅色，可随时切换 */
     applyTheme(t);
   })();
 
