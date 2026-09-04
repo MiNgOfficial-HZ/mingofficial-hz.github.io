@@ -9,7 +9,6 @@
 
   /* ---------- 云端配置 ---------- */
   var WORKER = 'https://minghz-api.mingsite.workers.dev';
-  var RAW_URL = 'https://raw.githubusercontent.com/MiNgOfficial-HZ/minghz-db/main/db.json';
   var CACHE_KEY = 'minghz.site.cache.v3';
   var THEME_KEY = 'minghz.theme';
 
@@ -372,10 +371,17 @@
   }
 
   function cloudFetch() {
-    return fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' })
+    return fetch(WORKER + '/api/db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session: mySession }),
+      cache: 'no-store'
+    })
       .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
+        return r.json().then(function (j) {
+          if (!r.ok || !j.db) throw new Error((j && j.error) || 'HTTP ' + r.status);
+          return j.db;
+        });
       });
   }
 
