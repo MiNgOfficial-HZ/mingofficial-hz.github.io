@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://minghz-api.mingsite.workers.dev https://raw.githubusercontent.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://minghz-api.mingsite.workers.dev https://raw.githubusercontent.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MiNg Official Website</title>
   <meta name="description" content="MiNgHZ 的个人小站：说说墙、旅行日志、数码生活与留言友链。一半是生活，一半是热爱。" />
@@ -15,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Fira+Code:wght@700&family=LXGW+WenKai+TC:wght@700&family=Long+Cang&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260903b" />
+  <link rel="stylesheet" href="css/style.css?v=20260903c" />
 </head>
 <body>
   <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
@@ -157,7 +158,7 @@
             </div>
             <form class="card msg-form reveal" id="msgForm" novalidate>
               <h3 class="card-title">✉️ 给我留言</h3>
-              <p class="card-sub">留下你的名字与想说的话，站长会在这里查看并回复你。</p>
+              <p class="card-sub">留下你的名字与想说的话。你的邮箱仅用于站长回复，不会在页面公开展示。</p>
               <div class="form-row">
                 <div class="field">
                   <label for="msgName">姓名 *</label>
@@ -239,6 +240,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260903b"></script>
+  <script src="js/app.js?v=20260903c"></script>
 </body>
 </html>

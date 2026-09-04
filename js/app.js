@@ -10,7 +10,7 @@
   /* ---------- 云端配置 ---------- */
   var WORKER = 'https://minghz-api.mingsite.workers.dev';
   var RAW_URL = 'https://raw.githubusercontent.com/MiNgOfficial-HZ/minghz-db/main/db.json';
-  var CACHE_KEY = 'minghz.site.cache.v2';
+  var CACHE_KEY = 'minghz.site.cache.v3';
   var THEME_KEY = 'minghz.theme';
 
   /* ---------- 登录状态（账号密码会话，12 小时有效） ---------- */
@@ -345,7 +345,23 @@
     try { var raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
   }
   function writeCache() {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(S)); } catch (e) {}
+    try {
+      /* 缓存永远不写留言邮箱：即使本地缓存被翻看，也不会带出访客邮箱 */
+      var safe = {
+        moments: S.moments,
+        travels: S.travels,
+        tech: S.tech,
+        studies: S.studies,
+        friends: S.friends,
+        perms: S.perms,
+        messages: S.messages.map(function (m) {
+          var c = {};
+          for (var k in m) { if (k !== 'email') c[k] = m[k]; }
+          return c;
+        })
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(safe));
+    } catch (e) {}
   }
 
   function setSync(state, text) {
@@ -391,6 +407,10 @@
   function boot() {
     syncAdminUI();
     setSync('syncing', '🔄 同步中…');
+    try {
+      localStorage.removeItem('minghz.site.cache.v1');
+      localStorage.removeItem('minghz.site.cache.v2');
+    } catch (e) {}
     var cached = readCache();
     if (cached) {
       S = normalize(cached);
