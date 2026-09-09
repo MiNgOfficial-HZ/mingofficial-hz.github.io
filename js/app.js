@@ -379,17 +379,27 @@
   }
 
   function cloudFetch() {
-    return fetch(WORKER + '/api/db', {
+    var ctrl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 8000) : null;
+    var finish = function () { if (timer) { clearTimeout(timer); timer = null; } };
+    var opts = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session: mySession }),
       cache: 'no-store'
-    })
-      .then(function (r) {
-        return r.json().then(function (j) {
-          if (!r.ok || !j.db) throw new Error((j && j.error) || 'HTTP ' + r.status);
-          return j.db;
-        });
+    };
+    if (ctrl) opts.signal = ctrl.signal;
+    var resp;
+    return fetch(WORKER + '/api/db', opts)
+      .then(function (r) { resp = r; return r.json(); })
+      .then(function (j) {
+        finish();
+        if (!resp.ok || !j.db) throw new Error((j && j.error) || 'HTTP ' + resp.status);
+        return j.db;
+      })
+      .catch(function (e) {
+        finish();
+        throw e;
       });
   }
 
