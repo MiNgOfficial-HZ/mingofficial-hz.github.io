@@ -8,7 +8,7 @@
   'use strict';
 
   /* ---------- 云端配置 ---------- */
-  var WORKER = 'https://minghz-api.mingsite.workers.dev';
+  var WORKER = 'https://api.giraffeming.online';
   var CACHE_KEY = 'minghz.site.cache.v3';
   var THEME_KEY = 'minghz.theme';
 
@@ -283,11 +283,13 @@
     });
   };
   var MEDIA_PREFIX = 'https://raw.githubusercontent.com/MiNgOfficial-HZ/minghz-db/main/uploads/';
+  var OLD_WORKER = 'https://minghz-api.mingsite.workers.dev';
   var mediaUrl = function (u) {
     u = String(u == null ? '' : u);
     if (u.indexOf(MEDIA_PREFIX) === 0) {
       return WORKER + '/api/img?p=' + encodeURIComponent(u.slice(MEDIA_PREFIX.length));
     }
+    if (u.indexOf(OLD_WORKER) === 0) return WORKER + u.slice(OLD_WORKER.length);
     return u;
   };
   var uid = function () { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); };
