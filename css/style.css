@@ -1092,3 +1092,311 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; }
   .section { padding: 68px 0; }
   .hero { padding: 76px 0 48px; }
 }
+
+/* ============================================================
+   v7：主页门户（两扇门）+ 个人空间 / 朋友们 视图
+   ============================================================ */
+.view-panel[hidden] { display: none !important; }
+
+/* ---------- 门户 ---------- */
+.portal { padding: 96px 0 56px; text-align: center; }
+.portal-title {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-family: var(--font-display);
+  line-height: 1.16; margin-top: 4px;
+}
+.portal-title span, .portal-title em { display: block; }
+.pt-l1, .pt-l3 {
+  font-family: var(--font-sans); font-weight: 400;
+  color: var(--muted); font-size: clamp(1.25rem, 3vw, 1.7rem);
+  letter-spacing: -0.01em;
+}
+.portal-title .pt-mid {
+  font-family: var(--font-f1);
+  font-style: italic; font-weight: 700;
+  font-size: clamp(3rem, 8.4vw, 5.6rem);
+  letter-spacing: -0.04em; line-height: 1.04;
+  background: linear-gradient(95deg, var(--accent), #ff7a5c 60%, var(--gold));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.portal-sub { max-width: 640px; margin: 20px auto 0; color: var(--muted); font-size: 1rem; line-height: 1.9; }
+.portal-sub .warn-en {
+  display: inline-block; margin-top: 8px;
+  font-family: var(--font-latin); font-weight: 700;
+  font-size: 0.72em; letter-spacing: 0.34em;
+  text-transform: uppercase; color: var(--accent);
+}
+.portal-split-label {
+  margin: 52px 0 18px;
+  font-family: var(--font-tech); font-weight: 600; font-size: 0.72rem;
+  letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted);
+}
+.portal-entries {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px; text-align: left;
+}
+.entry-card {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 30px 28px 26px;
+  border: 1px solid var(--line); border-radius: 22px;
+  background: var(--surface);
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+.entry-card::after {
+  content: ""; position: absolute; inset: auto -40% -70% auto; width: 260px; height: 260px;
+  background: radial-gradient(closest-side, var(--accent-soft), transparent);
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.entry-card:hover { transform: translateY(-4px); border-color: var(--line-strong); }
+.entry-card:hover::after { opacity: 1; }
+.entry-emoji { font-size: 2.1rem; line-height: 1; }
+.entry-kicker {
+  font-family: var(--font-tech); font-weight: 600; font-size: 0.66rem;
+  letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted);
+}
+.entry-title { font-size: 1.32rem; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; }
+.entry-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.75; }
+.entry-cta {
+  margin-top: 14px; color: var(--accent); font-weight: 600; font-size: 0.88rem;
+}
+.entry-card-main { border-color: var(--line-strong); }
+.entry-card-main .entry-title { color: var(--accent); }
+.portal-note { color: var(--muted); font-size: 0.78rem; margin-top: 34px; line-height: 1.8; }
+@media (max-width: 760px) {
+  .portal { padding: 68px 0 40px; }
+  .portal-entries { grid-template-columns: 1fr; gap: 14px; }
+  .entry-card { padding: 24px 22px; border-radius: 18px; }
+  .portal-split-label { margin: 38px 0 14px; letter-spacing: 0.2em; }
+}
+
+/* ---------- 个人空间 / 朋友们 页头 ---------- */
+.space-head { padding: 64px 0 26px; border-bottom: 1px solid var(--line); }
+.space-head-friends { border-bottom: none; }
+.space-title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(1.75rem, 4vw, 2.6rem); letter-spacing: -0.03em; line-height: 1.15;
+}
+.space-sub { color: var(--muted); font-size: 0.95rem; margin-top: 10px; max-width: 660px; }
+
+/* ---------- 个人空间内的板块小导航 ---------- */
+.sub-nav {
+  position: sticky; top: 44px; z-index: 40;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid var(--line);
+}
+.sub-nav-inner {
+  display: flex; gap: 6px; align-items: center;
+  padding-top: 9px; padding-bottom: 9px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.sub-nav-inner::-webkit-scrollbar { display: none; }
+.sub-link {
+  flex: 0 0 auto; padding: 6px 14px; border-radius: 999px;
+  color: var(--muted); font-size: 0.82rem; font-weight: 500;
+  border: 1px solid transparent; white-space: nowrap;
+  transition: color 0.18s, background 0.18s, border-color 0.18s;
+}
+.sub-link:hover { color: var(--ink); background: var(--surface-2); }
+.sub-link.on { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+
+/* ---------- Markdown 编辑器 + 符号速查 ---------- */
+.md-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 12px; align-items: start; }
+.md-help {
+  border: 1px solid var(--line-strong); border-radius: 12px;
+  background: var(--bg-2); padding: 12px 10px 10px;
+  max-height: 386px; overflow-y: auto;
+}
+.md-help-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font-size: 0.8rem; font-weight: 700; color: var(--ink);
+  padding: 0 6px 8px; border-bottom: 1px dashed var(--line); margin-bottom: 6px;
+}
+.md-help-head small { font-weight: 400; color: var(--muted); font-size: 0.7rem; }
+.md-sym {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  border: none; background: transparent; cursor: pointer; text-align: left;
+  padding: 5px 6px; border-radius: 8px; color: var(--ink);
+  transition: background 0.15s, color 0.15s;
+}
+.md-sym:hover, .md-sym:focus-visible { background: var(--accent-soft); }
+.md-sym code {
+  flex: 0 0 auto; min-width: 62px;
+  font-family: var(--font-latin); font-size: 0.72rem; line-height: 1.5;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 1px 6px; white-space: nowrap; color: var(--ink);
+}
+.md-sym span { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+.md-sym:hover code { border-color: var(--accent); color: var(--accent); }
+.md-sym:hover span { color: var(--accent); }
+.md-help-sep {
+  margin: 7px 6px 3px; padding-top: 7px; border-top: 1px dashed var(--line);
+  font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+@media (max-width: 940px) {
+  .md-wrap { grid-template-columns: 1fr; }
+  .md-help { max-height: 240px; order: 2; }
+}
+
+/* ---------- 数学公式（KaTeX） ---------- */
+.md-body .katex, .katex { font-size: 1.04em; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: 14px 0; }
+.katex-display > .katex { white-space: normal; }
+.math-raw {
+  font-family: var(--font-latin); font-size: 0.82em; color: var(--accent);
+  background: var(--accent-soft); border-radius: 6px; padding: 1px 6px;
+  white-space: pre-wrap; word-break: break-all;
+}
+
+/* ---------- Markdown 表格 / 删除线 ---------- */
+.md-body table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
+.md-body th, .md-body td { border: 1px solid var(--line); padding: 8px 11px; text-align: left; vertical-align: top; }
+.md-body th { background: var(--bg-2); font-weight: 600; }
+.md-body del { color: var(--muted); }
+.md-body input[type="checkbox"] { margin-right: 6px; }
+
+/* ---------- 图片上传：进度 / 失败 / 拖拽 ---------- */
+.img-thumb .img-state {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: rgba(0, 0, 0, 0.55); color: #fff;
+  font-family: var(--font-tech); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+}
+.img-thumb.uploading { border-color: var(--accent); }
+.img-thumb.failed { border-color: var(--danger); }
+.img-thumb.failed .img-state { background: rgba(229, 72, 77, 0.62); }
+.img-picker.dragging .img-add { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.upload-bar {
+  height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 8px;
+}
+.upload-bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s ease; }
+
+/* ---------- 人机验证（iPad / Safari 友好） ---------- */
+.ts-slot {
+  margin: 14px 0 4px; min-height: 68px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  touch-action: manipulation;
+}
+.ts-slot iframe { max-width: 100%; border: 0; }
+.ts-fallback { font-size: 0.76rem; color: var(--muted); line-height: 1.6; }
+.ts-fallback b { color: var(--danger); }
+.btn-ts-retry {
+  border: 1px solid var(--line-strong); background: transparent; color: var(--ink);
+  border-radius: 999px; padding: 7px 14px; font-size: 0.78rem; cursor: pointer;
+  transition: 0.18s;
+}
+.btn-ts-retry:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- iPad / 触屏：弹窗可滚动、控件够大 ---------- */
+.modal { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.modal.modal-wide { max-width: 980px; }
+@media (max-width: 900px) {
+  .modal { max-height: 86vh; padding: 22px 20px; }
+  .modal-body { overflow-x: hidden; }
+  .ts-slot { min-height: 78px; }
+}
+
+/* ---------- FAB / 快捷新建只在自己的空间里出现 ---------- */
+.fab { display: none; }
+body.can-post-any:not([data-view="home"]) .fab { display: grid; place-items: center; }
+
+/* ============================================================
+   v8：两扇门的内容重新分配
+   朋友们 = 说说墙（署名 + 跟帖）· 指南（编写人）· 友链留言
+   个人空间 = 账号管理 · 游记 · 数码 · 设备
+   ============================================================ */
+[hidden] { display: none !important; }
+
+/* ---------- 门户里的登录入口 ---------- */
+.portal-user {
+  margin-top: 34px; display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: center; gap: 12px;
+}
+.portal-user-hint { color: var(--muted); font-size: 0.78rem; }
+
+/* ---------- 账号与权限面板 ---------- */
+.acct-card { padding: 24px 26px; }
+.acct-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.acct-name { font-size: 1.06rem; font-weight: 600; }
+.acct-sub { color: var(--muted); font-size: 0.8rem; }
+.acct-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; margin-top: 18px; }
+.acct-btn {
+  display: flex; align-items: center; gap: 8px; justify-content: flex-start;
+  padding: 13px 16px; border-radius: 14px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--bg-2); color: var(--ink);
+  font-size: 0.88rem; font-weight: 500; text-align: left;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+.acct-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.acct-btn small { display: block; font-weight: 400; color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+.acct-note { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); color: var(--muted); font-size: 0.78rem; line-height: 1.8; }
+.acct-roles { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+/* ---------- 说说墙：发帖框 ---------- */
+.composer { padding: 20px 22px; margin-bottom: 26px; }
+.composer-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.composer-who { font-weight: 600; font-size: 0.92rem; }
+.composer-who small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.composer textarea {
+  width: 100%; min-height: 84px; resize: vertical;
+  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line-strong);
+  background: var(--bg-2); color: var(--ink); font: inherit; font-size: 0.94rem;
+}
+.composer textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.composer-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.composer-emoji {
+  width: 68px; padding: 9px 10px; border-radius: 11px; text-align: center;
+  border: 1px solid var(--line-strong); background: var(--bg-2); color: var(--ink); font-size: 1rem;
+}
+.composer-count { color: var(--muted); font-size: 0.74rem; margin-left: auto; }
+.composer-locked { padding: 20px 22px; margin-bottom: 26px; text-align: center; color: var(--muted); font-size: 0.88rem; }
+
+/* ---------- 说说墙：署名 / 跟帖 ---------- */
+.moment-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.m-author { font-weight: 700; font-size: 0.9rem; }
+.m-badge {
+  font-size: 0.62rem; padding: 1px 8px; border-radius: 999px; margin-left: 6px;
+  background: var(--accent-soft); color: var(--accent); font-weight: 600;
+}
+.m-badge.friend { background: var(--blue-soft); color: var(--blue); }
+.m-time { font-family: var(--font-tech); font-weight: 600; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--muted); }
+.m-time em { font-style: normal; opacity: 0.75; }
+.moment-foot { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.cmt-toggle {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  border-radius: 999px; padding: 5px 13px; font-size: 0.76rem; cursor: pointer;
+  transition: 0.18s;
+}
+.cmt-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.cmt-zone { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.cmt-list { display: flex; flex-direction: column; gap: 10px; }
+.cmt { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 13px; position: relative; }
+.cmt-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cmt-author { font-weight: 600; font-size: 0.82rem; }
+.cmt-text { margin-top: 4px; font-size: 0.88rem; line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
+.cmt .cmt-del {
+  position: absolute; top: 8px; right: 8px; width: 22px; height: 22px;
+  border-radius: 7px; border: 1px solid var(--line); background: transparent;
+  color: var(--muted); font-size: 0.62rem; cursor: pointer; display: grid; place-items: center;
+}
+.cmt .cmt-del:hover { color: var(--danger); border-color: var(--danger); }
+.cmt-form { display: flex; gap: 8px; margin-top: 12px; align-items: flex-end; }
+.cmt-form textarea {
+  flex: 1; min-height: 44px; resize: vertical; padding: 10px 12px; border-radius: 11px;
+  border: 1px solid var(--line-strong); background: var(--bg-2); color: var(--ink);
+  font: inherit; font-size: 0.88rem;
+}
+.cmt-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cmt-empty { color: var(--muted); font-size: 0.8rem; }
+
+/* ---------- 指南：编写人 ---------- */
+.author-chip {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: auto;
+  font-size: 0.72rem; color: var(--muted); white-space: nowrap;
+}
+.author-chip b { color: var(--ink); font-weight: 600; }
+@media (max-width: 560px) {
+  .acct-grid { grid-template-columns: 1fr; }
+  .composer-emoji { width: 100%; }
+}

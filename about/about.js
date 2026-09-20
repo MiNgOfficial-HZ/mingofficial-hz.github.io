@@ -15,6 +15,17 @@
   try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
   applyTheme(saved || 'light');
 
+  /* 字体非阻塞加载：加载完再启用，首屏先用系统字体 */
+  var fontLink = document.getElementById('gfontLink');
+  if (fontLink) {
+    var enableFonts = function () { if (fontLink.media !== 'all') fontLink.media = 'all'; };
+    if (fontLink.sheet) enableFonts();
+    else {
+      fontLink.addEventListener('load', enableFonts);
+      setTimeout(enableFonts, 3000);
+    }
+  }
+
   var themeBtn = document.getElementById('themeToggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', function () {

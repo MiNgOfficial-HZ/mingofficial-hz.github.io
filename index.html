@@ -2,23 +2,26 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>MiNg Official Website</title>
-  <meta name="description" content="MiNgHZ 的个人小站：说说墙、旅行日志、数码生活与留言友链。一半是生活，一半是热爱。" />
+  <meta name="description" content="MiNgHZ 的个人站点：个人空间（游记 · 数码 · 设备）与朋友们的客厅（说说墙 · 指南 · 友链）。" />
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0c" />
   <meta property="og:title" content="MiNg Official Website" />
   <meta property="og:description" content="一半是生活，一半是热爱。" />
   <meta property="og:type" content="website" />
   <link rel="icon" href="assets/logo.jpg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;600;700&family=Rajdhani:wght@500;600;700&family=Fira+Code:wght@400;500;700&family=LXGW+WenKai+TC:wght@400;700&family=Long+Cang&family=Titillium+Web:ital,wght@1,600;1,700;1,900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260920h" />
+  <link rel="preconnect" href="https://api.giraffeming.online" crossorigin />
+  <link rel="preload" as="image" href="assets/logo.jpg" />
+  <!-- 字体非阻塞加载：先按 print 低优先级拉取，加载完由 js/app.js 切成 all；首屏直接用系统字体渲染 -->
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
+  <link rel="stylesheet" href="css/style.css?v=20260921b" />
 </head>
-<body>
+<body data-view="home">
   <span id="pageTop" aria-hidden="true"></span>
   <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
   <div class="bg-decor" aria-hidden="true">
@@ -30,22 +33,18 @@
 
   <header class="site-header" id="siteHeader">
     <div class="container header-inner">
-      <a class="brand" href="#top">
+      <a class="brand" href="#home" data-action="go-view" data-view="home">
         <span class="brand-mark" style="background-image:url('assets/logo.jpg')"></span>
         <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
       </a>
       <nav class="main-nav" id="mainNav" aria-label="主导航">
-        <a href="#moments" class="nav-link">Talks</a>
-        <a href="#travel" class="nav-link">Travel</a>
-        <a href="#tech" class="nav-link">Tech &amp; Life</a>
-        <a href="#devices" class="nav-link">Devices</a>
-        <a href="#study" class="nav-link">Study &amp; Guide</a>
-        <a href="#guest" class="nav-link">Link &amp; Connect</a>
+        <a href="#home" class="nav-link" data-action="go-view" data-view="home">首页</a>
+        <a href="#space" class="nav-link" data-action="go-view" data-view="space">MiNg的个人空间</a>
+        <a href="#friends" class="nav-link" data-action="go-view" data-view="friends">MiNg和他的朋友们</a>
         <a href="/about/" class="nav-link">关于</a>
       </nav>
       <div class="header-actions">
         <span id="syncChip" class="sync-chip syncing" role="status" title="数据云端同步状态">🔄 同步中…</span>
-        <button id="userBtn" class="icon-btn user-btn" type="button" aria-label="登录或在">👤</button>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
         <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
       </div>
@@ -53,167 +52,237 @@
   </header>
 
   <main id="top">
-    <!-- Hero -->
-    <section class="hero">
-      <div class="container hero-inner">
-        <p class="hero-kicker">HZ DIGITAL LAB · TECH × LIFE × CREATION</p>
-        <h1 class="hero-title">
-          <span class="ht-l1">这里是</span>
-          <em class="ht-mid">MiNgHZ</em>
-          <span class="ht-l3">的个人站点</span>
-        </h1>
-        <p class="hero-sub">长颈鹿出没，谨防撞伤。<br /><span class="warn-en">WARNING！GIRAFFES！</span></p>
-        <div class="hero-stats" id="heroStats"></div>
-        <div class="hero-cta">
-          <a class="btn btn-primary" href="#moments">浏览内容 →</a>
-          <a class="btn btn-ghost" href="#guest">留下信号 ⌁</a>
-        </div>
-        <div class="ticker" aria-hidden="true">
-          <div class="ticker-track">
-            <span>HZ DIGITAL LAB</span><span class="t-dot">◆</span>
-            <span>TECH</span><span class="t-dot">◆</span>
-            <span>TRAVEL</span><span class="t-dot">◆</span>
-            <span>LIFESTYLE</span><span class="t-dot">◆</span>
-            <span>EST. 2026</span><span class="t-dot">◆</span>
-            <span>HZ DIGITAL LAB</span><span class="t-dot">◆</span>
-            <span>TECH</span><span class="t-dot">◆</span>
-            <span>TRAVEL</span><span class="t-dot">◆</span>
-            <span>LIFESTYLE</span><span class="t-dot">◆</span>
-            <span>EST. 2026</span><span class="t-dot">◆</span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- ============================ 主页（门户） ============================ -->
+    <div class="view-panel" id="viewHome">
+      <section class="portal">
+        <div class="container">
+          <p class="hero-kicker">HZ DIGITAL LAB · TECH × LIFE × CREATION</p>
+          <h1 class="portal-title">
+            <span class="pt-l1">这里是</span>
+            <em class="pt-mid">MiNgHZ</em>
+            <span class="pt-l3">的个人站点</span>
+          </h1>
+          <p class="portal-sub">
+            一个把生活、旅途和朋友们都装进来的地方 —— 长颈鹿出没，谨防撞伤。<br />
+            <span class="warn-en">WARNING！GIRAFFES！</span>
+          </p>
+          <div class="hero-stats" id="heroStats"></div>
 
-    <!-- 01 说说墙 -->
-    <section class="section" id="moments">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">01 · Talks</span>
-          <h2 class="section-title">Talks</h2>
-          <p class="section-sub">零碎的心情与灵感，都值得被记住 —— 点右下角的 <b class="inline-plus">＋</b> 随时写一条。</p>
-        </div>
-        <div class="timeline" id="momentList"></div>
-      </div>
-    </section>
-
-    <!-- 02 旅行日志 -->
-    <section class="section section-alt" id="travel">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">02 · Travel</span>
-          <div class="title-row">
-            <h2 class="section-title">Travel</h2>
-            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-travel">＋ 添加游记</button>
+          <p class="portal-split-label">进门请选一扇门 · TWO DOORS</p>
+          <div class="portal-entries">
+            <a class="entry-card" href="#friends" data-action="go-view" data-view="friends">
+              <span class="entry-emoji">🤝</span>
+              <span class="entry-kicker">ENTRY · 01 · 朋友们的客厅</span>
+              <h2 class="entry-title">MiNg 和他的朋友们</h2>
+              <p class="entry-desc">说说墙（我发帖，朋友也能发帖、跟帖）· 大家一起写的指南 · 友链与留言。</p>
+              <span class="entry-cta">去做客 / 发一条 →</span>
+            </a>
+            <a class="entry-card entry-card-main" href="#space" data-action="go-view" data-view="space">
+              <span class="entry-emoji">🧑‍🚀</span>
+              <span class="entry-kicker">ENTRY · 02 · 我的地盘</span>
+              <h2 class="entry-title">MiNg 的个人空间</h2>
+              <p class="entry-desc">旅行日志 · 数码生活 · 个人设备，以及账号与权限管理。</p>
+              <span class="entry-cta">进我的书房 →</span>
+            </a>
           </div>
-          <p class="section-sub">走过的路、看过的风景，用卡片收藏成册。</p>
-        </div>
-        <div class="travel-grid" id="travelGrid"></div>
-      </div>
-    </section>
 
-    <!-- 03 数码生活 -->
-    <section class="section" id="tech">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">03 · Tech &amp; Life</span>
-          <div class="title-row">
-            <h2 class="section-title">Tech &amp; Life</h2>
-            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-tech">＋ 添加体验</button>
+          <div class="portal-user">
+            <button id="userBtn" class="btn btn-ghost btn-small" type="button">👤 登录 / 我的账户</button>
+            <span class="portal-user-hint">账号由站长发放；登录后可以在说说墙发帖、跟帖，也能写指南。</span>
           </div>
-          <p class="section-sub">新玩具的第一印象，与长期使用的真实感受。</p>
+          <p class="portal-note">这个站是 MiNgHZ（Yanming HUANG）的自留地，也是朋友们的客厅 —— 内容实时云端同步，条条都有署名和时间。</p>
         </div>
-        <div class="timeline" id="techList"></div>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <!-- 04 个人设备 -->
-    <section class="section section-alt" id="devices">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">04 · Personal Devices</span>
-          <div class="title-row">
-            <h2 class="section-title">Personal Devices</h2>
-            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-device">＋ 添加设备</button>
-          </div>
-          <p class="section-sub">随身与桌面上的那些设备 —— 一行两台，慢慢添齐。</p>
+    <!-- ============================ MiNg 的个人空间 ============================ -->
+    <div class="view-panel" id="viewSpace" hidden>
+      <section class="space-head">
+        <div class="container">
+          <p class="eyebrow">PERSONAL SPACE · 我的地盘</p>
+          <h1 class="space-title">MiNg 的个人空间</h1>
+          <p class="space-sub">旅行、数码与设备，还有账号管理 —— 都在这儿。想找说说墙和指南，去「MiNg 和他的朋友们」那边。</p>
         </div>
-        <div class="devices-grid" id="deviceGrid"></div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 05 Study & Guide -->
-    <section class="section" id="study">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">05 · Study &amp; Guide</span>
-          <div class="title-row">
-            <h2 class="section-title">Study &amp; Guide</h2>
-            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-study">＋ 添加指南</button>
-          </div>
-          <p class="section-sub">教程、焚诀与学习笔记 —— 一步步点亮技能树。</p>
+      <nav class="sub-nav" id="subNav" aria-label="个人空间导航">
+        <div class="container sub-nav-inner">
+          <a href="#account" class="sub-link">👤 账号</a>
+          <a href="#travel" class="sub-link">🧳 游记</a>
+          <a href="#tech" class="sub-link">📷 数码</a>
+          <a href="#devices" class="sub-link">🎧 设备</a>
         </div>
-        <div class="timeline" id="studyList"></div>
-      </div>
-    </section>
+      </nav>
 
-    <!-- 06 留言 & 友链 -->
-    <section class="section section-alt" id="guest">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">06 · Link &amp; Connect</span>
-          <div class="title-row">
-            <h2 class="section-title">Link &amp; Connect</h2>
-            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-friend">＋ 添加友链</button>
+      <!-- 01 账号与权限（原来的账号管理系统） -->
+      <section class="section" id="account">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">01 · Account</span>
+            <h2 class="section-title">账号与权限</h2>
+            <p class="section-sub">登录、密码、两步验证，以及给朋友们发放账号 / 开关权限，都在这里。</p>
           </div>
-          <p class="section-sub">来过、聊过、交换过链接，就是朋友。</p>
+          <div id="accountPanel"></div>
         </div>
-        <div class="guest-grid">
-          <div class="guest-main">
-            <div class="card guest-gate" id="guestGate" hidden>
-              <p>🛡️ 留言功能当前仅对<b>已登录访客</b>开放。<br/><span class="field-hint">站长可在管理面板「权限管理」中开启游客留言。</span></p>
-              <button class="btn btn-soft btn-small" type="button" data-action="guest-login">登录后留言 →</button>
+      </section>
+
+      <!-- 02 旅行日志 -->
+      <section class="section section-alt" id="travel">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">02 · Travel</span>
+            <div class="title-row">
+              <h2 class="section-title">Travel</h2>
+              <button class="btn btn-small btn-soft" type="button" data-action="add-travel" hidden>＋ 添加游记</button>
             </div>
-            <form class="card msg-form reveal" id="msgForm" novalidate>
-              <h3 class="card-title">✉️ 给我留言</h3>
-              <p class="card-sub">留下你的名字与想说的话。你的邮箱仅用于站长回复，不会在页面公开展示。</p>
-              <div class="form-row">
-                <div class="field">
-                  <label for="msgName">姓名 *</label>
-                  <input id="msgName" name="name" type="text" maxlength="20" placeholder="怎么称呼你？" required />
+            <p class="section-sub">走过的路、看过的风景，用卡片收藏成册。</p>
+          </div>
+          <div class="travel-grid" id="travelGrid"></div>
+        </div>
+      </section>
+
+      <!-- 03 数码生活 -->
+      <section class="section" id="tech">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">03 · Tech &amp; Life</span>
+            <div class="title-row">
+              <h2 class="section-title">Tech &amp; Life</h2>
+              <button class="btn btn-small btn-soft" type="button" data-action="add-tech" hidden>＋ 添加体验</button>
+            </div>
+            <p class="section-sub">新玩具的第一印象，与长期使用的真实感受。</p>
+          </div>
+          <div class="timeline" id="techList"></div>
+        </div>
+      </section>
+
+      <!-- 04 个人设备 -->
+      <section class="section section-alt" id="devices">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">04 · Personal Devices</span>
+            <div class="title-row">
+              <h2 class="section-title">Personal Devices</h2>
+              <button class="btn btn-small btn-soft" type="button" data-action="add-device" hidden>＋ 添加设备</button>
+            </div>
+            <p class="section-sub">随身与桌面上的那些设备 —— 一行两台，慢慢添齐。</p>
+          </div>
+          <div class="devices-grid" id="deviceGrid"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================ MiNg 和他的朋友们 ============================ -->
+    <div class="view-panel" id="viewFriends" hidden>
+      <section class="space-head space-head-friends">
+        <div class="container">
+          <p class="eyebrow">FRIENDS · 朋友们的客厅</p>
+          <h1 class="space-title">MiNg 和他的朋友们</h1>
+          <p class="space-sub">说说墙谁都能发、能跟帖；指南是大家一起写的 —— 每条都标着署名与时间。</p>
+        </div>
+      </section>
+
+      <nav class="sub-nav" id="subNavFriends" aria-label="朋友们导航">
+        <div class="container sub-nav-inner">
+          <a href="#moments" class="sub-link">💬 说说墙</a>
+          <a href="#study" class="sub-link">📚 指南</a>
+          <a href="#guest" class="sub-link">🔗 友链 &amp; 留言</a>
+        </div>
+      </nav>
+
+      <!-- 01 说说墙 -->
+      <section class="section" id="moments">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">01 · Talks</span>
+            <div class="title-row">
+              <h2 class="section-title">说说墙</h2>
+            </div>
+            <p class="section-sub">我发帖，朋友们也可以发帖；每条都写着发帖人和时间，底下可以跟帖，同样署名 + 时间。</p>
+          </div>
+          <div id="momentComposer"></div>
+          <div class="timeline" id="momentList"></div>
+        </div>
+      </section>
+
+      <!-- 02 指南 -->
+      <section class="section section-alt" id="study">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">02 · Study &amp; Guide</span>
+            <div class="title-row">
+              <h2 class="section-title">Study &amp; Guide</h2>
+              <button class="btn btn-small btn-soft" type="button" data-action="add-study" hidden>＋ 写一篇指南</button>
+            </div>
+            <p class="section-sub">教程、焚诀与学习笔记 —— 欢迎朋友们一起来写，每篇都会标出编写人。</p>
+          </div>
+          <div class="timeline" id="studyList"></div>
+        </div>
+      </section>
+
+      <!-- 03 友链 & 留言 -->
+      <section class="section" id="guest">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">03 · Link &amp; Connect</span>
+            <div class="title-row">
+              <h2 class="section-title">Link &amp; Connect</h2>
+              <button class="btn btn-small btn-soft" type="button" data-action="add-friend" hidden>＋ 添加友链</button>
+            </div>
+            <p class="section-sub">来过、聊过、交换过链接，就是朋友。</p>
+          </div>
+          <div class="guest-grid">
+            <div class="guest-main">
+              <div class="card guest-gate" id="guestGate" hidden>
+                <p>🛡️ 留言功能当前仅对<b>已登录访客</b>开放。<br/><span class="field-hint">站长可在个人空间「账号与权限」里开启游客留言。</span></p>
+                <button class="btn btn-soft btn-small" type="button" data-action="guest-login">登录后留言 →</button>
+              </div>
+              <form class="card msg-form reveal" id="msgForm" novalidate>
+                <h3 class="card-title">✉️ 给我留言</h3>
+                <p class="card-sub">留下你的名字与想说的话。你的邮箱仅用于站长回复，不会在页面公开展示。</p>
+                <div class="form-row">
+                  <div class="field">
+                    <label for="msgName">姓名 *</label>
+                    <input id="msgName" name="name" type="text" maxlength="20" placeholder="怎么称呼你？" required />
+                  </div>
+                  <div class="field">
+                    <label for="msgEmail">邮箱 *</label>
+                    <input id="msgEmail" name="email" type="email" maxlength="60" placeholder="you@example.com" required />
+                  </div>
                 </div>
                 <div class="field">
-                  <label for="msgEmail">邮箱 *</label>
-                  <input id="msgEmail" name="email" type="email" maxlength="60" placeholder="you@example.com" required />
+                  <label for="msgText">想说的话 *</label>
+                  <textarea id="msgText" name="text" rows="4" maxlength="300" placeholder="随便写点什么吧～" required></textarea>
                 </div>
-              </div>
-              <div class="field">
-                <label for="msgText">想说的话 *</label>
-                <textarea id="msgText" name="text" rows="4" maxlength="300" placeholder="随便写点什么吧～" required></textarea>
-              </div>
-              <button class="btn btn-primary btn-block" type="submit">发送留言 ✨</button>
-            </form>
-            <div class="msg-list" id="msgList"></div>
-          </div>
-          <aside class="guest-side">
-            <div class="card friends-card reveal">
-              <div class="friends-head">
-                <h3 class="card-title">🔗 Link &amp; Connect</h3>
-                <span class="friends-count" id="friendCount"></span>
-              </div>
-              <p class="card-sub">交换链接请留言并关注后续邮箱。</p>
-              <div id="friendList"></div>
+                <button class="btn btn-primary btn-block" type="submit">发送留言 ✨</button>
+              </form>
+              <div class="msg-list" id="msgList"></div>
             </div>
-          </aside>
+            <aside class="guest-side">
+              <div class="card friends-card reveal">
+                <div class="friends-head">
+                  <h3 class="card-title">🔗 友情链接</h3>
+                  <span class="friends-count" id="friendCount"></span>
+                </div>
+                <p class="card-sub">交换链接请留言并关注后续邮箱。</p>
+                <div id="friendList"></div>
+              </div>
+            </aside>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <footer class="site-footer">
     <div class="container">
       <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
       <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav">
+        <a href="#space" data-action="go-view" data-view="space">MiNg的个人空间 →</a>
+        &nbsp;·&nbsp;
+        <a href="#friends" data-action="go-view" data-view="friends">MiNg和他的朋友们 →</a>
+      </p>
       <p class="footer-hint footer-nav"><a href="/about/">关于我 · Yanming HUANG →</a></p>
       <p class="footer-hint"><span class="credit-copy" data-tip="实时写入GitHub，若您在本网页活动，则默认允许此写入与日志记录">数据实时云端同步（GitHub）</span></p>
       <p class="footer-hint footer-credit">Powered by <a href="https://www.cloudflare.com" target="_blank" rel="noopener noreferrer">Cloudflare</a> · Workers &amp; Pages ⚡ · Hosted by <a href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">GitHub</a></p>
@@ -222,13 +291,13 @@
     </div>
   </footer>
 
-  <button class="guest-hint" id="guestHint" type="button" data-action="guest-login" hidden>👤 游客模式 · 点击登录后即可编辑</button>
+  <button class="guest-hint" id="guestHint" type="button" data-action="guest-login" hidden>👤 登录后即可发帖 / 跟帖 / 写指南</button>
   <div class="qa-menu" id="qaMenu" aria-label="快捷新建">
     <button type="button" data-action="qa-moment">💬 说说</button>
+    <button type="button" data-action="qa-study">📚 指南</button>
     <button type="button" data-action="qa-travel">🧳 游记</button>
     <button type="button" data-action="qa-tech">📷 数码</button>
     <button type="button" data-action="qa-device">🎧 设备</button>
-    <button type="button" data-action="qa-study">📚 指南</button>
     <button type="button" data-action="qa-friend">🔗 友链</button>
   </div>
   <button id="fab" class="fab" type="button" aria-label="发布新内容">＋</button>
@@ -260,6 +329,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260920h"></script>
+  <script src="js/app.js?v=20260921b" defer></script>
 </body>
 </html>
