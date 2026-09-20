@@ -51,7 +51,7 @@
     mySession = s || '';
     try { if (s) localStorage.setItem(USER_LS, s); else localStorage.removeItem(USER_LS); } catch (e) {}
   }
-  var PERM_MAP = { moment: 'say', travel: 'travel', tech: 'tech', study: 'study', friend: 'friends', msg: 'msg' };
+  var PERM_MAP = { moment: 'say', travel: 'travel', tech: 'tech', study: 'study', friend: 'friends', msg: 'msg', device: 'device' };
   function permFor(kindRaw) {
     if (!myUser) return false;
     var p = S.perms;
@@ -392,7 +392,7 @@
           return '<div class="perm-group">' + title + '</div>' + rows2;
         };
         permBlock = '<div class="perm-block"><h4>🎛 权限管理（滑块即开关）</h4>' +
-          pg('管理员 · 可管理板块', [['admin.say', '说说'], ['admin.travel', '游记'], ['admin.tech', '数码'], ['admin.study', '指南'], ['admin.friends', '友链'], ['admin.msg', '留言']]) +
+          pg('管理员 · 可管理板块', [['admin.say', '说说'], ['admin.travel', '游记'], ['admin.tech', '数码'], ['admin.device', '设备'], ['admin.study', '指南'], ['admin.friends', '友链'], ['admin.msg', '留言']]) +
           pg('成员（已登录访客）', [['member.canMsg', '发表留言'], ['member.canEdit', '编辑内容']]) +
           pg('游客（未登录）', [['guest.canMsg', '允许留言']]) +
           '<button class="btn btn-soft btn-small" type="button" data-action="perms-save" style="margin-top:12px">保存权限</button>' +
@@ -502,8 +502,8 @@
   }
 
   /* ---------- 数据 ---------- */
-  var S = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [],
-    perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true }, member: { canMsg: true, canEdit: false }, guest: { canMsg: false } } };
+  var S = { moments: [], travels: [], tech: [], studies: [], devices: [], friends: [], messages: [],
+    perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true, device: true }, member: { canMsg: true, canEdit: false }, guest: { canMsg: false } } };
   var cloudOk = false;
   var pendingOp = null;
 
@@ -515,14 +515,15 @@
       travels: [],
       tech: [],
       studies: [],
+      devices: [],
       friends: [],
       messages: []
     };
   }
 
   function normalize(data) {
-    var out = { moments: [], travels: [], tech: [], studies: [], friends: [], messages: [],
-      perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true }, member: { canMsg: true, canEdit: false }, guest: { canMsg: false } } };
+    var out = { moments: [], travels: [], tech: [], studies: [], devices: [], friends: [], messages: [],
+      perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true, device: true }, member: { canMsg: true, canEdit: false }, guest: { canMsg: false } } };
     Object.keys(out).forEach(function (k) {
       if (k === 'perms') return;
       if (data && Array.isArray(data[k])) out[k] = data[k];
@@ -550,6 +551,7 @@
         travels: S.travels,
         tech: S.tech,
         studies: S.studies,
+        devices: S.devices,
         friends: S.friends,
         perms: S.perms,
         messages: S.messages.map(function (m) {
@@ -664,6 +666,7 @@
       ['💬', S.moments.length, '条说说'],
       ['🧳', S.travels.length, '段旅程'],
       ['📷', S.tech.length, '件数码'],
+      ['🎧', S.devices.length, '件设备'],
       ['📚', S.studies.length, '篇指南'],
       ['🔗', S.friends.length, '位友人']
     ];
@@ -752,6 +755,23 @@
     }).join('');
   }
 
+  /* 个人设备：一行两个的紧凑卡片（emoji + 产品名 + 类别） */
+  function renderDevices() {
+    var list = $('#deviceGrid');
+    if (!list) return;
+    if (!S.devices.length) { list.innerHTML = emptyHTML('还没有登记设备，点右下角 <b>＋</b> 添置第一台 🎧'); return; }
+    list.innerHTML = S.devices.map(function (d, i) {
+      return '<article class="device-card card reveal" style="--rd:' + Math.min(i * 60, 300) + 'ms" data-id="' + d.id + '">' +
+        '<span class="device-emoji">' + esc(d.emoji || '🎧') + '</span>' +
+        '<span class="device-meta">' +
+          '<span class="device-cat">' + esc(d.category || '设备') + '</span>' +
+          '<span class="device-name">' + esc(d.name || '') + '</span>' +
+        '</span>' +
+        actionsHTML('device', d.id) +
+      '</article>';
+    }).join('');
+  }
+
   function renderStudies() {
     var list = $('#studyList');
     if (!list) return;
@@ -818,6 +838,7 @@
     renderMoments();
     renderTravels();
     renderTech();
+    renderDevices();
     renderStudies();
     renderFriends();
     renderMessages();
@@ -1222,6 +1243,32 @@
     });
   }
 
+  /* 个人设备：只需要 emoji + 类别 + 产品名 */
+  function openDeviceModal(item) {
+    openModal({
+      title: item ? '编辑设备' : '添加设备',
+      submitText: item ? '保存修改' : '添加 🎧',
+      fields: [
+        { key: 'emoji', label: 'Emoji', max: 4, placeholder: '🎧', hint: '单个 emoji，选填', value: item ? (item.emoji || '') : '' },
+        { key: 'category', label: '类别', max: 20, placeholder: '如：耳机 / 相机 / 键盘', value: item ? (item.category || '') : '' },
+        { key: 'name', label: '产品名字', required: true, max: 60, placeholder: '如：Sony WH-1000XM5', value: item ? (item.name || '') : '' }
+      ],
+      onSubmit: function (v) {
+        var data = {
+          emoji: (v.emoji || '').trim() || '🎧',
+          category: (v.category || '').trim() || '设备',
+          name: (v.name || '').trim()
+        };
+        if (item) {
+          adminMutate('device.edit', Object.assign({ id: item.id }, data), '设备已更新 🎧');
+        } else {
+          adminMutate('device.add', Object.assign({ id: uid() }, data), '设备已添加 🎧');
+        }
+        return true;
+      }
+    });
+  }
+
   function dateStr(n) {
     var d = daysAgo(n);
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
@@ -1345,6 +1392,7 @@
       case 'qa-moment': $('#qaMenu').classList.remove('open'); openMomentModal(null); break;
       case 'qa-travel': $('#qaMenu').classList.remove('open'); openTravelModal(null); break;
       case 'qa-tech': $('#qaMenu').classList.remove('open'); openTechModal(null); break;
+      case 'qa-device': $('#qaMenu').classList.remove('open'); openDeviceModal(null); break;
       case 'qa-study': $('#qaMenu').classList.remove('open'); openStudyModal(null); break;
       case 'qa-friend': $('#qaMenu').classList.remove('open'); openFriendModal(null); break;
       case 'add-moment': openMomentModal(null); break;
@@ -1356,6 +1404,9 @@
       case 'add-tech': openTechModal(null); break;
       case 'edit-tech': openTechModal(find('tech')); break;
       case 'del-tech': confirmDel('tech', id, '体验'); break;
+      case 'add-device': openDeviceModal(null); break;
+      case 'edit-device': openDeviceModal(find('devices')); break;
+      case 'del-device': confirmDel('device', id, '设备'); break;
       case 'add-study': openStudyModal(null); break;
       case 'edit-study': openStudyModal(find('studies')); break;
       case 'del-study': confirmDel('study', id, '指南'); break;

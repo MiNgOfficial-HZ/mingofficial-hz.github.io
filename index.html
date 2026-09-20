@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;600;700&family=Rajdhani:wght@500;600;700&family=Fira+Code:wght@400;500;700&family=LXGW+WenKai+TC:wght@400;700&family=Long+Cang&family=Titillium+Web:ital,wght@1,600;1,700;1,900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260920f" />
+  <link rel="stylesheet" href="css/style.css?v=20260920g" />
 </head>
 <body>
   <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
@@ -37,6 +37,7 @@
         <a href="#moments" class="nav-link">Talks</a>
         <a href="#travel" class="nav-link">Travel</a>
         <a href="#tech" class="nav-link">Tech &amp; Life</a>
+        <a href="#devices" class="nav-link">Devices</a>
         <a href="#study" class="nav-link">Study &amp; Guide</a>
         <a href="#guest" class="nav-link">Link &amp; Connect</a>
         <a href="/about/" class="nav-link">关于</a>
@@ -125,11 +126,26 @@
       </div>
     </section>
 
-    <!-- 04 Study & Guide -->
+    <!-- 04 个人设备 -->
+    <section class="section section-alt" id="devices">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">04 · Personal Devices</span>
+          <div class="title-row">
+            <h2 class="section-title">Personal Devices</h2>
+            <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-device">＋ 添加设备</button>
+          </div>
+          <p class="section-sub">随身与桌面上的那些设备 —— 一行两台，慢慢添齐。</p>
+        </div>
+        <div class="devices-grid" id="deviceGrid"></div>
+      </div>
+    </section>
+
+    <!-- 05 Study & Guide -->
     <section class="section" id="study">
       <div class="container">
         <div class="section-head reveal">
-          <span class="eyebrow">04 · Study &amp; Guide</span>
+          <span class="eyebrow">05 · Study &amp; Guide</span>
           <div class="title-row">
             <h2 class="section-title">Study &amp; Guide</h2>
             <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-study">＋ 添加指南</button>
@@ -140,11 +156,11 @@
       </div>
     </section>
 
-    <!-- 05 留言 & 友链 -->
+    <!-- 06 留言 & 友链 -->
     <section class="section section-alt" id="guest">
       <div class="container">
         <div class="section-head reveal">
-          <span class="eyebrow">05 · Link &amp; Connect</span>
+          <span class="eyebrow">06 · Link &amp; Connect</span>
           <div class="title-row">
             <h2 class="section-title">Link &amp; Connect</h2>
             <button class="btn btn-small btn-soft admin-only" type="button" data-action="add-friend">＋ 添加友链</button>
@@ -210,6 +226,7 @@
     <button type="button" data-action="qa-moment">💬 说说</button>
     <button type="button" data-action="qa-travel">🧳 游记</button>
     <button type="button" data-action="qa-tech">📷 数码</button>
+    <button type="button" data-action="qa-device">🎧 设备</button>
     <button type="button" data-action="qa-study">📚 指南</button>
     <button type="button" data-action="qa-friend">🔗 友链</button>
   </div>
@@ -242,6 +259,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260920f"></script>
+  <script src="js/app.js?v=20260920g"></script>
 </body>
 </html>
