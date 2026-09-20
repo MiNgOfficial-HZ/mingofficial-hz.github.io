@@ -3,13 +3,40 @@
    ============================================================ */
 .about-hero { padding: 84px 0 8px; }
 .about-hero-inner { display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; }
-.about-photo { flex: 0 0 300px; max-width: 300px; }
-.about-photo img {
-  display: block; width: 100%; height: auto;
-  border-radius: 18px; border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  background: var(--bg-2);
+/* 照片：去掉硬边框，用「边缘羽化 + 柔和光晕」融进页面背景，深浅主题分别适配 */
+.about-photo { position: relative; flex: 0 0 300px; max-width: 300px; }
+.about-photo::before {
+  content: ''; position: absolute; inset: 4% 2%;
+  border-radius: 50%; pointer-events: none; z-index: 0;
+  background: radial-gradient(closest-side, var(--photo-glow, rgba(0, 102, 204, 0.1)), transparent 74%);
+  filter: blur(28px);
 }
+.about-photo img {
+  position: relative; z-index: 1;
+  display: block; width: 100%; height: auto;
+  border: 0; border-radius: 20px; background: transparent;
+  /* 四边羽化：矩形中间清晰，靠近边缘渐隐，不会出现一圈硬边 */
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+  mask-image:
+    linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.10));
+}
+/* 浅色主题：淡蓝灰光晕 + 轻投影，像压在纸面上 */
+[data-theme="light"] { --photo-glow: rgba(0, 102, 204, 0.10); }
+[data-theme="light"] .about-photo img {
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.10)) saturate(1.02);
+}
+/* 深色主题：品牌红暖光晕 + 更深的落影，让照片从黑色背景里浮出来 */
+[data-theme="dark"] { --photo-glow: rgba(255, 89, 72, 0.16); }
+[data-theme="dark"] .about-photo img {
+  filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.62)) saturate(1.04);
+}
+/* 只想要更轻/更重的羽化？改上面两个 8% 即可（越小越像原图，越大越朦胧） */
 .about-intro { flex: 1 1 340px; min-width: 270px; max-width: 520px; }
 .about-kicker {
   font-family: var(--font-tech); font-weight: 600; font-size: 0.78rem;
@@ -71,3 +98,4 @@
   .about-row dt { flex: none; }
   .about-card { padding: 20px 18px; }
 }
+
