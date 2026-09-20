@@ -83,7 +83,34 @@
     toast('已退出登录', 'info');
   }
 
+  /* ---------- 两步验证（2FA）状态 ---------- */
+  var pending2fa = null;          /* 第一步通过后拿到的临时票据 */
+  var pendingRecoveryCodes = '';  /* 刚生成的恢复码（仅本次显示） */
+
+  function copyText(text, okMsg) {
+    var t = String(text == null ? '' : text);
+    var done = function () { toast(okMsg || '已复制 ✔'); };
+    var fallback = function () {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = t;
+        ta.setAttribute('readonly', 'readonly');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      } catch (e) { toast('复制失败，请手动选择复制', 'error'); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(done, fallback);
+    } else { fallback(); }
+  }
+
   function openLoginModal() {
+    pending2fa = null;
     $('#modalTitle').textContent = '🔐 登录';
     $('#modalBody').innerHTML =
       '<div class="field"><label>账号</label><input id="loginUser" type="text" maxlength="40" autocomplete="username" placeholder="你的账号（由站长发放）" /></div>' +
@@ -97,23 +124,53 @@
     var u = $('#loginUser'); if (u) u.focus();
   }
 
+  /* 第二步：已开启两步验证的账号，输入验证器动态码（或恢复码） */
+  function openLoginCodeStep(un) {
+    $('#modalTitle').textContent = '🔐 两步验证';
+    $('#modalBody').innerHTML =
+      '<p class="field-hint">账号 <b>' + esc(un || '') + '</b> 已开启两步验证：请输入验证器 App 上的 6 位动态码。<br />手机不在身边时，可改用一枚恢复码。</p>' +
+      '<div class="field"><label>动态码 / 恢复码</label><input id="loginCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="6 位数字，或 XXXXX-XXXXX" /></div>';
+    $('#modalFoot').innerHTML =
+      '<button class="btn btn-ghost" type="button" data-action="login-back">返回</button>' +
+      '<button class="btn btn-primary" type="button" data-action="submit-login">验证并登录</button>';
+    $('#modalBackdrop').hidden = false;
+    document.body.style.overflow = 'hidden';
+    var c = $('#loginCode'); if (c) c.focus();
+  }
+
   function submitLogin() {
+    if (pending2fa) {
+      var code = ((($('#loginCode') || {}).value) || '').trim();
+      if (!code) { toast('请输入动态码或恢复码', 'error'); return; }
+      apiPost('/api/auth/login', { ticket: pending2fa.ticket, code: code }).then(function (res) {
+        if (res.ok && res.json.ok) { completeLogin(res.json); }
+        else { toast(res.json.error || '验证失败', 'error'); }
+      });
+      return;
+    }
     var username = ((($('#loginUser') || {}).value) || '').trim();
     var pw = ((($('#loginPw') || {}).value) || '');
     if (!username || !pw) { toast('请输入账号和密码', 'error'); return; }
     apiPost('/api/auth/login', { username: username, password: pw }).then(function (res) {
-      if (res.ok) completeLogin(res.json);
+      if (res.ok && res.json.need2fa) {
+        pending2fa = { ticket: res.json.ticket, un: res.json.un };
+        openLoginCodeStep(res.json.un);
+        return;
+      }
+      if (res.ok && res.json.ok) completeLogin(res.json);
       else toast(res.json.error || '登录失败', 'error');
     });
   }
 
   function completeLogin(res) {
+    pending2fa = null;
     saveUserSession(res.session);
     myUser = res.user;
     refreshAdminState();
     closeModal();
     renderAll();
     toast('欢迎回来，' + (res.user.nick || '朋友') + ' 👋');
+    if (res.twoFactor && res.recoveryLeft === 0) toast('恢复码已用完，建议重新生成一组', 'info');
   }
 
   function openMineModal() {
@@ -129,6 +186,7 @@
         '<div class="pu-role ' + roleCls + '">' + roleLabel + '</div></div>' +
       '</div>' +
       '<div class="mine-actions">' +
+        '<button class="btn btn-soft btn-block" type="button" data-action="open-2fa">' + (myUser.twoFactor ? '🔐 两步验证 · 已开启' : '🔐 开启两步验证') + '</button>' +
         '<button class="btn btn-soft btn-block" type="button" data-action="open-pw">' + (myUser.hasPw ? '修改密码' : '设置密码') + '</button>' +
         (hasPanelRight() ? '<button class="btn btn-soft btn-block" type="button" data-action="open-panel">🛡️ 管理面板（用户）</button>' : '') +
         '<button class="btn btn-ghost btn-block" type="button" data-action="logout-user">退出登录</button>' +
@@ -143,6 +201,9 @@
     if (myUser && myUser.hasPw) {
       fields.push({ key: 'current', label: '原密码', type: 'password', required: true, max: 64, placeholder: '当前登录密码' });
     }
+    if (myUser && myUser.twoFactor) {
+      fields.push({ key: 'code', label: '两步验证码', required: true, max: 12, placeholder: '6 位动态码或恢复码', hint: '已开启两步验证：改密需要再验证一次动态码' });
+    }
     fields.push(
       { key: 'password', label: '新密码', type: 'password', required: true, max: 64, placeholder: '6-64 位' },
       { key: 'password2', label: '确认新密码', type: 'password', required: true, max: 64, placeholder: '再输一遍' }
@@ -154,12 +215,87 @@
       onSubmit: function (v) {
         if (String(v.password).length < 6) { toast('密码至少 6 位', 'error'); return false; }
         if (v.password !== v.password2) { toast('两次输入的密码不一致', 'error'); return false; }
-        apiPost('/api/auth/password', { session: mySession, current: v.current || '', password: v.password }).then(function (res) {
+        apiPost('/api/auth/password', { session: mySession, current: v.current || '', password: v.password, code: v.code || '' }).then(function (res) {
           if (res.ok) { myUser.hasPw = true; toast('密码已保存 🔑'); closeModal(); }
           else { toast(res.json.error || '保存失败，请重试', 'error'); }
         });
         return false;
       }
+    });
+  }
+
+  /* ---------- 两步验证（2FA）界面 ---------- */
+  function render2faSetup(secret, uri) {
+    $('#modalTitle').textContent = '🔐 开启两步验证';
+    $('#modalBody').innerHTML =
+      '<div class="field"><label>第 1 步 · 用验证器 App 扫码</label>' +
+        '<div class="qr-wrap"><img alt="两步验证二维码" src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=8&data=' + encodeURIComponent(uri) + '" /></div>' +
+        '<p class="field-hint">支持 Google / Microsoft Authenticator、Authy、1Password、小米 / 华为等验证器 App。</p>' +
+      '</div>' +
+      '<div class="field"><label>扫不了码？手动输入这段密钥</label>' +
+        '<div class="secret-row"><code id="tfSecret">' + esc(secret) + '</code>' +
+        '<button class="btn btn-soft btn-small" type="button" data-action="copy-2fa-secret">复制</button></div>' +
+        '<p class="field-hint">类型：基于时间（TOTP）· 6 位数字 · 30 秒刷新一次。</p>' +
+      '</div>' +
+      '<div class="field"><label>第 2 步 · 输入 App 上显示的 6 位动态码</label>' +
+        '<input id="tfCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位数字" />' +
+        '<p class="field-hint">确认之前不会生效；确认后会给你 8 枚一次性恢复码。</p>' +
+      '</div>';
+    $('#modalFoot').innerHTML =
+      '<button class="btn btn-ghost" type="button" data-action="close-modal">稍后再弄</button>' +
+      '<button class="btn btn-primary" type="button" data-action="2fa-enable">确认开启</button>';
+    $('#modalBackdrop').hidden = false;
+    document.body.style.overflow = 'hidden';
+    var c = $('#tfCode'); if (c) c.focus();
+  }
+
+  function render2faCodes(codes, isRegen) {
+    pendingRecoveryCodes = (codes || []).join('\n');
+    $('#modalTitle').textContent = '🔑 恢复码（只显示这一次）';
+    $('#modalBody').innerHTML =
+      '<p class="field-hint">每枚恢复码只能用一次。手机丢失、验证器被删或换机时，用它代替动态码登录。请现在就抄下来或存进密码管理器。</p>' +
+      '<div class="rc-grid">' + (codes || []).map(function (c) { return '<code>' + esc(c) + '</code>'; }).join('') + '</div>' +
+      '<p class="field-hint">' + (isRegen ? '旧的恢复码已全部作废。' : '开启成功 ✔ 关掉这个窗口后就再也看不到这组码了。') + '</p>';
+    $('#modalFoot').innerHTML =
+      '<button class="btn btn-soft" type="button" data-action="copy-2fa-codes">复制全部</button>' +
+      '<button class="btn btn-primary" type="button" data-action="close-modal">我已保存</button>';
+    $('#modalBackdrop').hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function ask2faCode(title, submitText, cb) {
+    openModal({
+      title: title,
+      submitText: submitText,
+      fields: [{ key: 'code', label: '动态码 / 恢复码', required: true, max: 12, placeholder: '6 位数字，或 XXXXX-XXXXX' }],
+      onSubmit: function (v) {
+        cb(String(v.code || '').trim());
+        return false;
+      }
+    });
+  }
+
+  function open2faModal() {
+    if (!myUser) { openLoginModal(); return; }
+    if (myUser.twoFactor) {
+      $('#modalTitle').textContent = '🔐 两步验证 · 已开启';
+      $('#modalBody').innerHTML =
+        '<p class="field-hint">已开启 ✔ 以后登录要「密码 + 验证器动态码」两步。如果你换了手机，请先用旧设备或恢复码登录，再在这里重新开启。</p>' +
+        '<div class="mine-actions">' +
+          '<button class="btn btn-soft btn-block" type="button" data-action="2fa-codes">重新生成恢复码</button>' +
+          '<button class="btn btn-soft btn-block" type="button" data-action="2fa-disable">关闭两步验证</button>' +
+        '</div>';
+      $('#modalFoot').innerHTML = '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>';
+      $('#modalBackdrop').hidden = false;
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    apiPost('/api/users/2fa', { session: mySession, op: 'setup' }).then(function (res) {
+      if (!res.ok) {
+        toast(res.status === 404 ? '后台还没升级到支持两步验证的版本，请先部署新版 Worker' : (res.json.error || '暂时无法开启，请重试'), 'error');
+        return;
+      }
+      render2faSetup(res.json.secret, res.json.uri);
     });
   }
 
@@ -181,13 +317,14 @@
         if (myUser && myUser.role === 'owner' && u.role !== 'owner') {
           acts = '<button class="act-btn" type="button" data-action="panel-role" data-id="' + u.id + '" data-role="' + (u.role === 'admin' ? 'member' : 'admin') + '">' + (u.role === 'admin' ? '取消管理' : '设为管理') + '</button>' +
                   '<button class="act-btn" type="button" data-action="panel-resetpw" data-id="' + u.id + '">重置密码</button>' +
+                  (u.twoFactor ? '<button class="act-btn" type="button" data-action="panel-reset2fa" data-id="' + u.id + '">重置两步验证</button>' : '') +
                   '<button class="act-btn danger" type="button" data-action="panel-del" data-id="' + u.id + '">删</button>';
         }
         return '<div class="panel-user">' +
           '<div class="pu-avatar">' + esc((u.nick || '友')[0]) + '</div>' +
           '<div class="pu-meta">' +
             '<div class="pu-name">' + esc(u.nick) + ' <span class="pu-role ' + rc + '">' + rl + '</span></div>' +
-            '<div class="pu-sub">账号：' + esc(u.un || '') + (u.hasPw ? ' · 已设密码' : ' · 未设密码') + '</div>' +
+            '<div class="pu-sub">账号：' + esc(u.un || '') + (u.hasPw ? ' · 已设密码' : ' · 未设密码') + (u.twoFactor ? ' · 🔐 两步验证' : '') + '</div>' +
             '<div class="pu-sub">创建 ' + esc(u.c || '-') + (u.l ? ' · 最近登录 ' + esc(u.l) : '') + '</div>' +
           '</div>' + acts + '</div>';
       }).join('');
@@ -210,7 +347,7 @@
           '<p class="panel-tip">默认：管理员可管理内容板块（密钥与登录由系统保护）；成员可留言不可编辑；游客仅可浏览。</p></div>';
       }
       $('#modalBody').innerHTML = (rows || '<p class="confirm-text">还没有任何账号</p>') + permBlock +
-        '<p class="panel-tip">账号密码请私下发给访客；「设为管理」授予管理员角色。</p>';
+        '<p class="panel-tip">账号密码请私下发给访客；「设为管理」授予管理员角色；两步验证开启后需动态码登录，忘记设备时可用「重置两步验证」兜底。</p>';
     });
   }
 
@@ -1079,6 +1216,57 @@
       case 'open-pw': openPwModal(); break;
       case 'open-panel': openPanelModal(); break;
       case 'logout-user': logoutUser(); break;
+      case 'login-back': openLoginModal(); break;
+      case 'open-2fa': open2faModal(); break;
+      case 'copy-2fa-secret': {
+        var secEl = $('#tfSecret');
+        copyText(secEl ? secEl.textContent : '', '密钥已复制 ✔');
+        break;
+      }
+      case 'copy-2fa-codes': copyText(pendingRecoveryCodes, '恢复码已复制 ✔（请尽快妥善保存）'); break;
+      case '2fa-enable': {
+        var tf = ($('#tfCode') || {}).value || '';
+        if (String(tf).replace(/\D/g, '').length !== 6) { toast('请输入 6 位动态码', 'error'); break; }
+        apiPost('/api/users/2fa', { session: mySession, op: 'enable', code: tf.trim() }).then(function (res) {
+          if (!res.ok) { toast(res.json.error || '开启失败，请重试', 'error'); return; }
+          myUser.twoFactor = true;
+          render2faCodes(res.json.codes, false);
+        });
+        break;
+      }
+      case '2fa-disable': {
+        ask2faCode('关闭两步验证', '确认关闭', function (code) {
+          if (!code) { toast('请输入动态码或恢复码', 'error'); return; }
+          apiPost('/api/users/2fa', { session: mySession, op: 'disable', code: code }).then(function (res) {
+            if (!res.ok) { toast(res.json.error || '关闭失败', 'error'); return; }
+            myUser.twoFactor = false;
+            toast('已关闭两步验证', 'info');
+            closeModal();
+            openMineModal();
+          });
+        });
+        break;
+      }
+      case '2fa-codes': {
+        ask2faCode('重新生成恢复码', '生成', function (code) {
+          if (!code) { toast('请输入动态码或恢复码', 'error'); return; }
+          apiPost('/api/users/2fa', { session: mySession, op: 'codes', code: code }).then(function (res) {
+            if (!res.ok) { toast(res.json.error || '生成失败', 'error'); return; }
+            render2faCodes(res.json.codes, true);
+          });
+        });
+        break;
+      }
+      case 'panel-reset2fa': openConfirm({
+        title: '重置该用户的两步验证？',
+        message: '重置后该用户仅凭密码即可登录，之后可以自行重新开启。用于对方换手机 / 丢失验证器的情况。',
+        onOk: function () {
+          apiPost('/api/users/2fa', { session: mySession, op: 'reset', id: id }).then(function (res) {
+            if (res.ok) { toast('已重置两步验证 ✔'); openPanelModal(); }
+            else { toast(res.json.error || '操作失败', 'error'); }
+          });
+        }
+      }); break;
       case 'panel-create': openCreateUserModal(); break;
       case 'perms-save': {
         var np = { admin: {}, member: {}, guest: {} };

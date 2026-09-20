@@ -589,6 +589,26 @@ button { font-family: inherit; }
 .pu-role.edit { background: rgba(48, 209, 88, 0.1); color: var(--ok); border-color: rgba(48, 209, 88, 0.3); }
 .panel-tip { color: var(--muted); font-size: 0.76rem; margin-top: 10px; }
 
+/* ---------- 两步验证（2FA） ---------- */
+.qr-wrap { display: flex; justify-content: center; padding: 12px 0 4px; }
+.qr-wrap img {
+  width: 190px; height: 190px; padding: 9px; border-radius: 16px;
+  background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+}
+.secret-row { display: flex; align-items: center; gap: 10px; }
+.secret-row code {
+  flex: 1; min-width: 0; padding: 10px 12px; border-radius: var(--radius-sm);
+  background: var(--bg-2); border: 1px dashed var(--line-strong);
+  font-family: var(--font-latin); font-size: 0.82rem; letter-spacing: 0.08em;
+  word-break: break-all; color: var(--ink);
+}
+.rc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0 6px; }
+.rc-grid code {
+  padding: 10px 8px; border-radius: var(--radius-sm); text-align: center;
+  background: var(--bg-2); border: 1px solid var(--line);
+  font-family: var(--font-latin); font-size: 0.82rem; letter-spacing: 0.05em; color: var(--ink);
+}
+
 /* ---------- 管理模式（面板触发） ---------- */
 .admin-btn {
   display: inline-flex; align-items: center; gap: 5px;
