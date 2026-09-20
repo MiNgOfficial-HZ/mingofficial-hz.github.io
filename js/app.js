@@ -109,18 +109,66 @@
     } else { fallback(); }
   }
 
+  /* ---------- Cloudflare Turnstile 人机验证（留空 = 休眠，不影响任何流程） ----------
+     启用步骤：① 这里填站点密钥；② 在 Worker 上设置 TURNSTILE_SECRET 环境变量。 */
+  var TURNSTILE_SITEKEY = '';
+  var tsTokens = { login: '', msg: '' };
+
+  function loadTurnstile(cb) {
+    if (!TURNSTILE_SITEKEY) { cb(false); return; }
+    if (window.turnstile) { cb(true); return; }
+    if (!window.__tsLoading) {
+      window.__tsLoading = true;
+      var s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true;
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+    var tries = 0;
+    var timer = setInterval(function () {
+      if (window.turnstile) { clearInterval(timer); cb(true); }
+      else if (++tries > 48) { clearInterval(timer); cb(false); }
+    }, 250);
+  }
+
+  function mountTurnstile(slot, key) {
+    if (!TURNSTILE_SITEKEY || !slot || slot.dataset.tsId) return;
+    loadTurnstile(function (ready) {
+      if (!ready || !window.turnstile) return;
+      var dark = (document.documentElement.getAttribute('data-theme') || '').indexOf('dark') >= 0;
+      slot.dataset.tsId = window.turnstile.render(slot, {
+        sitekey: TURNSTILE_SITEKEY,
+        theme: dark ? 'dark' : 'light',
+        callback: function (t) { tsTokens[key] = t || ''; },
+        'expired-callback': function () { tsTokens[key] = ''; },
+        'error-callback': function () { tsTokens[key] = ''; }
+      });
+    });
+  }
+
+  function resetTurnstile(slot, key) {
+    tsTokens[key] = '';
+    if (slot && slot.dataset.tsId && window.turnstile) {
+      try { window.turnstile.reset(slot.dataset.tsId); } catch (e) {}
+    }
+  }
+
   function openLoginModal() {
     pending2fa = null;
+    tsTokens.login = '';
     $('#modalTitle').textContent = '🔐 登录';
     $('#modalBody').innerHTML =
       '<div class="field"><label>账号</label><input id="loginUser" type="text" maxlength="40" autocomplete="username" placeholder="你的账号（由站长发放）" /></div>' +
       '<div class="field"><label>密码</label><input id="loginPw" type="password" maxlength="64" autocomplete="current-password" placeholder="登录密码" /></div>' +
+      (TURNSTILE_SITEKEY ? '<div class="ts-slot" id="loginTs"></div>' : '') +
       '<p class="field-hint">账号由站长发放；登录后按权限显示「可编辑」或「仅查看」界面。</p>';
     $('#modalFoot').innerHTML =
       '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>' +
       '<button class="btn btn-primary" type="button" data-action="submit-login">登录</button>';
     $('#modalBackdrop').hidden = false;
     document.body.style.overflow = 'hidden';
+    mountTurnstile($('#loginTs'), 'login');
     var u = $('#loginUser'); if (u) u.focus();
   }
 
@@ -151,14 +199,18 @@
     var username = ((($('#loginUser') || {}).value) || '').trim();
     var pw = ((($('#loginPw') || {}).value) || '');
     if (!username || !pw) { toast('请输入账号和密码', 'error'); return; }
-    apiPost('/api/auth/login', { username: username, password: pw }).then(function (res) {
+    if (TURNSTILE_SITEKEY && !tsTokens.login) { toast('请先完成下方的人机验证', 'error'); return; }
+    apiPost('/api/auth/login', { username: username, password: pw, turnstile: tsTokens.login }).then(function (res) {
       if (res.ok && res.json.need2fa) {
         pending2fa = { ticket: res.json.ticket, un: res.json.un };
         openLoginCodeStep(res.json.un);
         return;
       }
       if (res.ok && res.json.ok) completeLogin(res.json);
-      else toast(res.json.error || '登录失败', 'error');
+      else {
+        resetTurnstile($('#loginTs'), 'login');   /* 令牌一次性，失败后要重新验证 */
+        toast(res.json.error || '登录失败', 'error');
+      }
     });
   }
 
@@ -1329,18 +1381,39 @@
     if (!name) return markInvalid(nameEl, '请填写你的名字');
     if (!EMAIL_RE.test(email)) return markInvalid(emailEl, '邮箱格式不正确');
     if (!text) return markInvalid(textEl, '写点什么再发送吧');
-    apiPost('/api/msg', { name: name, email: email, text: text, session: mySession }).then(function (res) {
+    if (TURNSTILE_SITEKEY && !tsTokens.msg) { toast('请先完成下方的人机验证', 'error'); return; }
+    apiPost('/api/msg', { name: name, email: email, text: text, session: mySession, turnstile: tsTokens.msg }).then(function (res) {
       if (res.ok) {
         if (res.json.db) { S = normalize(res.json.db); writeCache(); renderAll(); }
         e.target.reset();
+        resetTurnstile($('#msgTs'), 'msg');
         toast('留言成功 🎉 已同步到云端');
       } else {
+        resetTurnstile($('#msgTs'), 'msg');
         toast(res.json.error || '发送失败，请稍后重试', 'error');
       }
     }).catch(function () {
       toast('网络异常，发送失败', 'error');
     });
   });
+
+  /* 留言框的人机验证：表单可见时才挂载，避免白白加载第三方脚本 */
+  (function initMsgTurnstile() {
+    if (!TURNSTILE_SITEKEY) return;
+    var form = $('#msgForm');
+    if (!form) return;
+    var tryMount = function () {
+      if (form.offsetParent === null || form.querySelector('#msgTs')) return;
+      var btn = form.querySelector('button[type="submit"]');
+      var slot = document.createElement('div');
+      slot.className = 'ts-slot';
+      slot.id = 'msgTs';
+      if (btn) form.insertBefore(slot, btn); else form.appendChild(slot);
+      mountTurnstile(slot, 'msg');
+    };
+    tryMount();
+    document.addEventListener('click', tryMount);
+  })();
 
   /* ---------- 顶部阅读进度条 ---------- */
   (function initProgress() {

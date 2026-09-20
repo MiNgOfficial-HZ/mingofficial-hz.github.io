@@ -590,6 +590,8 @@ button { font-family: inherit; }
 .panel-tip { color: var(--muted); font-size: 0.76rem; margin-top: 10px; }
 
 /* ---------- 两步验证（2FA） ---------- */
+.ts-slot { margin: 14px 0 4px; min-height: 0; }
+.ts-slot iframe { max-width: 100%; border: 0; }
 .qr-wrap { display: flex; justify-content: center; padding: 12px 0 4px; }
 .qr-wrap img {
   width: 190px; height: 190px; padding: 9px; border-radius: 16px;
