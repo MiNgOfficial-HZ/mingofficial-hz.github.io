@@ -494,6 +494,15 @@ button { font-family: inherit; }
 .site-footer { padding: 72px 0 44px; text-align: center; border-top: 1px solid var(--line); margin-top: 20px; }
 .footer-brand { font-family: var(--font-tech); font-weight: 700; font-size: 1.4rem; letter-spacing: 0.32em; text-transform: uppercase; }
 .footer-brand span { color: var(--accent); }
+/* 页脚 ▲：点一下就回到顶部（#top 在 <main> 上，配合全局 smooth 滚动） */
+.footer-brand .footer-top {
+  color: var(--accent); text-decoration: none; cursor: pointer;
+  display: inline-block; padding: 0 4px;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.footer-brand .footer-top:hover { transform: translateY(-4px); opacity: 0.85; }
+.footer-brand .footer-top:active { transform: translateY(-1px); }
+.footer-brand .footer-top:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 .footer-line { color: var(--muted); font-size: 0.84rem; margin-top: 10px; letter-spacing: 0.06em; }
 .footer-hint { color: var(--muted); font-size: 0.78rem; margin-top: 5px; }
 .footer-hint a { color: var(--accent); }
