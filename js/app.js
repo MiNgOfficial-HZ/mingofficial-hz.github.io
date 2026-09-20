@@ -111,7 +111,7 @@
 
   /* ---------- Cloudflare Turnstile 人机验证（留空 = 休眠，不影响任何流程） ----------
      启用步骤：① 这里填站点密钥；② 在 Worker 上设置 TURNSTILE_SECRET 环境变量。 */
-  var TURNSTILE_SITEKEY = '';
+  var TURNSTILE_SITEKEY = '0x4AAAAAAE9nhEhZUu-NfJNS';
   var tsTokens = { login: '', msg: '' };
 
   function loadTurnstile(cb) {
