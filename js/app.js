@@ -1038,8 +1038,8 @@
       title: item ? '编辑说说' : '写一条说说',
       submitText: item ? '保存修改' : '发布 ✨',
       fields: [
-        { key: 'text', label: '说点什么', type: 'textarea', required: true, max: 200, rows: 4, placeholder: '此刻的心情、灵感、碎碎念…' },
-        { key: 'emoji', label: '配一个表情', max: 4, placeholder: '🍀', hint: '单个 emoji，选填' }
+        { key: 'text', label: '说点什么', type: 'textarea', required: true, max: 200, rows: 4, placeholder: '此刻的心情、灵感、碎碎念…', value: item ? item.text : '' },
+        { key: 'emoji', label: '配一个表情', max: 4, placeholder: '🍀', hint: '单个 emoji，选填', value: item ? (item.emoji || '') : '' }
       ],
       onSubmit: function (v) {
         if (item) {
@@ -1057,13 +1057,13 @@
       title: item ? '编辑游记' : '添加游记',
       submitText: item ? '保存修改' : '添加 ✨',
       fields: [
-        { key: 'title', label: '标题', required: true, max: 40, placeholder: '如：杭州 · 西湖散记' },
+        { key: 'title', label: '标题', required: true, max: 40, placeholder: '如：杭州 · 西湖散记', value: item ? item.title : '' },
         { key: 'date', label: '日期', type: 'date', required: true, value: item ? item.date : dateStr(0) },
-        { key: 'location', label: '地点', max: 30, placeholder: '如：浙江 · 杭州' },
-        { key: 'emoji', label: '封面表情', max: 4, placeholder: '🌊' },
-        { key: 'summary', label: '摘要', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '用两三句话记录这趟旅程…' },
-        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 早上六点的湖边\n\n**正文从这里开始**……' },
-        { key: 'tags', label: '标签', max: 60, placeholder: '江南, 慢游', hint: '用逗号分隔' }
+        { key: 'location', label: '地点', max: 30, placeholder: '如：浙江 · 杭州', value: item ? (item.location || '') : '' },
+        { key: 'emoji', label: '封面表情', max: 4, placeholder: '🌊', value: item ? (item.emoji || '') : '' },
+        { key: 'summary', label: '摘要', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '用两三句话记录这趟旅程…', value: item ? (item.summary || '') : '' },
+        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 早上六点的湖边\n\n**正文从这里开始**……', value: item ? (item.content || '') : '' },
+        { key: 'tags', label: '标签', max: 60, placeholder: '江南, 慢游', hint: '用逗号分隔', value: item && Array.isArray(item.tags) ? item.tags.join(', ') : '' }
       ],
       onSubmit: function (v) {
         var tags = v.tags.split(/[,，、]/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 5);
@@ -1150,12 +1150,12 @@
       title: item ? '编辑体验' : '添加数码体验',
       submitText: item ? '保存修改' : '添加 ✨',
       fields: [
-        { key: 'title', label: '名称', required: true, max: 40, placeholder: '如：iPhone 16 Pro 半年体验' },
+        { key: 'title', label: '名称', required: true, max: 40, placeholder: '如：iPhone 16 Pro 半年体验', value: item ? item.title : '' },
         { key: 'category', label: '分类', type: 'select', options: ['手机', '电脑', '耳机', '相机', '桌面', '智能家居', '其他'], value: item ? item.category : '手机' },
         { key: 'rating', label: '评分', type: 'select', options: ['5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1'], value: item ? String(item.rating) : '4.5' },
         { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
-        { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括体验…' },
-        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 为什么入手它\n\n**正文从这里开始**……' },
+        { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括体验…', value: item ? (item.text || '') : '' },
+        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 为什么入手它\n\n**正文从这里开始**……', value: item ? (item.content || '') : '' },
         { key: '_imgs', label: '图片', type: 'imgs' }
       ],
       onSubmit: function (v) {
@@ -1178,11 +1178,11 @@
       title: item ? '编辑指南' : '添加指南',
       submitText: item ? '保存修改' : '添加 ✍️',
       fields: [
-        { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：C 语言焚诀 · 燃烧你的 CPU' },
+        { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：C 语言焚诀 · 燃烧你的 CPU', value: item ? item.title : '' },
         { key: 'category', label: '类目', type: 'select', options: ['教程', '焚诀', '笔记', '杂谈'], value: item ? item.category : '教程' },
         { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
-        { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括这篇指南…' },
-        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 第一章 · 心法总纲\n\n**正文从这里开始**……' },
+        { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括这篇指南…', value: item ? (item.text || '') : '' },
+        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 第一章 · 心法总纲\n\n**正文从这里开始**……', value: item ? (item.content || '') : '' },
         { key: '_imgs', label: '图片', type: 'imgs' }
       ],
       onSubmit: function (v) {
@@ -1203,10 +1203,10 @@
       title: item ? '编辑友链' : '添加友链',
       submitText: item ? '保存修改' : '添加 🔗',
       fields: [
-        { key: 'name', label: '站点名称', required: true, max: 30, placeholder: '如：TZ Blog' },
-        { key: 'url', label: '链接', type: 'url', required: true, max: 200, placeholder: 'https://example.com' },
-        { key: 'desc', label: '一句话介绍', max: 40, placeholder: '简约里藏着思考的技术博客' },
-        { key: 'emoji', label: '头像表情', max: 4, placeholder: '✨' }
+        { key: 'name', label: '站点名称', required: true, max: 30, placeholder: '如：TZ Blog', value: item ? item.name : '' },
+        { key: 'url', label: '链接', type: 'url', required: true, max: 200, placeholder: 'https://example.com', value: item ? item.url : '' },
+        { key: 'desc', label: '一句话介绍', max: 40, placeholder: '简约里藏着思考的技术博客', value: item ? (item.desc || '') : '' },
+        { key: 'emoji', label: '头像表情', max: 4, placeholder: '✨', value: item ? (item.emoji || '') : '' }
       ],
       onSubmit: function (v) {
         var url = v.url.trim();
