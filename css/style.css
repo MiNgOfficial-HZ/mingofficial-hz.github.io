@@ -29,6 +29,7 @@
   --font-display: "LXGW WenKai TC", "Noto Sans SC", -apple-system, sans-serif; /* Apple 式手写流线感 */
   --font-latin: "Fira Code", "Consolas", "SF Mono", ui-monospace, monospace; /* 科技等宽 */
   --font-hand: "Long Cang", "Kaiti SC", "KaiTi", "Noto Sans SC", sans-serif; /* 手写体 */
+  --font-f1: "Titillium Web", "Rajdhani", "Noto Sans SC", -apple-system, sans-serif; /* F1 风格斜体 */
   
 }
 [data-theme="light"] {
@@ -118,7 +119,10 @@ button { font-family: inherit; }
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-.brand-text b { font-size: 1.02rem; font-weight: 700; letter-spacing: 0.04em; }
+.brand-text b {
+  font-family: var(--font-f1); font-style: italic;
+  font-size: 1.06rem; font-weight: 700; letter-spacing: 0.02em;
+}
 .brand-text small {
   font-family: var(--font-tech);
   font-weight: 600; font-size: 0.6rem; color: var(--muted);
@@ -202,8 +206,8 @@ button { font-family: inherit; }
 .ht-l3 { align-self: flex-end; text-align: right; margin-right: 27%; transform: rotate(1.2deg); }
 .hero-title .ht-mid {
   align-self: center;
-  font-family: var(--font-latin); /* Fira Code */
-  font-style: normal;
+  font-family: var(--font-f1); /* F1 风格斜体 */
+  font-style: italic;
   font-weight: 700;
   font-size: clamp(3.2rem, 8.5vw, 6rem);
   letter-spacing: -0.01em;
@@ -892,8 +896,8 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; }
   letter-spacing: -0.01em;
 }
 .ht-mid {
-  font-family: var(--font-display) !important;
-  font-style: normal;
+  font-family: var(--font-f1) !important;
+  font-style: italic;
   font-weight: 600 !important;
   color: var(--ink) !important;
   -webkit-text-fill-color: var(--ink) !important;
