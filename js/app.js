@@ -1696,7 +1696,7 @@
         if (item) {
           adminMutate('moment.edit', { id: item.id, text: v.text.trim(), emoji: v.emoji.trim() }, '说说已更新 ✨');
         } else {
-          adminMutate('moment.add', { id: uid(), text: v.text.trim(), emoji: v.emoji.trim(), time: nowStamp() }, '发布成功 ✨');
+          adminMutate('moment.add', { id: uid(), text: v.text.trim(), emoji: v.emoji.trim(), time: nowStamp(), author: myUser ? myUser.nick : '' }, '发布成功 ✨');
         }
         return true;
       }
@@ -2052,7 +2052,7 @@
         if (item) {
           adminMutate('study.edit', Object.assign({ id: item.id }, data), '指南已更新 📚');
         } else {
-          adminMutate('study.add', Object.assign({ id: uid() }, data), '指南已添加 📚');
+          adminMutate('study.add', Object.assign({ id: uid(), author: myUser ? myUser.nick : '', time: nowStamp() }, data), '指南已添加 📚');
         }
         return true;
       }
@@ -2312,7 +2312,12 @@
       var t = (($('#postText') || {}).value || '').trim();
       var em = (($('#postEmoji') || {}).value || '').trim();
       if (!t) { toast('写点什么再发布吧 ✍️', 'error'); return; }
-      adminMutate('moment.add', { id: uid(), text: t, emoji: em }, '已发布 ✨');
+      /* time / author 这里也带上：万一 Worker 还是旧版，帖子至少不会缺时间与署名；
+         新版 Worker 会用服务端时间与昵称覆盖这两个字段 */
+      adminMutate('moment.add', {
+        id: uid(), text: t, emoji: em,
+        time: nowStamp(), author: myUser ? myUser.nick : ''
+      }, '已发布 ✨');
       return;
     }
     if (form.classList && form.classList.contains('cmt-form')) {
