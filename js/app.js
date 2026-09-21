@@ -908,11 +908,17 @@
   /* 发帖人 / 编写人：老数据没存作者，默认就是站长本人 */
   function momentAuthor(m) { return authorName(m); }
   function itemAuthor(x) { return authorName(x); }
+  /* 老数据的作者判定：旧版 Worker 没写 authorId，只写了昵称「站长」 */
+  function isOwnerPost(x) {
+    if (!x) return false;
+    if (x.authorId === 'owner0') return true;
+    if (!x.authorId && (!x.author || x.author === '站长')) return true;
+    return false;
+  }
   /* 站长账号的昵称就叫「站长」，对外统一显示成 MiNgHZ，免得出现「站长 站长」 */
   function authorName(x) {
-    if (!x) return 'MiNgHZ';
-    if (x.authorId === 'owner0' || (!x.authorId && !x.author)) return 'MiNgHZ';
-    return x.author || 'MiNgHZ';
+    if (isOwnerPost(x)) return 'MiNgHZ';
+    return (x && x.author) || 'MiNgHZ';
   }
 
   /* 头像：emoji 或本站上传的图片；没设置就用昵称首字 */
@@ -961,14 +967,14 @@
     if (!S.moments.length) { list.innerHTML = emptyHTML('还没有说说 —— 第一条就等你来写 ✨'); return; }
     list.innerHTML = sortDesc(S.moments, 'time').map(function (m, i) {
       var author = momentAuthor(m);
-      var badge = m.authorId === 'owner0' || (!m.authorId && !m.author)
+      var badge = isOwnerPost(m)
         ? '<span class="m-badge">站长</span>'
         : (myUser && m.authorId === myUser.id ? '<span class="m-badge friend">我</span>' : '<span class="m-badge friend">朋友</span>');
       var cmts = Array.isArray(m.comments) ? m.comments : [];
       var cmtHtml = cmts.map(function (c) {
         return '<div class="cmt"><div class="cmt-head">' +
             avatarHTML(c, 24, 'av-sm') +
-            '<span class="cmt-author">' + esc(c.authorId === 'owner0' ? 'MiNgHZ' : (c.author || '朋友')) + '</span>' +
+            '<span class="cmt-author">' + esc(isOwnerPost(c) ? 'MiNgHZ' : (c.author || '朋友')) + '</span>' +
             '<span class="m-time">' + esc(c.time || '') + '</span>' +
             ipTag(c) +
             (canDelComment(m, c) ? '<button class="cmt-del" type="button" data-action="del-cmt" data-id="' + m.id + '" data-cid="' + esc(c.id || '') + '" aria-label="删除跟帖">✕</button>' : '') +
