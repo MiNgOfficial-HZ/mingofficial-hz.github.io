@@ -919,7 +919,9 @@
         return { id: a.id, nick: (a.id === 'owner0' ? 'MiNgHZ' : (a.nick || '朋友')), avatar: a.avatar || '' };
       });
     }
-    return [{ id: (x && x.authorId) || '', nick: authorName(x), avatar: (x && x.avatar) || '' }];
+    /* 老数据没有 authorId：只要判定成站长发的，就补上 owner0，免得被标成「朋友」 */
+    var oneId = (x && x.authorId) || (isOwnerPost(x) ? 'owner0' : '');
+    return [{ id: oneId, nick: authorName(x), avatar: (x && x.avatar) || '' }];
   }
   function authorsBadge(a) {
     if (a.id === 'owner0') return '<span class="m-badge">站长</span>';
