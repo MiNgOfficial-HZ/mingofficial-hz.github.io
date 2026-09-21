@@ -19,7 +19,7 @@
   <!-- 字体非阻塞加载：先按 print 低优先级拉取，加载完由 js/app.js 切成 all；首屏直接用系统字体渲染 -->
   <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
-  <link rel="stylesheet" href="css/style.css?v=20260921k" />
+  <link rel="stylesheet" href="css/style.css?v=20260921l" />
 </head>
 <body data-view="home">
   <span id="pageTop" aria-hidden="true"></span>
@@ -109,6 +109,7 @@
           <a href="#travel" class="sub-link">🧳 游记</a>
           <a href="#tech" class="sub-link">📷 数码</a>
           <a href="#devices" class="sub-link">🎧 设备</a>
+          <a href="#photo" class="sub-link">📷 摄影</a>
         </div>
       </nav>
 
@@ -166,6 +167,23 @@
             <p class="section-sub">随身与桌面上的那些设备。</p>
           </div>
           <div class="devices-grid" id="deviceGrid"></div>
+        </div>
+      </section>
+
+      <!-- 05 摄影空间（点进去是独立的三级页面） -->
+      <section class="section" id="photo">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">04 · Photography</span>
+            <h2 class="section-title">摄影空间</h2>
+            <p class="section-sub">作品名、拍摄地点与时间，都在单独的一页里。</p>
+          </div>
+          <a class="entry-card entry-card-photo reveal" href="/photo/">
+            <span class="entry-emoji">📷</span>
+            <span class="entry-kicker">打开摄影空间</span>
+            <h3 class="entry-title">进入取景器 →</h3>
+            <span class="entry-cta">点这里进入摄影空间</span>
+          </a>
         </div>
       </section>
     </div>
@@ -327,6 +345,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260921k" defer></script>
+  <script src="js/app.js?v=20260921l" defer></script>
 </body>
 </html>

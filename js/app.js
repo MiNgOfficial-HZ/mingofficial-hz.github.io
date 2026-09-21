@@ -1457,7 +1457,7 @@
   /* 朋友们：说说墙 / 指南 / 友链留言；个人空间：账号 / 游记 / 数码 / 设备 */
   var SECTION_VIEW = {
     moments: 'friends', study: 'friends', guest: 'friends',
-    account: 'space', travel: 'space', tech: 'space', devices: 'space'
+    account: 'space', travel: 'space', tech: 'space', devices: 'space', photo: 'space'
   };
   var currentView = '';
   var mountMsgTs = null;   /* 由留言表单那一段赋值：进入视图后再挂人机验证 */

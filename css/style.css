@@ -1445,6 +1445,8 @@ body:not(.is-owner) #account,
 body:not(.is-owner) #accountNavLink { display: none !important; }
 
 /* ---------- 署名选择器（像发邮件那样从已有账号里加人） ---------- */
+.entry-card-photo { max-width: 560px; }
+.entry-card-photo .entry-title { font-size: 1.2rem; }
 .composer-authors { margin-top: 10px; }
 .ap {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;

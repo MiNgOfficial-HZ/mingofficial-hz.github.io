@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>摄影空间 · MiNgHZ</title>
+  <meta name="description" content="MiNgHZ 的摄影空间：每张照片都记下作品名、拍摄地点与时间。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0c" />
+  <link rel="icon" href="/assets/logo.jpg" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.giraffeming.online" crossorigin />
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
+  <link rel="stylesheet" href="/css/style.css?v=20260921l" />
+  <link rel="stylesheet" href="/photo/photo.css?v=1" />
+</head>
+<body data-view="photo">
+  <span id="pageTop" aria-hidden="true"></span>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="/#home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
+        <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="/#home" class="nav-link">首页</a>
+        <a href="/#space" class="nav-link">MiNg的个人空间</a>
+        <a href="/#friends" class="nav-link">MiNg和他的朋友们</a>
+        <a href="/about/" class="nav-link">关于</a>
+      </nav>
+      <div class="header-actions">
+        <button id="photoUserBtn" class="btn btn-ghost btn-small" type="button">👤 登录</button>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="photo-head">
+      <div class="container">
+        <p class="crumbs"><a href="/#home">首页</a> › <a href="/#space">MiNg 的个人空间</a> › <span>摄影空间</span></p>
+        <h1 class="photo-title">📷 摄影空间</h1>
+        <p class="photo-sub">长颈鹿的取景器：每一张都记下作品名、拍摄地点与时间。</p>
+        <div class="photo-toolbar">
+          <span class="photo-count" id="photoCount"></span>
+          <button class="btn btn-primary btn-small" type="button" id="addPhotoBtn" hidden>＋ 添加作品</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="container photo-body">
+      <div class="photo-grid" id="photoGrid"></div>
+      <p class="photo-empty" id="photoEmpty" hidden>还没有作品 —— 站长可以在登录后点「＋ 添加作品」上传。</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
+      <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav"><a href="/#space">← 回到 MiNg 的个人空间</a></p>
+    </div>
+  </footer>
+
+  <!-- 作品查看（大图 + 左右切换） -->
+  <div class="pv" id="pv" hidden>
+    <button class="pv-close" type="button" aria-label="关闭">✕</button>
+    <button class="pv-nav pv-prev" type="button" aria-label="上一张">‹</button>
+    <button class="pv-nav pv-next" type="button" aria-label="下一张">›</button>
+    <div class="pv-stage" id="pvStage"></div>
+    <div class="pv-info">
+      <h2 class="pv-title" id="pvTitle"></h2>
+      <p class="pv-meta" id="pvMeta"></p>
+      <p class="pv-note" id="pvNote"></p>
+      <div class="pv-thumbs" id="pvThumbs"></div>
+    </div>
+  </div>
+
+  <!-- 编辑作品 -->
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal card" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="modalTitle">添加作品</h3>
+        <button class="icon-btn" type="button" data-act="close" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <div class="toast-root" id="toastRoot" aria-live="polite"></div>
+
+  <script src="/photo/photo.js?v=1" defer></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+/* 摄影空间（三级页面）专属样式：与主站共用 style.css，这里只加这一页需要的东西 */
+.photo-head { padding: 56px 0 20px; border-bottom: 1px solid var(--line); }
+.crumbs { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; }
+.crumbs a { color: var(--muted); }
+.crumbs a:hover { color: var(--accent); }
+.crumbs span { color: var(--ink); }
+.photo-title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(1.8rem, 4vw, 2.7rem); letter-spacing: -0.03em;
+}
+.photo-sub { color: var(--muted); font-size: 0.95rem; margin-top: 10px; }
+.photo-toolbar { display: flex; align-items: center; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+.photo-count { color: var(--muted); font-size: 0.82rem; }
+
+.photo-body { padding: 30px 24px 70px; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 900px) { .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .photo-grid { grid-template-columns: 1fr; } }
+
+.work {
+  position: relative; overflow: hidden; cursor: zoom-in;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface);
+  transition: border-color 0.2s, transform 0.2s;
+}
+.work:hover { border-color: var(--line-strong); transform: translateY(-3px); }
+.work-cover { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--bg-2); }
+.work-body { padding: 12px 14px 14px; }
+.work-title { font-weight: 600; font-size: 0.98rem; letter-spacing: -0.01em; }
+.work-meta { margin-top: 4px; color: var(--muted); font-size: 0.76rem; display: flex; gap: 8px; flex-wrap: wrap; }
+.work-meta .dot { opacity: 0.6; }
+.work-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0, 0, 0, 0.55); color: #fff; border-radius: 999px;
+  padding: 3px 9px; font-size: 0.68rem; letter-spacing: 0.04em;
+}
+.work-acts { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; }
+.work-acts button {
+  width: 26px; height: 26px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(0, 0, 0, 0.5);
+  color: #fff; font-size: 0.7rem; display: grid; place-items: center;
+}
+.work-acts button:hover { background: var(--accent); border-color: var(--accent); }
+.photo-empty { color: var(--muted); text-align: center; padding: 40px 0; }
+
+/* 大图查看 */
+.pv {
+  position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+  background: rgba(6, 6, 8, 0.94); backdrop-filter: blur(10px);
+}
+.pv[hidden] { display: none; }
+.pv-stage { flex: 1; display: grid; place-items: center; padding: 46px 56px 8px; min-height: 0; }
+.pv-stage img { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.pv-info { padding: 14px 24px 26px; text-align: center; color: #f5f5f7; }
+.pv-title { font-size: 1.1rem; font-weight: 600; }
+.pv-meta { color: #a1a1a6; font-size: 0.8rem; margin-top: 6px; }
+.pv-note { color: #d0d0d5; font-size: 0.85rem; margin-top: 8px; white-space: pre-wrap; }
+.pv-thumbs { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+.pv-thumbs img { width: 54px; height: 54px; object-fit: cover; border-radius: 8px; cursor: pointer; opacity: 0.55; border: 1px solid transparent; }
+.pv-thumbs img.on { opacity: 1; border-color: #fff; }
+.pv-close {
+  position: fixed; top: 16px; right: 18px; z-index: 2;
+  width: 40px; height: 40px; border-radius: 12px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.45); color: #fff;
+}
+.pv-nav {
+  position: fixed; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 46px; height: 70px; border-radius: 12px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(0, 0, 0, 0.4);
+  color: #fff; font-size: 1.6rem; line-height: 1;
+}
+.pv-nav:hover { background: rgba(255, 255, 255, 0.16); }
+.pv-prev { left: 14px; } .pv-next { right: 14px; }
+@media (max-width: 560px) {
+  .pv-stage { padding: 54px 12px 6px; }
+  .pv-nav { width: 38px; height: 54px; font-size: 1.3rem; }
+}
+
+/* 作品编辑弹窗里的图片选择：复用主站的 .img-picker / .img-thumb 样式 */
+.modal.modal-wide { max-width: 760px; }
+.photo-form .field { margin-bottom: 14px; }
+.photo-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) { .photo-form .row2 { grid-template-columns: 1fr; } }
+.photo-tip { font-size: 0.74rem; color: var(--muted); margin-top: 6px; }
