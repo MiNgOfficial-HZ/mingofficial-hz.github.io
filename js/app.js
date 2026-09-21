@@ -1035,6 +1035,23 @@
     apRender(prefix);
   }
 
+  /* 弹窗里的署名选择器：初始化 + 取当前选择 */
+  function modalAuthorsInit(ids) {
+    if (!isOwnerUser()) return;
+    var init = (ids || []).filter(Boolean).slice(0, 8);
+    pickerState.modal = init;
+    apInit('modal', init);
+    loadUsers(function () {
+      pickerState.modal = init;
+      var host = document.querySelector('#modalBody .ap');
+      if (host) host.outerHTML = authorPickerHTML('modal', init);
+      apInput('modal');
+    });
+  }
+  function modalAuthorsPayload() {
+    return (isOwnerUser() && pickerState.modal && pickerState.modal.length) ? pickerState.modal.slice(0, 8) : null;
+  }
+
   function apInput(prefix) {
     var el = document.getElementById(prefix + 'AuthorSearch');
     if (!el) return;
@@ -1224,7 +1241,7 @@
         '<div class="tech-card card">' +
           '<div class="tech-head"><span class="badge">' + esc(t.category || '指南') + '</span><time>' + esc(t.date) + '</time>' + actionsHTML('study', t) + '</div>' +
           '<h3 class="tech-name">' + esc(t.title) + '</h3>' +
-          '<div class="author-chip">' + avatarHTML(t, 22, 'av-xs') + ' ✍️ 编写：<b>' + esc(itemAuthor(t)) + '</b>' + (t.time ? '<span class="m-time"> · ' + esc(t.time) + '</span>' : '') + '</div>' +
+          '<div class="author-chip">' + avatarHTML(t, 22, 'av-xs') + ' ✍️ 编写：<b>' + esc(authorsOf(t).map(function (a) { return a.nick; }).join('、')) + '</b>' + (t.time ? '<span class="m-time"> · ' + esc(t.time) + '</span>' : '') + '</div>' +
           galleryHTML(t.imgs, t.title) +
           '<p class="tech-text">' + esc(t.text) + '</p>' +
           (t.content ? '<button class="read-more" type="button" data-action="read-item" data-kind="study" data-id="' + t.id + '">阅读全文 →</button>' : '') +
@@ -1791,9 +1808,9 @@
     var label = '<label for="f_' + f.key + '">' + esc(f.label) + (f.required ? ' <i style="color:var(--danger);font-style:normal">*</i>' : '') + '</label>';
     var inner;
     if (f.type === 'authors') {
-      if (!hasPanelRight()) return '';
+      if (!isOwnerUser()) return '';
       inner = authorPickerHTML('modal', pickerState.modal || []) +
-        '<p class="field-hint">可以选多个账号联合署名；不选就署你自己。</p>';
+        '<p class="field-hint">' + esc(f.hint || '可以选多个账号联合署名；不选就署你自己。') + '</p>';
     } else if (f.type === 'markdown') {
       inner = '<div class="md-wrap"><div class="md-box">' +
         '<div class="md-tabs"><button type="button" class="m-tab on" data-action="md-tab-edit">✏️ 编辑</button><button type="button" class="m-tab" data-action="md-tab-prev">👁️ 预览</button></div>' +
@@ -1867,7 +1884,7 @@
     if (!item) return;
     var meta = '';
     if (kind === 'travel') meta = esc(item.location || '') + (item.date ? ' · ' + esc(item.date) : '');
-    else meta = esc(item.category || '') + (item.date ? ' · ' + esc(item.date) : '') + ' · ✍️ 编写：' + esc(itemAuthor(item));
+    else meta = esc(item.category || '') + (item.date ? ' · ' + esc(item.date) : '') + ' · ✍️ 编写：' + esc(authorsOf(item).map(function (a) { return a.nick; }).join('、'));
     $('#readerMeta').textContent = meta;
     $('#readerTitle').textContent = item.title || '';
     var body = $('#readerBody');
@@ -1942,7 +1959,7 @@
       submitText: item ? '保存修改' : '发布 ✨',
       fields: fields,
       onSubmit: function (v) {
-        var authors = owner && pickerState.modal && pickerState.modal.length ? pickerState.modal.slice(0, 8) : null;
+        var authors = modalAuthorsPayload();
         if (item) {
           var data = { id: item.id, text: v.text.trim(), emoji: v.emoji.trim() };
           if (authors) data.authors = authors;
@@ -1955,16 +1972,7 @@
         return true;
       }
     });
-    if (owner) {
-      loadUsers(function () {
-        pickerState.modal = initIds.filter(Boolean).slice(0, 8);
-        var host = document.querySelector('#modalBody .ap');
-        if (host) host.outerHTML = authorPickerHTML('modal', pickerState.modal);
-        apInput('modal');
-      });
-      pickerState.modal = initIds.filter(Boolean).slice(0, 8);
-      apInit('modal', pickerState.modal);
-    }
+    if (owner) modalAuthorsInit(initIds);
   }
 
   function openTravelModal(item) {
@@ -2299,20 +2307,30 @@
     imgFolder = 'study';
     pendingModalImgs = item && Array.isArray(item.imgs) ? item.imgs.slice() : [];
     uploadItems = [];
+    var owner = isOwnerUser();
+    var initIds = owner
+      ? ((item && Array.isArray(item.authors) && item.authors.length)
+          ? item.authors.map(function (a) { return a.id; })
+          : (item && item.authorId ? [item.authorId] : [myUser ? myUser.id : '']))
+      : [];
+    var fields = [
+      { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：C 语言焚诀 · 燃烧你的 CPU', value: item ? item.title : '' },
+      { key: 'category', label: '类目', type: 'select', options: ['教程', '焚诀', '笔记', '杂谈'], value: item ? item.category : '教程' },
+      { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
+      { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括这篇指南…', value: item ? (item.text || '') : '' },
+      { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 第一章 · 心法总纲\n\n**正文从这里开始**……', value: item ? (item.content || '') : '' }
+    ];
+    if (owner) fields.push({ key: '_authors', label: '编写人（可以选好几个）', type: 'authors', hint: '从已有账号里挑；不选就署你自己。' });
+    fields.push({ key: '_imgs', label: '图片', type: 'imgs' });
     openModal({
       title: item ? '编辑指南' : '添加指南',
       submitText: item ? '保存修改' : '添加 ✍️',
-      fields: [
-        { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：C 语言焚诀 · 燃烧你的 CPU', value: item ? item.title : '' },
-        { key: 'category', label: '类目', type: 'select', options: ['教程', '焚诀', '笔记', '杂谈'], value: item ? item.category : '教程' },
-        { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
-        { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括这篇指南…', value: item ? (item.text || '') : '' },
-        { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 第一章 · 心法总纲\n\n**正文从这里开始**……', value: item ? (item.content || '') : '' },
-        { key: '_imgs', label: '图片', type: 'imgs' }
-      ],
+      fields: fields,
       onSubmit: function (v) {
         if (uploadsBusy()) return false;
+        var authors = modalAuthorsPayload();
         var data = { title: v.title.trim(), category: v.category, date: v.date, text: v.text.trim(), content: v.content || '', imgs: pendingModalImgs.slice(0, 6) };
+        if (authors) data.authors = authors;
         if (item) {
           adminMutate('study.edit', Object.assign({ id: item.id }, data), '指南已更新 📚');
         } else {
@@ -2321,6 +2339,7 @@
         return true;
       }
     });
+    if (owner) modalAuthorsInit(initIds);
     wireImgPicker();
   }
 
