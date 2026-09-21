@@ -68,6 +68,11 @@
           </p>
           <div class="hero-stats" id="heroStats"></div>
 
+          <div class="portal-user">
+            <button id="userBtn" class="btn btn-primary" type="button">👤 登录 / 我的账户</button>
+            <span class="portal-user-hint">账号由站长发放；登录后可以发帖、跟帖、写指南，也能换自己的头像</span>
+          </div>
+
           <p class="portal-split-label">进门请选一扇门 · TWO DOORS</p>
           <div class="portal-entries">
             <a class="entry-card" href="#friends" data-action="go-view" data-view="friends">
@@ -86,10 +91,6 @@
             </a>
           </div>
 
-          <div class="portal-user">
-            <button id="userBtn" class="btn btn-ghost btn-small" type="button">👤 登录 / 我的账户</button>
-            <span class="portal-user-hint">账号由站长发放；登录后可以在说说墙发帖、跟帖，也能写指南。</span>
-          </div>
           <p class="portal-note">这个站是 MiNgHZ（Yanming HUANG）的自留地，也是朋友们的客厅 —— 内容实时云端同步，条条都有署名和时间。</p>
         </div>
       </section>
@@ -107,20 +108,20 @@
 
       <nav class="sub-nav" id="subNav" aria-label="个人空间导航">
         <div class="container sub-nav-inner">
-          <a href="#account" class="sub-link">👤 账号</a>
+          <a href="#account" class="sub-link" id="accountNavLink" hidden>🛡️ 管理界面</a>
           <a href="#travel" class="sub-link">🧳 游记</a>
           <a href="#tech" class="sub-link">📷 数码</a>
           <a href="#devices" class="sub-link">🎧 设备</a>
         </div>
       </nav>
 
-      <!-- 01 账号与权限（原来的账号管理系统） -->
-      <section class="section" id="account">
+      <!-- 01 管理界面（只有站长能看到：账号、权限、发放账号） -->
+      <section class="section" id="account" hidden>
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">01 · Account</span>
-            <h2 class="section-title">账号与权限</h2>
-            <p class="section-sub">登录、密码、两步验证，以及给朋友们发放账号 / 开关权限，都在这里。</p>
+            <span class="eyebrow">01 · Admin</span>
+            <h2 class="section-title">管理界面</h2>
+            <p class="section-sub">发放账号、开关朋友们的权限、重置密码与两步验证 —— 只有站长看得到这一块。</p>
           </div>
           <div id="accountPanel"></div>
         </div>

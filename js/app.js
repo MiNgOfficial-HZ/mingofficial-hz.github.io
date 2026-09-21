@@ -21,8 +21,10 @@
     var btn = $('#adminBtn'); if (btn) btn.textContent = isAdmin ? '🔓 退出管理' : '🔐 管理';
     var ub = $('#userBtn');
     if (ub) {
-      ub.textContent = myUser ? '😊' : '👤';
-      ub.setAttribute('aria-label', myUser ? '我的账户（' + (myUser.nick || '') + '）' : '登录 / 注册');
+      ub.textContent = myUser
+        ? ((myUser.avatar && !/^https?:/i.test(myUser.avatar) ? myUser.avatar : '😊') + ' 我的账户（' + (myUser.nick || '') + '）')
+        : '👤 登录 / 我的账户';
+      ub.setAttribute('aria-label', myUser ? '我的账户（' + (myUser.nick || '') + '）' : '登录 / 我的账户');
     }
     var gh = $('#guestHint');
     if (gh) gh.hidden = !!myUser;
@@ -46,6 +48,12 @@
   var USER_LS = 'minghz.user.v1';
   var mySession = (function () { try { return localStorage.getItem(USER_LS) || ''; } catch (e) { return ''; } })();
   var myUser = null;
+  /* 服务端下发的头像字段叫 av，前端统一成 avatar，避免两处命名不一致 */
+  function setMyUser(u) {
+    myUser = u || null;
+    if (myUser && !myUser.avatar) myUser.avatar = myUser.av || '';
+    return myUser;
+  }
 
   function saveUserSession(s) {
     mySession = s || '';
@@ -60,6 +68,8 @@
   function permFor(kindRaw) {
     if (!myUser) return false;
     if (myUser.role === 'owner') return true;
+    /* 个人空间（游记 / 数码 / 设备）是站长的私人地盘：管理员和普通用户只能看 */
+    if (kindRaw === 'travel' || kindRaw === 'tech' || kindRaw === 'device') return false;
     if (myUser.role === 'admin') return !!S.perms.admin[PERM_MAP[kindRaw]];
     if (kindRaw === 'moment') return memberCan('canPost') || memberCan('canEdit');
     if (kindRaw === 'study') return memberCan('canGuide') || memberCan('canEdit');
@@ -71,6 +81,7 @@
   function canManage(kindRaw, item) {
     if (!myUser) return false;
     if (isOwnerUser()) return true;
+    if (kindRaw === 'travel' || kindRaw === 'tech' || kindRaw === 'device') return false;
     if (isAdminUser()) return !!S.perms.admin[PERM_MAP[kindRaw]];
     var mine = !!(item && item.authorId && myUser && item.authorId === myUser.id);
     if (kindRaw === 'moment' || kindRaw === 'study') return mine || !!S.perms.member.canEdit;
@@ -349,7 +360,7 @@
   function completeLogin(res) {
     pending2fa = null;
     saveUserSession(res.session);
-    myUser = res.user;
+    setMyUser(res.user);
     refreshAdminState();
     closeModal();
     renderAll();
@@ -364,20 +375,70 @@
     $('#modalTitle').textContent = '👤 我的账户';
     $('#modalBody').innerHTML =
       '<div class="mine-card">' +
-        '<div class="pu-avatar" style="width:46px;height:46px;font-size:1.1rem">' + esc((myUser.nick || '友')[0]) + '</div>' +
+        avatarHTML({ nick: myUser.nick, avatar: myUser.av }, 46, 'av-md') +
         '<div><div class="pu-name">' + esc(myUser.nick) + '</div>' +
         '<div class="pu-sub">账号：' + esc(myUser.un || '') + '</div>' +
         '<div class="pu-role ' + roleCls + '">' + roleLabel + '</div></div>' +
       '</div>' +
+      '<div class="av-edit">' +
+        '<div class="av-edit-head">🎨 我的头像 <small>朋友、管理员、站长都可以自己设置</small></div>' +
+        '<div class="av-emoji-grid">' +
+          AVATAR_EMOJIS.map(function (e) {
+            return '<button type="button" class="av-pick" data-action="set-avatar" data-av="' + esc(e) + '" aria-label="用 ' + esc(e) + ' 当头像">' + e + '</button>';
+          }).join('') +
+        '</div>' +
+        '<div class="av-edit-row">' +
+          '<label class="btn btn-soft btn-small" for="avFile">🖼️ 上传图片</label>' +
+          '<input id="avFile" type="file" accept="image/png,image/jpeg,image/webp" hidden />' +
+          '<button class="btn btn-ghost btn-small" type="button" data-action="set-avatar" data-av="">用昵称首字</button>' +
+        '</div>' +
+        '<p class="field-hint">头像可以是 emoji，也可以是上传的图片（自动压缩）。换头像后，你以前发的说说、跟帖、指南也会一起更新。</p>' +
+      '</div>' +
       '<div class="mine-actions">' +
         '<button class="btn btn-soft btn-block" type="button" data-action="open-2fa">' + (myUser.twoFactor ? '🔐 两步验证 · 已开启' : '🔐 开启两步验证') + '</button>' +
         '<button class="btn btn-soft btn-block" type="button" data-action="open-pw">' + (myUser.hasPw ? '修改密码' : '设置密码') + '</button>' +
-        (hasPanelRight() ? '<button class="btn btn-soft btn-block" type="button" data-action="open-panel">🛡️ 管理面板（用户）</button>' : '') +
+        (isOwnerUser() ? '<button class="btn btn-soft btn-block" type="button" data-action="open-panel">🛡️ 管理面板（发放账号 / 权限）</button>' : '') +
         '<button class="btn btn-ghost btn-block" type="button" data-action="logout-user">退出登录</button>' +
       '</div>';
     $('#modalFoot').innerHTML = '<button class="btn btn-ghost" type="button" data-action="close-modal">关闭</button>';
     $('#modalBackdrop').hidden = false;
     document.body.style.overflow = 'hidden';
+    wireAvatarPicker();
+  }
+
+  var AVATAR_EMOJIS = ['😀','😎','🤓','🥳','🐯','🦒','🐣','🐧','🐼','🦊','🐳','🌊','🌏','🚀','🎧','📷','💻','📚','☕','🍜','⚡','🔥','🌙','🍀'];
+
+  /* 保存头像：emoji / 本站图片 / 空（回到昵称首字） */
+  function saveAvatar(av) {
+    return apiPost('/api/auth/profile', { session: mySession, avatar: av }).then(function (res) {
+      if (res.ok && res.json.user) {
+        setMyUser(res.json.user);
+        toast(av ? '头像已更新 🎨' : '头像已恢复成昵称首字');
+        refreshAdminState();   /* 顺带刷新顶部按钮上的头像 */
+        openMineModal();
+      } else {
+        toast((res.json && res.json.error) || '头像保存失败（可能 Worker 还没更新到新版）', 'error');
+      }
+    });
+  }
+
+  function wireAvatarPicker() {
+    var inp = $('#avFile');
+    if (!inp) return;
+    inp.addEventListener('change', function () {
+      var f = (inp.files || [])[0];
+      inp.value = '';
+      if (!f) return;
+      toast('正在压缩并上传头像…', 'info');
+      compressImage(f).then(function (res) {
+        return uploadImage({ name: 'avatar.' + res.ext, data: res.data, session: mySession, folder: 'avatar' }, null);
+      }).then(function (r) {
+        if (r && r.ok && r.json.url) return saveAvatar(r.json.url);
+        toast((r && r.json && r.json.error) || '头像上传失败', 'error');
+      }).catch(function (e) {
+        toast(e && e.message === 'decode' ? '这张图格式不支持（可能是 HEIC），换一张试试' : '头像上传失败', 'error');
+      });
+    });
   }
 
   function openPwModal() {
@@ -505,7 +566,7 @@
                   '<button class="act-btn danger" type="button" data-action="panel-del" data-id="' + u.id + '">删</button>';
         }
         return '<div class="panel-user">' +
-          '<div class="pu-avatar">' + esc((u.nick || '友')[0]) + '</div>' +
+          avatarHTML({ nick: u.nick, avatar: u.av }, 38, 'av-sm') +
           '<div class="pu-meta">' +
             '<div class="pu-name">' + esc(u.nick) + ' <span class="pu-role ' + rc + '">' + rl + '</span></div>' +
             '<div class="pu-sub">账号：' + esc(u.un || '') + (u.hasPw ? ' · 已设密码' : ' · 未设密码') + (u.twoFactor ? ' · 🔐 两步验证' : '') + '</div>' +
@@ -594,7 +655,7 @@
   function restoreUser() {
     if (!mySession) { refreshAdminState(); return; }
     apiPost('/api/auth/me', { session: mySession }).then(function (res) {
-      if (res.ok) { myUser = res.json.user; }
+      if (res.ok) { setMyUser(res.json.user); }
       else { saveUserSession(''); myUser = null; }
       refreshAdminState();
       renderAll();
@@ -787,7 +848,7 @@
       cloudFetch().then(function (res) {
         S = normalize(res.db);
         if (res.hasUser) {
-          myUser = res.user || null;
+          setMyUser(res.user);
           if (!res.user) saveUserSession('');
           refreshAdminState();
         } else {
@@ -854,6 +915,29 @@
     return x.author || 'MiNgHZ';
   }
 
+  /* 头像：emoji 或本站上传的图片；没设置就用昵称首字 */
+  function avatarHTML(x, size, cls) {
+    var nm = (x && (x.author || x.nick)) || authorName(x) || '友';
+    var av = (x && x.avatar) || '';
+    var px = size || 38;
+    var style = 'width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px * 0.46) + 'px;';
+    if (/^https?:\/\//i.test(av)) {
+      return '<span class="av ' + (cls || '') + '" style="' + style + '"><img src="' + esc(mediaUrl(av)) + '" alt="" loading="lazy" decoding="async" /></span>';
+    }
+    if (av) return '<span class="av av-emoji ' + (cls || '') + '" style="' + style + '">' + esc(av) + '</span>';
+    return '<span class="av av-text ' + (cls || '') + '" style="' + style + '">' + esc(String(nm).slice(0, 1)) + '</span>';
+  }
+
+  /* 发帖 / 跟帖的来源（IP 是打码后的，完整 IP 不下发到页面） */
+  function ipTag(x) {
+    if (!x) return '';
+    var bits = [];
+    if (x.geo) bits.push(x.geo);
+    if (x.ip) bits.push(x.ip);
+    if (!bits.length) return '';
+    return '<span class="m-ip" title="发帖 / 跟帖来源（IP 已打码）">📍 ' + esc(bits.join(' · ')) + '</span>';
+  }
+
   /* 跟时间后缀：刚刚 / N 分钟前 / N 小时前 / N 天前（时间戳是北京时间字符串） */
   function relSuffix(stamp) {
     var m = String(stamp || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
@@ -883,8 +967,10 @@
       var cmts = Array.isArray(m.comments) ? m.comments : [];
       var cmtHtml = cmts.map(function (c) {
         return '<div class="cmt"><div class="cmt-head">' +
+            avatarHTML(c, 24, 'av-sm') +
             '<span class="cmt-author">' + esc(c.authorId === 'owner0' ? 'MiNgHZ' : (c.author || '朋友')) + '</span>' +
             '<span class="m-time">' + esc(c.time || '') + '</span>' +
+            ipTag(c) +
             (canDelComment(m, c) ? '<button class="cmt-del" type="button" data-action="del-cmt" data-id="' + m.id + '" data-cid="' + esc(c.id || '') + '" aria-label="删除跟帖">✕</button>' : '') +
           '</div><p class="cmt-text">' + esc(c.text || '') + '</p></div>';
       }).join('');
@@ -900,8 +986,10 @@
         '<div class="moment-dot">' + esc(m.emoji || '💬') + '</div>' +
         '<div class="moment-card card">' +
           '<div class="moment-head moment-meta">' +
+            avatarHTML(m, 32, 'av-sm') +
             '<span class="m-author">' + esc(author) + badge + '</span>' +
             '<span class="m-time">' + esc(m.time || '') + relSuffix(m.time) + '</span>' +
+            ipTag(m) +
             actionsHTML('moment', m) +
           '</div>' +
           '<p class="moment-text">' + esc(m.text) + '</p>' +
@@ -1000,7 +1088,7 @@
         '<div class="tech-card card">' +
           '<div class="tech-head"><span class="badge">' + esc(t.category || '指南') + '</span><time>' + esc(t.date) + '</time>' + actionsHTML('study', t) + '</div>' +
           '<h3 class="tech-name">' + esc(t.title) + '</h3>' +
-          '<div class="author-chip">✍️ 编写：<b>' + esc(itemAuthor(t)) + '</b>' + (t.time ? '<span class="m-time"> · ' + esc(t.time) + '</span>' : '') + '</div>' +
+          '<div class="author-chip">' + avatarHTML(t, 22, 'av-xs') + ' ✍️ 编写：<b>' + esc(itemAuthor(t)) + '</b>' + (t.time ? '<span class="m-time"> · ' + esc(t.time) + '</span>' : '') + '</div>' +
           galleryHTML(t.imgs, t.title) +
           '<p class="tech-text">' + esc(t.text) + '</p>' +
           (t.content ? '<button class="read-more" type="button" data-action="read-item" data-kind="study" data-id="' + t.id + '">阅读全文 →</button>' : '') +
@@ -1037,12 +1125,13 @@
       if (isOwnerRole() && m.email) {
         var mailSubject = encodeURIComponent('回复：' + (m.name || '访客') + ' 在 MiNgHZ 的留言');
         var mailBody = encodeURIComponent('\n\n——\n原留言：' + (m.text || ''));
-        ownerMail = '<div class="m-contact"><a class="m-mailto" href="mailto:' + esc(m.email) + '?subject=' + mailSubject + '&amp;body=' + mailBody + '" title="点击后在 Outlook 中回复此留言">📧 ' + esc(m.email) + ' · 回复</a></div>';
+      ownerMail = '<div class="m-contact"><a class="m-mailto" href="mailto:' + esc(m.email) + '?subject=' + mailSubject + '&amp;body=' + mailBody + '" title="点击后在 Outlook 中回复此留言">📧 ' + esc(m.email) + ' · 回复</a></div>';
       }
       return '<article class="msg-item card reveal" data-id="' + m.id + '">' +
-        '<div class="m-avatar">' + esc(initial) + '</div>' +
+        avatarHTML({ nick: m.name, author: m.name, avatar: m.avatar }, 42, 'av-md') +
         '<div class="m-body">' +
           '<div class="m-head"><span class="m-name">' + esc(m.name) + '</span><time>' + esc(m.time) + '</time>' +
+          ipTag(m) +
           (canManage('msg', m) ? '<button class="act-btn danger" type="button" data-action="del-msg" data-id="' + m.id + '" aria-label="删除">✕</button>' : '') + '</div>' +
           ownerMail +
           '<p class="m-text">' + esc(m.text) + '</p>' +
@@ -1083,6 +1172,12 @@
       $$('#qaMenu [data-action="' + act + '"]').forEach(function (b) { b.hidden = !ok; });
     });
     document.body.classList.toggle('can-post-any', any);
+    /* 管理界面只有站长看得到（管理员 / 普通用户进个人空间只能看） */
+    var acctSection = $('#account');
+    if (acctSection) acctSection.hidden = !isOwnerUser();
+    var acctLink = $('#accountNavLink');
+    if (acctLink) acctLink.hidden = !isOwnerUser();
+    document.body.classList.toggle('is-owner', isOwnerUser());
     renderComposer();
     renderAccount();
   }
@@ -1133,32 +1228,23 @@
   function renderAccount() {
     var box = $('#accountPanel');
     if (!box) return;
-    if (!myUser) {
-      box.innerHTML = '<div class="card acct-card">' +
-        '<div class="acct-head"><span class="entry-emoji">👤</span><div>' +
-          '<div class="acct-name">还没登录</div>' +
-          '<div class="acct-sub">账号由站长私下发放；登录后按权限显示「可编辑 / 可发帖 / 仅查看」</div>' +
-        '</div></div>' +
-        '<div class="acct-grid"><button class="acct-btn" type="button" data-action="guest-login">🔐 登录<small>用站长发的账号 + 密码</small></button></div>' +
-        '<p class="acct-note">说说墙、跟帖和指南在「MiNg 和他的朋友们」那扇门里；这里只管账号本身。</p></div>';
-      return;
-    }
-    var roleCls = isOwnerUser() ? 'owner' : (isAdminUser() ? 'admin' : '');
-    var roleLabel = isOwnerUser() ? '站长' : (isAdminUser() ? '管理员' : '朋友账号');
+    /* 这一块只有站长看得到（管理员 / 普通用户进来只能看内容） */
+    if (!isOwnerUser()) { box.innerHTML = ''; return; }
+    var roleLabel = '站长';
     box.innerHTML = '<div class="card acct-card">' +
       '<div class="acct-head">' +
-        '<div class="pu-avatar" style="width:44px;height:44px;font-size:1.05rem">' + esc((myUser.nick || '友')[0]) + '</div>' +
-        '<div><div class="acct-name">' + esc(myUser.nick) + ' <span class="pu-role ' + roleCls + '">' + roleLabel + '</span></div>' +
+        avatarHTML({ nick: myUser.nick, avatar: myUser.av }, 44, 'av-md') +
+        '<div><div class="acct-name">' + esc(myUser.nick) + ' <span class="pu-role owner">' + roleLabel + '</span></div>' +
         '<div class="acct-sub">账号：' + esc(myUser.un || '') + (myUser.twoFactor ? ' · 🔐 已开两步验证' : ' · 未开两步验证') + (myUser.l ? ' · 最近登录 ' + esc(myUser.l) : '') + '</div></div>' +
       '</div>' +
       '<div class="acct-grid">' +
-        '<button class="acct-btn" type="button" data-action="open-mine">👤 我的账户<small>角色 · 昵称 · 登录状态</small></button>' +
+        '<button class="acct-btn" type="button" data-action="open-mine">👤 我的账户 / 头像<small>头像、昵称、登录状态</small></button>' +
         '<button class="acct-btn" type="button" data-action="open-pw">🔑 ' + (myUser.hasPw ? '修改密码' : '设置密码') + '<small>建议定期更换</small></button>' +
         '<button class="acct-btn" type="button" data-action="open-2fa">' + (myUser.twoFactor ? '🔐 两步验证 · 已开启' : '🔐 开启两步验证') + '<small>密码 + 验证器动态码</small></button>' +
-        (hasPanelRight() ? '<button class="acct-btn" type="button" data-action="open-panel">🛡️ 管理面板<small>新建账号 / 权限开关 / 重置密码</small></button>' : '') +
+        '<button class="acct-btn" type="button" data-action="open-panel">🛡️ 管理面板<small>发放账号 / 权限开关 / 重置密码</small></button>' +
         '<button class="acct-btn" type="button" data-action="logout-user">🚪 退出登录<small>在公用设备上记得退出</small></button>' +
       '</div>' +
-      '<p class="acct-note">' + esc(permSummary()) + (hasPanelRight() ? '<br />给朋友开权限：管理面板 → 权限管理中勾选「发说说 / 跟帖 / 写指南」再保存。' : '') + '</p>' +
+      '<p class="acct-note">你是站长：游记 / 数码 / 设备只有你能改；朋友们那扇门里的说说墙、指南、友链留言的权限，在「管理面板 → 权限管理」里随时开关。</p>' +
       '</div>';
   }
 
@@ -2165,6 +2251,7 @@
       case 'open-img': openLightbox(btn.getAttribute('data-url')); break;
       case 'open-pw': openPwModal(); break;
       case 'open-mine': openMineModal(); break;
+      case 'set-avatar': saveAvatar(btn.getAttribute('data-av') || ''); break;
       case 'open-panel': openPanelModal(); break;
       case 'logout-user': logoutUser(); break;
       case 'toggle-cmt': {
