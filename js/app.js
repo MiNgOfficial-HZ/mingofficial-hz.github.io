@@ -121,6 +121,8 @@
   function logoutUser() {
     saveUserSession('');
     myUser = null;
+    usersCache = null;
+    pickerState.post = []; pickerState.modal = [];
     closeModal();
     refreshAdminState();
     renderAll();
@@ -554,6 +556,7 @@
     document.body.style.overflow = 'hidden';
     apiPost('/api/users/list', { session: mySession }).then(function (res) {
       if (!res.ok) { $('#modalBody').innerHTML = '<p class="confirm-text">' + esc(res.json.error || '加载失败') + '</p>'; return; }
+      usersCache = res.json.users || [];   /* 顺手刷新「署名」选择器用的账号列表 */
       var permCache = res.json.perms || S.perms;
       var rows = (res.json.users || []).map(function (u) {
         var rc = u.role === 'owner' ? 'owner' : (u.role === 'admin' ? 'admin' : '');
@@ -617,7 +620,7 @@
         if (String(v.password).length < 6) { toast('密码至少 6 位', 'error'); return false; }
         if (v.password !== v.password2) { toast('两次输入的密码不一致', 'error'); return false; }
         apiPost('/api/users/create', { session: mySession, username: v.username.trim(), nick: v.nick.trim(), password: v.password, role: v.role }).then(function (res) {
-          if (res.ok) { toast('账号已创建 ✔ 请把「账号+密码」私下发给对方'); closeModal(); openPanelModal(); }
+          if (res.ok) { usersCache = null; toast('账号已创建 ✔ 请把「账号+密码」私下发给对方'); closeModal(); openPanelModal(); }
           else { toast(res.json.error || '创建失败', 'error'); }
         });
         return false;
@@ -647,7 +650,7 @@
 
   function panelAction(op, id, role) {
     apiPost('/api/users/action', { session: mySession, op: op, id: id, role: role }).then(function (res) {
-      if (res.ok) { toast('已更新 ✔'); openPanelModal(); }
+      if (res.ok) { usersCache = null; toast('已更新 ✔'); openPanelModal(); }
       else { toast(res.json.error || '操作失败', 'error'); }
     });
   }
@@ -908,6 +911,134 @@
   /* 发帖人 / 编写人：老数据没存作者，默认就是站长本人 */
   function momentAuthor(m) { return authorName(m); }
   function itemAuthor(x) { return authorName(x); }
+
+  /* ---------- 署名（可以多个人，像邮件收件人那样从已有账号里挑） ---------- */
+  function authorsOf(x) {
+    if (x && Array.isArray(x.authors) && x.authors.length) {
+      return x.authors.map(function (a) {
+        return { id: a.id, nick: (a.id === 'owner0' ? 'MiNgHZ' : (a.nick || '朋友')), avatar: a.avatar || '' };
+      });
+    }
+    return [{ id: (x && x.authorId) || '', nick: authorName(x), avatar: (x && x.avatar) || '' }];
+  }
+  function authorsBadge(a) {
+    if (a.id === 'owner0') return '<span class="m-badge">站长</span>';
+    if (myUser && a.id === myUser.id) return '<span class="m-badge friend">我</span>';
+    return '<span class="m-badge friend">朋友</span>';
+  }
+  function authorsHTML(x) {
+    var list = authorsOf(x);
+    return list.map(function (a, i) {
+      return (i ? '<span class="ap-join">、</span>' : '') +
+        '<span class="m-author">' + esc(a.nick) + authorsBadge(a) + '</span>';
+    }).join('');
+  }
+
+  /* 账号列表（只有站长 / 管理员能拿到），给「作者」选择器用 */
+  var usersCache = null;
+  function loadUsers(cb) {
+    if (usersCache) { cb(usersCache); return; }
+    if (!hasPanelRight()) { cb([]); return; }
+    apiPost('/api/users/list', { session: mySession }).then(function (res) {
+      usersCache = (res.ok && res.json.users) ? res.json.users : [];
+      cb(usersCache);
+    }).catch(function () { cb([]); });
+  }
+  function userById(id) {
+    var list = usersCache || [];
+    for (var i = 0; i < list.length; i++) { if (list[i].id === id) return list[i]; }
+    return null;
+  }
+  function apNick(u) { return u.id === 'owner0' ? 'MiNgHZ' : (u.nick || u.un || '朋友'); }
+
+  /* prefix: 'post'（发帖框）/ 'modal'（编辑弹窗） */
+  function apChipsHTML(prefix, ids) {
+    return (ids || []).map(function (id) {
+      var u = userById(id);
+      var nm = u ? apNick(u) : '未找到的账号';
+      var av = u ? (u.av || '') : '';
+      var head = /^https?:\/\//i.test(av) ? '' : esc(av || nm.slice(0, 1));
+      return '<span class="ap-chip" data-id="' + esc(id) + '"' + (u ? '' : ' data-missing="1"') + '>' +
+        '<span class="ap-chip-av">' + head + '</span>' + esc(nm) +
+        '<button type="button" class="ap-x" data-action="ap-remove" data-prefix="' + prefix + '" data-id="' + esc(id) + '" aria-label="移除">✕</button></span>';
+    }).join('');
+  }
+  function apInnerHTML(prefix, ids) {
+    return '<span class="ap-label">署名</span>' +
+      '<span class="ap-chips">' + apChipsHTML(prefix, ids) + '</span>' +
+      '<input class="ap-input" id="' + prefix + 'AuthorSearch" autocomplete="off" placeholder="输入昵称或账号添加…" />' +
+      '<div class="ap-menu" id="' + prefix + 'AuthorMenu" hidden></div>' +
+      '<span class="ap-hint">默认署名是发帖人自己；站长可以在这里挑人，选几个就联合署名几个。</span>';
+  }
+  function authorPickerHTML(prefix, ids) {
+    return '<div class="ap" id="' + prefix + 'Authors">' + apInnerHTML(prefix, ids) + '</div>';
+  }
+
+  var pickerState = { post: [], modal: [] };
+
+  function apRoot(prefix) { return document.getElementById(prefix + 'Authors'); }
+
+  function apCloseMenu(prefix) {
+    var m = document.getElementById(prefix + 'AuthorMenu');
+    if (m) { m.hidden = true; m.innerHTML = ''; }
+  }
+
+  function apMenuHTML(prefix, q) {
+    var ids = pickerState[prefix] || [];
+    var ql = String(q || '').trim().toLowerCase();
+    var list = (usersCache || []).filter(function (u) {
+      if (ids.indexOf(u.id) >= 0) return false;
+      if (!ql) return true;
+      return (apNick(u) + ' ' + (u.un || '')).toLowerCase().indexOf(ql) >= 0;
+    }).slice(0, 8);
+    if (!list.length) return '<div class="ap-empty">没有更多账号了</div>';
+    return list.map(function (u) {
+      return '<button type="button" class="ap-item" data-action="ap-add" data-prefix="' + prefix + '" data-id="' + esc(u.id) + '">' +
+        '<span class="ap-item-name">' + esc(apNick(u)) + '</span>' +
+        '<small>' + esc(u.un || '') + (u.role === 'owner' ? ' · 站长' : (u.role === 'admin' ? ' · 管理员' : ' · 朋友')) + '</small></button>';
+    }).join('');
+  }
+
+  /* 重画署名区（保留输入框里已经打了一半的搜索词） */
+  function apRender(prefix, keepQuery) {
+    var root = apRoot(prefix);
+    if (!root) return;
+    var q = keepQuery ? String((document.getElementById(prefix + 'AuthorSearch') || {}).value || '') : '';
+    root.innerHTML = apInnerHTML(prefix, pickerState[prefix] || []);
+    var input = document.getElementById(prefix + 'AuthorSearch');
+    if (input && q) { input.value = q; apSearch(prefix, q); }
+  }
+
+  function apSearch(prefix, q) {
+    var menu = document.getElementById(prefix + 'AuthorMenu');
+    if (!menu) return;
+    menu.innerHTML = apMenuHTML(prefix, q);
+    menu.hidden = false;
+  }
+
+  function apAdd(prefix, id) {
+    pickerState[prefix] = (pickerState[prefix] || []).concat([id]).slice(0, 8);
+    apRender(prefix);
+    var input = document.getElementById(prefix + 'AuthorSearch');
+    if (input) input.focus();
+  }
+
+  function apRemove(prefix, id) {
+    pickerState[prefix] = (pickerState[prefix] || []).filter(function (x) { return x !== id; });
+    apRender(prefix);
+  }
+
+  function apInit(prefix, ids) {
+    pickerState[prefix] = (ids || []).slice(0, 8);
+    apRender(prefix);
+  }
+
+  function apInput(prefix) {
+    var el = document.getElementById(prefix + 'AuthorSearch');
+    if (!el) return;
+    el.addEventListener('focus', function () { apSearch(prefix, el.value); });
+    el.addEventListener('blur', function () { setTimeout(function () { apCloseMenu(prefix); }, 180); });
+  }
   /* 老数据的作者判定：旧版 Worker 没写 authorId，只写了昵称「站长」 */
   function isOwnerPost(x) {
     if (!x) return false;
@@ -966,10 +1097,7 @@
     if (!list) return;
     if (!S.moments.length) { list.innerHTML = emptyHTML('还没有说说 —— 第一条就等你来写 ✨'); return; }
     list.innerHTML = sortDesc(S.moments, 'time').map(function (m, i) {
-      var author = momentAuthor(m);
-      var badge = isOwnerPost(m)
-        ? '<span class="m-badge">站长</span>'
-        : (myUser && m.authorId === myUser.id ? '<span class="m-badge friend">我</span>' : '<span class="m-badge friend">朋友</span>');
+      var first = authorsOf(m)[0];
       var cmts = Array.isArray(m.comments) ? m.comments : [];
       var cmtHtml = cmts.map(function (c) {
         return '<div class="cmt"><div class="cmt-head">' +
@@ -992,8 +1120,8 @@
         '<div class="moment-dot">' + esc(m.emoji || '💬') + '</div>' +
         '<div class="moment-card card">' +
           '<div class="moment-head moment-meta">' +
-            avatarHTML(m, 32, 'av-sm') +
-            '<span class="m-author">' + esc(author) + badge + '</span>' +
+            avatarHTML({ nick: first.nick, avatar: first.avatar }, 32, 'av-sm') +
+            authorsHTML(m) +
             '<span class="m-time">' + esc(m.time || '') + relSuffix(m.time) + '</span>' +
             ipTag(m) +
             actionsHTML('moment', m) +
@@ -1220,14 +1348,28 @@
         (canCommentMoment() ? '' : '（跟帖权限也没开）') + '；发帖权限还没开，找站长开一下就行。</div>';
       return;
     }
-    box.innerHTML = '<form class="card composer" id="postForm" novalidate>' +
-      '<div class="composer-head"><span class="composer-who">' + esc(myUser.nick) + '<small>以这个昵称发帖 · 时间自动记录</small></span></div>' +
-      '<textarea id="postText" rows="3" maxlength="300" placeholder="此刻在想什么？（最多 300 字）"></textarea>' +
-      '<div class="composer-row">' +
-        '<input class="composer-emoji" id="postEmoji" maxlength="4" placeholder="😀" aria-label="配一个表情" />' +
-        '<span class="composer-count"><b id="postCount">0</b>/300</span>' +
-        '<button class="btn btn-primary btn-small" type="submit">发布 ✨</button>' +
-      '</div></form>';
+    var paint = function () {
+      box.innerHTML = '<form class="card composer" id="postForm" novalidate>' +
+        '<div class="composer-head"><span class="composer-who">' + esc(myUser.nick) +
+          '<small>' + (isOwnerUser() ? '你是站长：署名可以自己挑（默认就是你）' : '以这个昵称发帖 · 时间自动记录') + '</small></span></div>' +
+        '<textarea id="postText" rows="3" maxlength="300" placeholder="此刻在想什么？（最多 300 字）"></textarea>' +
+        (isOwnerUser() ? '<div class="composer-authors" id="postAuthors"></div>' : '') +
+        '<div class="composer-row">' +
+          '<input class="composer-emoji" id="postEmoji" maxlength="4" placeholder="😀" aria-label="配一个表情" />' +
+          '<span class="composer-count"><b id="postCount">0</b>/0</span>' +
+          '<button class="btn btn-primary btn-small" type="submit">发布 ✨</button>' +
+        '</div></form>';
+      var box2 = document.getElementById('postAuthors');
+      if (box2) {
+        if (!pickerState.post || !pickerState.post.length) pickerState.post = [myUser.id];
+        box2.outerHTML = authorPickerHTML('post', pickerState.post);
+        apInput('post');
+      }
+      var c = $('#postCount');
+      if (c) c.textContent = String((($('#postText') || {}).value || '').length);
+    };
+    if (hasPanelRight() && !usersCache) loadUsers(function () { paint(); });
+    else paint();
   }
 
   /* 个人空间里的「账号与权限」面板（原来的账号管理系统） */
@@ -1646,7 +1788,11 @@
     var v = f.value != null ? f.value : '';
     var label = '<label for="f_' + f.key + '">' + esc(f.label) + (f.required ? ' <i style="color:var(--danger);font-style:normal">*</i>' : '') + '</label>';
     var inner;
-    if (f.type === 'markdown') {
+    if (f.type === 'authors') {
+      if (!hasPanelRight()) return '';
+      inner = authorPickerHTML('modal', pickerState.modal || []) +
+        '<p class="field-hint">可以选多个账号联合署名；不选就署你自己。</p>';
+    } else if (f.type === 'markdown') {
       inner = '<div class="md-wrap"><div class="md-box">' +
         '<div class="md-tabs"><button type="button" class="m-tab on" data-action="md-tab-edit">✏️ 编辑</button><button type="button" class="m-tab" data-action="md-tab-prev">👁️ 预览</button></div>' +
         '<textarea class="md-input" id="f_' + f.key + '" name="' + f.key + '" rows="14" maxlength="50000" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>' +
@@ -1777,22 +1923,46 @@
 
   /* ---------- 各模块编辑弹窗 ---------- */
   function openMomentModal(item) {
+    /* 站长发帖 / 改帖时可以挑署名（普通用户固定署自己） */
+    var owner = isOwnerUser();
+    var initIds = owner
+      ? ((item && Array.isArray(item.authors) && item.authors.length)
+          ? item.authors.map(function (a) { return a.id; })
+          : (item && item.authorId ? [item.authorId] : [myUser ? myUser.id : '']))
+      : [];
+    var fields = [
+      { key: 'text', label: '说点什么', type: 'textarea', required: true, max: 300, rows: 4, placeholder: '此刻的心情、灵感、碎碎念…', value: item ? item.text : '' },
+      { key: 'emoji', label: '配一个表情', max: 4, placeholder: '🍀', hint: '单个 emoji，选填', value: item ? (item.emoji || '') : '' }
+    ];
+    if (owner) fields.push({ key: '_authors', label: '署名（可以选好几个）', type: 'authors' });
     openModal({
       title: item ? '编辑说说' : '写一条说说',
       submitText: item ? '保存修改' : '发布 ✨',
-      fields: [
-        { key: 'text', label: '说点什么', type: 'textarea', required: true, max: 200, rows: 4, placeholder: '此刻的心情、灵感、碎碎念…', value: item ? item.text : '' },
-        { key: 'emoji', label: '配一个表情', max: 4, placeholder: '🍀', hint: '单个 emoji，选填', value: item ? (item.emoji || '') : '' }
-      ],
+      fields: fields,
       onSubmit: function (v) {
+        var authors = owner && pickerState.modal && pickerState.modal.length ? pickerState.modal.slice(0, 8) : null;
         if (item) {
-          adminMutate('moment.edit', { id: item.id, text: v.text.trim(), emoji: v.emoji.trim() }, '说说已更新 ✨');
+          var data = { id: item.id, text: v.text.trim(), emoji: v.emoji.trim() };
+          if (authors) data.authors = authors;
+          adminMutate('moment.edit', data, '说说已更新 ✨');
         } else {
-          adminMutate('moment.add', { id: uid(), text: v.text.trim(), emoji: v.emoji.trim(), time: nowStamp(), author: myUser ? myUser.nick : '' }, '发布成功 ✨');
+          var add = { id: uid(), text: v.text.trim(), emoji: v.emoji.trim(), time: nowStamp(), author: myUser ? myUser.nick : '' };
+          if (authors) add.authors = authors;
+          adminMutate('moment.add', add, '发布成功 ✨');
         }
         return true;
       }
     });
+    if (owner) {
+      loadUsers(function () {
+        pickerState.modal = initIds.filter(Boolean).slice(0, 8);
+        var host = document.querySelector('#modalBody .ap');
+        if (host) host.outerHTML = authorPickerHTML('modal', pickerState.modal);
+        apInput('modal');
+      });
+      pickerState.modal = initIds.filter(Boolean).slice(0, 8);
+      apInit('modal', pickerState.modal);
+    }
   }
 
   function openTravelModal(item) {
@@ -2351,6 +2521,8 @@
       case 'md-tab-edit': mdToggleTab(btn, 'edit'); break;
       case 'md-tab-prev': mdToggleTab(btn, 'prev'); break;
       case 'md-insert': mdInsert(btn); break;
+      case 'ap-add': apAdd(btn.getAttribute('data-prefix'), btn.getAttribute('data-id')); break;
+      case 'ap-remove': apRemove(btn.getAttribute('data-prefix'), btn.getAttribute('data-id')); break;
       case 'go-view': {
         e.preventDefault();
         goView(btn.getAttribute('data-view') || 'home');
@@ -2407,10 +2579,12 @@
       if (!t) { toast('写点什么再发布吧 ✍️', 'error'); return; }
       /* time / author 这里也带上：万一 Worker 还是旧版，帖子至少不会缺时间与署名；
          新版 Worker 会用服务端时间与昵称覆盖这两个字段 */
-      adminMutate('moment.add', {
+      var payload = {
         id: uid(), text: t, emoji: em,
         time: nowStamp(), author: myUser ? myUser.nick : ''
-      }, '已发布 ✨');
+      };
+      if (isOwnerUser() && pickerState.post && pickerState.post.length) payload.authors = pickerState.post.slice(0, 8);
+      adminMutate('moment.add', payload, '已发布 ✨').then(function () { pickerState.post = []; });
       return;
     }
     if (form.classList && form.classList.contains('cmt-form')) {
@@ -2432,6 +2606,9 @@
     if (el.id === 'postText') {
       var c = $('#postCount');
       if (c) c.textContent = String(String(el.value || '').length);
+    }
+    if (el.id === 'postAuthorSearch' || el.id === 'modalAuthorSearch') {
+      apSearch(el.id === 'postAuthorSearch' ? 'post' : 'modal', el.value);
     }
     if (el.classList) el.classList.remove('invalid');
   });
