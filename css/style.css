@@ -1112,10 +1112,15 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; }
   letter-spacing: -0.01em;
 }
 .portal-title .pt-mid {
+  display: inline-block;
   font-family: var(--font-f1);
   font-style: italic; font-weight: 700;
   font-size: clamp(3rem, 8.4vw, 5.6rem);
-  letter-spacing: -0.04em; line-height: 1.04;
+  letter-spacing: -0.04em; line-height: 1.06;
+  /* 负字距 + 斜体：最后一个字母的笔锋会超出元素盒子，而渐变文字只在盒子里上色，
+     看起来就像被切掉一截 —— 这里补一点内边距（再用负外边距抵消，保持居中） */
+  padding: 0.02em 0.12em 0.07em;
+  margin-left: -0.12em; margin-right: -0.12em;
   background: linear-gradient(95deg, var(--accent), #ff7a5c 60%, var(--gold));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
