@@ -85,6 +85,15 @@
 
 .about-link { color: var(--accent); border-bottom: 1px dashed var(--accent); }
 .about-link:hover { border-bottom-style: solid; }
+/* 正文同色的链接：只靠下划线表示可点（Formula Student 那条用这个） */
+.about-link-plain {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+.about-link-plain:hover { color: inherit; text-decoration-color: currentColor; }
 .about-back { text-align: center; margin: 30px 0 10px; }
 
 @media (max-width: 640px) {
