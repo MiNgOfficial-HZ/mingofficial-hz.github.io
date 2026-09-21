@@ -119,6 +119,7 @@
   }
 
   function logoutUser() {
+    var oldSession = mySession;
     saveUserSession('');
     myUser = null;
     usersCache = null;
@@ -127,6 +128,8 @@
     refreshAdminState();
     renderAll();
     toast('已退出登录', 'info');
+    /* 同时让服务端把这张令牌作废（该账号其它设备也会一起退出） */
+    if (oldSession) apiPost('/api/auth/logout', { session: oldSession }).catch(function () {});
   }
 
   /* ---------- 两步验证（2FA）状态 ---------- */
@@ -463,7 +466,13 @@
         if (String(v.password).length < 6) { toast('密码至少 6 位', 'error'); return false; }
         if (v.password !== v.password2) { toast('两次输入的密码不一致', 'error'); return false; }
         apiPost('/api/auth/password', { session: mySession, current: v.current || '', password: v.password, code: v.code || '' }).then(function (res) {
-          if (res.ok) { myUser.hasPw = true; toast('密码已保存 🔑'); closeModal(); }
+          if (res.ok) {
+            /* 改密会让其它设备的会话失效，服务端会顺手给当前设备一张新令牌 */
+            if (res.json.session) saveUserSession(res.json.session);
+            if (res.json.user) setMyUser(res.json.user);
+            else myUser.hasPw = true;
+            toast('密码已保存 🔑'); closeModal();
+          }
           else { toast(res.json.error || '保存失败，请重试', 'error'); }
         });
         return false;
@@ -472,12 +481,53 @@
   }
 
   /* ---------- 两步验证（2FA）界面 ---------- */
+  /* 二维码在本地生成（内置 qrcode-generator），密钥不会被送到任何第三方服务 */
+  var qrWaiting = null;
+  function ensureQrLib(cb) {
+    if (window.qrcode) { cb(true); return; }
+    if (qrWaiting) { qrWaiting.push(cb); return; }
+    qrWaiting = [cb];
+    var done = function (ok) {
+      var q = qrWaiting; qrWaiting = null;
+      if (!q) return;
+      q.forEach(function (fn) { try { fn(ok); } catch (e) {} });
+    };
+    var s = document.createElement('script');
+    s.src = 'vendor/qrcode/qrcode.js';
+    s.async = true;
+    s.onload = function () { done(!!window.qrcode); };
+    s.onerror = function () { done(false); };
+    document.head.appendChild(s);
+    setTimeout(function () { if (!window.qrcode) done(false); }, 10000);
+  }
+  function paintQr(uri) {
+    var wrap = $('#qrWrap');
+    if (!wrap) return;
+    ensureQrLib(function (ok) {
+      if (!ok || !window.qrcode) {
+        wrap.innerHTML = '<span class="qr-loading">二维码生成失败，用下面的密钥手动添加也一样。</span>';
+        return;
+      }
+      try {
+        var qr = window.qrcode(0, 'M');
+        qr.addData(uri);
+        qr.make();
+        wrap.innerHTML = qr.createImgTag(5, 8, '两步验证二维码');
+        var img = wrap.querySelector('img');
+        if (img) { img.style.width = '190px'; img.style.height = '190px'; }
+      } catch (e) {
+        wrap.innerHTML = '<span class="qr-loading">二维码生成失败，用下面的密钥手动添加也一样。</span>';
+      }
+    });
+  }
+
   function render2faSetup(secret, uri) {
     $('#modalTitle').textContent = '🔐 开启两步验证';
     $('#modalBody').innerHTML =
       '<div class="field"><label>第 1 步 · 用验证器 App 扫码</label>' +
-        '<div class="qr-wrap"><img alt="两步验证二维码" src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=8&data=' + encodeURIComponent(uri) + '" /></div>' +
+        '<div class="qr-wrap" id="qrWrap"><span class="qr-loading">二维码生成中…</span></div>' +
         '<p class="field-hint">支持 Google / Microsoft Authenticator、Authy、1Password、小米 / 华为等验证器 App。</p>' +
+        '<p class="field-hint">二维码在你自己浏览器里生成（不上传任何第三方），密钥只在你和验证器之间。</p>' +
       '</div>' +
       '<div class="field"><label>扫不了码？手动输入这段密钥</label>' +
         '<div class="secret-row"><code id="tfSecret">' + esc(secret) + '</code>' +
@@ -493,6 +543,7 @@
       '<button class="btn btn-primary" type="button" data-action="2fa-enable">确认开启</button>';
     $('#modalBackdrop').hidden = false;
     document.body.style.overflow = 'hidden';
+    paintQr(uri);
     var c = $('#tfCode'); if (c) c.focus();
   }
 
@@ -2482,6 +2533,7 @@
         apiPost('/api/users/2fa', { session: mySession, op: 'enable', code: tf.trim() }).then(function (res) {
           if (!res.ok) { toast(res.json.error || '开启失败，请重试', 'error'); return; }
           myUser.twoFactor = true;
+          if (res.json.session) saveUserSession(res.json.session);   /* 换新令牌，别把自己踢下线 */
           render2faCodes(res.json.codes, false);
         });
         break;
@@ -2492,6 +2544,7 @@
           apiPost('/api/users/2fa', { session: mySession, op: 'disable', code: code }).then(function (res) {
             if (!res.ok) { toast(res.json.error || '关闭失败', 'error'); return; }
             myUser.twoFactor = false;
+            if (res.json.session) saveUserSession(res.json.session);
             toast('已关闭两步验证', 'info');
             closeModal();
             openMineModal();
