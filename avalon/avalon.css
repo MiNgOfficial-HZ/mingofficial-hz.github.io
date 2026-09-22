@@ -197,10 +197,9 @@
 
 /* ---------- 在线开局入口 ---------- */
 .av-launch {
-  display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; margin-top: 22px;
+  display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 22px;
   align-items: stretch;
 }
-@media (max-width: 820px) { .av-launch { grid-template-columns: 1fr; } }
 .av-launch-card {
   padding: 22px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface);
 }
