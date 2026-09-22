@@ -33,6 +33,8 @@
   var busy = false;
   var qrPainted = '';
   var ladyResult = null;
+  var tsToken = '';
+  var tsState = 'idle';
 
   /* ---------- 小工具 ---------- */
   function readLS(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
@@ -107,17 +109,98 @@
       paintUserBtn();
     });
   }
+  /* ---------- 人机验证（和主站 / 摄影页同一套 key + 兜底逻辑） ---------- */
+  var TS_KEY = '0x4AAAAAAE9nhEhZUu-NfJNS';
+  function tsFallback(slot) {
+    var badHost = location.protocol === 'file:' || !/(^|\.)giraffeming\.online$/i.test(location.hostname);
+    slot.innerHTML = '<div class="ts-fallback"><b>人机验证没能加载</b><br>' +
+      (badHost ? '当前地址不在验证白名单里，请用 <b>giraffeming.online</b> 打开。' : '可能是网络或浏览器设置挡住了，点下面重试。') +
+      '</div><button type="button" class="btn-ts-retry" data-act="ts-retry">🔄 重新验证</button>';
+  }
+  function loadTs(cb) {
+    if (window.turnstile && window.turnstile.render) { cb(true); return; }
+    if (!window.__tsLoading) {
+      window.__tsLoading = true;
+      window.__tsReady = [];
+      var s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__tsOnload';
+      s.async = true; s.defer = true;
+      window.__tsOnload = function () {
+        var q = window.__tsReady || []; window.__tsReady = null;
+        q.forEach(function (fn) { try { fn(true); } catch (e) {} });
+      };
+      s.onerror = function () {
+        window.__tsLoading = false;
+        var q = window.__tsReady || []; window.__tsReady = null;
+        q.forEach(function (fn) { try { fn(false); } catch (e) {} });
+      };
+      document.head.appendChild(s);
+    }
+    if (window.__tsReady) window.__tsReady.push(cb); else cb(!!window.turnstile);
+  }
+  function mountTs() {
+    var slot = $('#tsSlot');
+    if (!slot || !TS_KEY) return;
+    if (slot.dataset.tsId && window.turnstile) return;
+    tsState = 'pending';
+    loadTs(function (ok) {
+      if (!ok || !window.turnstile || !window.turnstile.render) { tsState = 'failed'; tsFallback(slot); return; }
+      try {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        slot.dataset.tsId = window.turnstile.render(slot, {
+          sitekey: TS_KEY, theme: dark ? 'dark' : 'light', language: 'zh-cn',
+          appearance: 'always', retry: 'auto', 'refresh-expired': 'auto', 'refresh-timeout': 'auto',
+          callback: function (t) { tsState = 'ok'; tsToken = t || ''; },
+          'expired-callback': function () { tsState = 'idle'; tsToken = ''; },
+          'timeout-callback': function () { tsState = 'idle'; tsToken = ''; },
+          'error-callback': function () {
+            tsState = 'failed'; tsToken = '';
+            if (slot.dataset.tsId && window.turnstile && window.turnstile.remove) {
+              try { window.turnstile.remove(slot.dataset.tsId); } catch (e) {}
+            }
+            delete slot.dataset.tsId;
+            tsFallback(slot);
+          }
+        });
+        /* 10 秒还没拿到令牌就当成「慢」：不再拦着登录，交给服务端判断 */
+        setTimeout(function () {
+          if (tsState !== 'ok') {
+            tsState = 'slow';
+            if (!slot.querySelector('.ts-fallback')) {
+              var tip = document.createElement('div');
+              tip.className = 'ts-fallback';
+              tip.textContent = '人机验证加载较慢 —— 可以直接点「登录」，服务端会再校验一次。';
+              slot.appendChild(tip);
+              var btn = document.createElement('button');
+              btn.type = 'button'; btn.className = 'btn-ts-retry'; btn.setAttribute('data-act', 'ts-retry');
+              btn.textContent = '🔄 重新验证';
+              slot.appendChild(btn);
+            }
+          }
+        }, 10000);
+      } catch (e) { tsState = 'failed'; tsFallback(slot); }
+    });
+  }
+  function tsOk() {
+    if (!TS_KEY) return true;
+    if (tsToken) return true;
+    return tsState === 'failed' || tsState === 'slow';
+  }
+
   function openLogin() {
     $('#modalTitle').textContent = '🔐 站长登录';
     $('#modalBody').innerHTML =
       '<div class="field"><label>账号</label><input id="lUser" maxlength="40" autocomplete="username" /></div>' +
       '<div class="field"><label>密码</label><input id="lPw" type="password" maxlength="64" autocomplete="current-password" /></div>' +
+      (TS_KEY ? '<div class="ts-slot" id="tsSlot"></div>' : '') +
       '<p class="field-hint">只有站长 / 管理员能建房当上帝。玩家不需要登录，直接输入房间码就行。</p>';
     $('#modalFoot').innerHTML =
       '<button class="btn btn-ghost" type="button" data-act="close">取消</button>' +
       '<button class="btn btn-primary" type="button" data-act="do-login">登录</button>';
     $('#modalBackdrop').hidden = false;
     document.body.style.overflow = 'hidden';
+    tsToken = ''; tsState = 'idle';
+    mountTs();
     var u = $('#lUser'); if (u) u.focus();
   }
   function closeModal() {
@@ -140,7 +223,8 @@
     var un = String(($('#lUser') || {}).value || '').trim();
     var pw = String(($('#lPw') || {}).value || '');
     if (!un || !pw) { toast('请输入账号和密码', 'error'); return; }
-    api('/api/auth/login', { username: un, password: pw }).then(function (res) {
+    if (!tsOk()) { toast('请先完成人机验证（可点「重新验证」重试）', 'error'); return; }
+    api('/api/auth/login', { username: un, password: pw, turnstile: tsToken }).then(function (res) {
       if (res.ok && res.json.ok) {
         setSession(res.json.session);
         me = res.json.user;
@@ -620,6 +704,7 @@
     else if (act === 'do-login') doLogin();
     else if (act === 'confirm-ok') { var fn = pendingConfirm; pendingConfirm = null; closeModal(); if (fn) fn(); }
     else if (act === 'close') closeModal();
+    else if (act === 'ts-retry') { var s = $('#tsSlot'); if (s) { s.innerHTML = ''; delete s.dataset.tsId; } mountTs(); }
     else if (act === 'code') {
       var t = el.getAttribute('data-ticket'), c = String(($('#lCode') || {}).value || '').trim();
       if (!c) { toast('请输入动态码或恢复码', 'error'); return; }
