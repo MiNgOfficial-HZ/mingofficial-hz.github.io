@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>阿瓦隆 · 规则与人物 · MiNgHZ</title>
+  <meta name="description" content="阿瓦隆（The Resistance: Avalon）中文规则、人物卡片与在线开局：梅林、派西维尔、忠臣、刺客、莫甘娜、莫德雷德、奥伯伦、爪牙、湖中仙女。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+  <meta property="og:title" content="阿瓦隆 · 规则与人物 · MiNgHZ" />
+  <meta property="og:description" content="5~10 人的嘴炮王：规则、人物、在线开局。" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="/assets/logo.jpg" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="/css/style.css?v=20260921m" />
+  <link rel="stylesheet" href="/avalon/avalon.css?v=1" />
+</head>
+<body data-view="avalon">
+  <span id="pageTop" aria-hidden="true"></span>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="/#home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
+        <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="/#home" class="nav-link">首页</a>
+        <a href="/#space" class="nav-link">MiNg的个人空间</a>
+        <a href="/#friends" class="nav-link">MiNg和他的朋友们</a>
+        <a href="/about/" class="nav-link">关于</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-primary btn-small" href="/avalon/play/">🎲 开一局</a>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="av-main" id="top">
+    <section class="av-head">
+      <div class="container">
+        <p class="av-crumbs"><a href="/#home">首页</a> › <a href="/#friends">MiNg 和他的朋友们</a> › <b>阿瓦隆</b></p>
+        <h1 class="av-title">阿瓦隆 <em>AVALON</em></h1>
+        <p class="av-lead">
+          5~10 个人围一圈，靠嘴、靠投票、靠一点点演技。好人要在亚瑟王的忠臣里揪出莫德雷德的爪牙，
+          坏人要在最后关头指认梅林翻盘。<br />
+          这一页把规则讲清楚、把每个角色「知道什么 / 不知道什么 / 该怎么玩」写成卡片 —— 点开卡片就是人物详情，
+          手机上还能直接开一局、自动发身份。
+        </p>
+        <div class="av-facts">
+          <span class="av-pill">👥 5 – 10 人</span>
+          <span class="av-pill">⏱ 一局 20 – 40 分钟</span>
+          <span class="av-pill">🏆 先拿 3 次任务者领先</span>
+          <span class="av-pill">🗣 没有淘汰，全程都在说话</span>
+        </div>
+        <div class="av-head-actions">
+          <a class="btn btn-primary" href="/avalon/play/">🎲 在线开局（站长当上帝）</a>
+          <a class="btn btn-soft" href="#roles">👤 先看人物</a>
+        </div>
+      </div>
+    </section>
+
+    <nav class="av-tabs" id="avTabs" aria-label="阿瓦隆页内导航">
+      <div class="container av-tabs-inner">
+        <a class="av-tab on" href="#howto">🎯 怎么玩</a>
+        <a class="av-tab" href="#roles">👤 人物</a>
+        <a class="av-tab" href="#setup">👥 人数配置</a>
+        <a class="av-tab" href="#terms">📖 术语</a>
+        <a class="av-tab" href="#faq">❓ 常见问题</a>
+        <a class="av-tab" href="#online">📱 在线开局</a>
+      </div>
+    </nav>
+
+    <!-- ========== 怎么玩 ========== -->
+    <section class="av-band" id="howto">
+      <div class="container">
+        <p class="av-eyebrow">RULES · 玩法</p>
+        <h2 class="av-h2">一局是这样走完的</h2>
+        <p class="av-sub">先说结论：<b>好人完成 3 次任务就赢</b>（但还得躲过刺客的最后一击）；<b>坏人破坏 3 次任务就赢</b>，或者靠最后指认梅林翻盘。</p>
+        <div class="av-flow" id="avFlow"></div>
+        <div class="tip-box" style="margin-top:18px">
+          <b>胜负条件速记</b>：好人赢 = 3 次任务成功 + 刺客指认失败（或坏人从未拿到 3 分）；坏人赢 = 3 次任务失败，
+          或同一轮里连续 5 次组队被否决，或终局指认对了梅林。
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 人物 ========== -->
+    <section class="av-band av-band-alt" id="roles">
+      <div class="container">
+        <p class="av-eyebrow">CHARACTERS · 人物</p>
+        <h2 class="av-h2">九个角色，三种立场</h2>
+        <p class="av-sub">点开任意一张卡片，进去看这个角色<b>知道什么、不知道什么</b>，以及他被提倡的几个玩法。</p>
+        <div class="av-roles" id="avRoles"></div>
+        <noscript>
+          <p class="av-hint" style="margin-top:16px">
+            你的浏览器关闭了 JavaScript。人物详情仍可直接访问：
+            <a href="/avalon/roles/merlin/">梅林</a>、<a href="/avalon/roles/percival/">派西维尔</a>、
+            <a href="/avalon/roles/loyal/">忠臣</a>、<a href="/avalon/roles/assassin/">刺客</a>、
+            <a href="/avalon/roles/morgana/">莫甘娜</a>、<a href="/avalon/roles/mordred/">莫德雷德</a>、
+            <a href="/avalon/roles/oberon/">奥伯伦</a>、<a href="/avalon/roles/minion/">爪牙</a>、
+            <a href="/avalon/roles/lady/">湖中仙女</a>。
+          </p>
+        </noscript>
+      </div>
+    </section>
+
+    <!-- ========== 人数配置 ========== -->
+    <section class="av-band" id="setup">
+      <div class="container">
+        <p class="av-eyebrow">SETUP · 配置</p>
+        <h2 class="av-h2">多少人局，谁是坏人，任务要派几个人</h2>
+        <p class="av-sub">下面用的是阿瓦隆基础版的推荐配置 —— 在线开局会按人数自动套用同一张表。</p>
+        <div class="av-table-wrap">
+          <table class="av-table" id="avTable">
+            <thead>
+              <tr>
+                <th>人数</th><th>好人</th><th>坏人</th>
+                <th>任务 1</th><th>任务 2</th><th>任务 3</th><th>任务 4</th><th>任务 5</th><th>这一局的角色</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="av-hint av-table-note">
+          第 4 个任务在 7 人及以上时需要 2 张失败票才算失败（表里已按这条规则标出）。
+          湖中仙女是一件可选的信物，不占座位，通常 7 人以上、或想加强好人信息量时加入。
+        </p>
+      </div>
+    </section>
+
+    <!-- ========== 术语 ========== -->
+    <section class="av-band av-band-alt" id="terms">
+      <div class="container">
+        <p class="av-eyebrow">GLOSSARY · 桌面黑话</p>
+        <h2 class="av-h2">听懂这几句，就能上桌</h2>
+        <div class="av-terms" id="avTerms"></div>
+      </div>
+    </section>
+
+    <!-- ========== FAQ ========== -->
+    <section class="av-band" id="faq">
+      <div class="container">
+        <p class="av-eyebrow">FAQ · 常见问题</p>
+        <h2 class="av-h2">新手最常问的八个问题</h2>
+        <div class="av-faq" id="avFaq"></div>
+      </div>
+    </section>
+
+    <!-- ========== 在线开局 ========== -->
+    <section class="av-band av-band-alt" id="online">
+      <div class="container">
+        <p class="av-eyebrow">PLAY ONLINE · 在线开局</p>
+        <h2 class="av-h2">不用买牌，手机就能开一局</h2>
+        <p class="av-sub">
+          站长（上帝）建房 → 朋友输入房间码入场（<b>不用注册账号</b>）→ 坐满后一键发身份 →
+          每个人的手机屏幕上显示自己的身份牌、自己能看见谁、看不见谁。
+        </p>
+        <div class="av-launch">
+          <div class="av-launch-card">
+            <h3>📱 在线开局怎么用</h3>
+            <ol>
+              <li><b>站长</b>打开开局页、登录站长账号，选人数（5~10 人）后建房；</li>
+              <li>把屏幕上的<b>房间码 / 二维码</b>给身边的朋友；</li>
+              <li>朋友用手机打开同一页、输入房间码和昵称就能<span style="color:var(--ink)">入座</span>；</li>
+              <li>坐满后站长点「开始发牌」—— 身份<b>只在服务端洗</b>，每个人的手机上只会显示他自己的那份；</li>
+              <li>查看身份需要<b>按住屏幕</b>，松手即遮挡，防止旁边的狼看到；</li>
+              <li>上帝面板能推进流程、记录任务成败、最后公开全部身份复盘。</li>
+            </ol>
+            <div class="av-head-actions">
+              <a class="btn btn-primary" href="/avalon/play/">进入开局页 →</a>
+            </div>
+          </div>
+          <div class="av-launch-card">
+            <h3>🧭 为什么不用线上房间也能玩</h3>
+            <p class="g-card-sub" style="margin-top:10px">
+              这个工具只负责两件事：<b>发身份</b> 和 <b>记分</b>。
+              说话、投票、使眼色、拍桌子，还是在线下面对面完成 —— 手机上不会替你们说话。
+            </p>
+            <p class="g-card-sub">
+              房间里不要求玩家注册账号：进门只需要一个昵称。
+              房主是本站站长，房间状态存在他的账号下，24 小时后自动过期回收。
+            </p>
+            <div class="g-good" style="margin-top:14px">
+              小提示：8 个人围一桌，屏幕上只会显示你自己的身份 —— 想看，按住；松手，就盖回牌背。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
+      <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav"><a href="/#friends">← 回到 MiNg 和他的朋友们</a></p>
+      <p class="footer-hint">规则参考《The Resistance: Avalon》基础版；本站为个人学习整理，与发行商无关。</p>
+    </div>
+  </footer>
+
+  <script src="/avalon/avalon-data.js?v=1" defer></script>
+  <script src="/avalon/avalon.js?v=1" defer></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>奥伯伦 Oberon · 阿瓦隆人物 · MiNgHZ</title>
+  <meta name="description" content="阿瓦隆 · 奥伯伦：坏人阵营的孤狼 —— 看不见同伴，同伴也看不见你。怎么用任务结果给同伴发信号。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+  <link rel="icon" href="/assets/logo.jpg" />
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="/css/style.css?v=20260921m" />
+  <link rel="stylesheet" href="/avalon/avalon.css?v=1" />
+</head>
+<body data-view="avalon" data-role="oberon">
+  <span id="pageTop" aria-hidden="true"></span>
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="/#home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
+        <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="/avalon/" class="nav-link">阿瓦隆</a>
+        <a href="/avalon/#roles" class="nav-link">全部人物</a>
+        <a href="/avalon/play/" class="nav-link">在线开局</a>
+        <a href="/#friends" class="nav-link">朋友们</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-primary btn-small" href="/avalon/play/">🎲 开一局</a>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+  <main class="av-main" id="top"><div id="roleApp"></div></main>
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
+      <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav"><a href="/avalon/">← 阿瓦隆：规则与人物</a></p>
+    </div>
+  </footer>
+  <script src="/avalon/avalon-data.js?v=1" defer></script>
+  <script src="/avalon/roles/role.js?v=1" defer></script>
+</body>
+</html>

@@ -2821,7 +2821,7 @@
       });
     });
   }, { rootMargin: '-40% 0px -52% 0px' }) : null;
-  ['moments', 'study', 'guest', 'account', 'travel', 'tech', 'devices'].forEach(function (sec) {
+  ['moments', 'study', 'guest', 'avalon', 'account', 'travel', 'tech', 'devices'].forEach(function (sec) {
     var el = document.getElementById(sec);
     if (el && spyIO) spyIO.observe(el);
   });
