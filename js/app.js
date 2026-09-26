@@ -59,7 +59,7 @@
     mySession = s || '';
     try { if (s) localStorage.setItem(USER_LS, s); else localStorage.removeItem(USER_LS); } catch (e) {}
   }
-  var PERM_MAP = { moment: 'say', travel: 'travel', tech: 'tech', study: 'study', friend: 'friends', msg: 'msg', device: 'device' };
+  var PERM_MAP = { moment: 'say', travel: 'travel', tech: 'tech', study: 'study', trip: 'trips', friend: 'friends', msg: 'msg', device: 'device' };
   function isOwnerUser() { return !!myUser && myUser.role === 'owner'; }
   function isAdminUser() { return !!myUser && myUser.role === 'admin'; }
   function memberCan(key) { return !!myUser && myUser.role === 'member' && !!S.perms.member[key]; }
@@ -73,6 +73,7 @@
     if (myUser.role === 'admin') return !!S.perms.admin[PERM_MAP[kindRaw]];
     if (kindRaw === 'moment') return memberCan('canPost') || memberCan('canEdit');
     if (kindRaw === 'study') return memberCan('canGuide') || memberCan('canEdit');
+    if (kindRaw === 'trip') return memberCan('canTrip') || memberCan('canEdit');
     if (kindRaw === 'msg') return memberCan('canMsg');
     return memberCan('canEdit');
   }
@@ -84,7 +85,7 @@
     if (kindRaw === 'travel' || kindRaw === 'tech' || kindRaw === 'device') return false;
     if (isAdminUser()) return !!S.perms.admin[PERM_MAP[kindRaw]];
     var mine = !!(item && item.authorId && myUser && item.authorId === myUser.id);
-    if (kindRaw === 'moment' || kindRaw === 'study') return mine || !!S.perms.member.canEdit;
+    if (kindRaw === 'moment' || kindRaw === 'study' || kindRaw === 'trip') return mine || !!S.perms.member.canEdit;
     return !!S.perms.member.canEdit;
   }
   function canPostMoment() { return permFor('moment'); }
@@ -639,17 +640,18 @@
           return '<div class="perm-group">' + title + '</div>' + rows2;
         };
         permBlock = '<div class="perm-block"><h4>🎛 权限管理（滑块即开关）</h4>' +
-          pg('管理员 · 可管理板块', [['admin.say', '说说'], ['admin.travel', '游记'], ['admin.tech', '数码'], ['admin.device', '设备'], ['admin.study', '指南'], ['admin.friends', '友链'], ['admin.msg', '留言']]) +
+          pg('管理员 · 可管理板块', [['admin.say', '说说'], ['admin.travel', '游记'], ['admin.tech', '数码'], ['admin.device', '设备'], ['admin.study', '指南'], ['admin.trips', '旅行攻略'], ['admin.friends', '友链'], ['admin.msg', '留言']]) +
           pg('朋友账号（成员）· 说白了就是「能做什么」', [
             ['member.canMsg', '发留言'],
             ['member.canPost', '在说说墙发帖'],
             ['member.canComment', '跟帖（默认开）'],
             ['member.canGuide', '写指南（含自己的图片）'],
+            ['member.canTrip', '写旅行攻略（含自己的图片，默认开）'],
             ['member.canEdit', '编辑全部内容（高级：能改所有人的内容）']
           ]) +
           pg('游客（未登录）', [['guest.canMsg', '允许留言']]) +
           '<button class="btn btn-soft btn-small" type="button" data-action="perms-save" style="margin-top:12px">保存权限</button>' +
-          '<p class="panel-tip">默认：管理员可管理内容板块；朋友账号可留言 + 跟帖，发帖 / 写指南需要在这里打开；朋友只能改自己发的内容。游客仅可浏览。</p></div>';
+          '<p class="panel-tip">默认：管理员可管理内容板块；朋友账号可留言 + 跟帖 + 写旅行攻略（共创），发帖 / 写指南需要在这里打开；朋友只能改自己发的内容。游客仅可浏览。</p></div>';
       }
       $('#modalBody').innerHTML = (rows || '<p class="confirm-text">还没有任何账号</p>') + permBlock +
         '<p class="panel-tip">账号密码请私下发给访客；「设为管理」授予管理员角色；两步验证开启后需动态码登录，忘记设备时可用「重置两步验证」兜底。</p>';
@@ -755,9 +757,9 @@
   }
 
   /* ---------- 数据 ---------- */
-  var S = { moments: [], travels: [], tech: [], studies: [], devices: [], friends: [], messages: [],
-    perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true, device: true },
-      member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false }, guest: { canMsg: false } } };
+  var S = { moments: [], travels: [], tech: [], studies: [], trips: [], devices: [], friends: [], messages: [],
+    perms: { admin: { say: true, travel: true, tech: true, study: true, trips: true, friends: true, msg: true, device: true },
+      member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false, canTrip: true }, guest: { canMsg: false } } };
   var cloudOk = false;
   var pendingOp = null;
   var openComments = {};   /* 哪些说说展开了跟帖区（按 id 记，重渲染后不丢） */
@@ -770,6 +772,7 @@
       travels: [],
       tech: [],
       studies: [],
+      trips: [],
       devices: [],
       friends: [],
       messages: []
@@ -777,9 +780,9 @@
   }
 
   function normalize(data) {
-    var out = { moments: [], travels: [], tech: [], studies: [], devices: [], friends: [], messages: [],
-      perms: { admin: { say: true, travel: true, tech: true, study: true, friends: true, msg: true, device: true },
-        member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false }, guest: { canMsg: false } } };
+    var out = { moments: [], travels: [], tech: [], studies: [], trips: [], devices: [], friends: [], messages: [],
+      perms: { admin: { say: true, travel: true, tech: true, study: true, trips: true, friends: true, msg: true, device: true },
+        member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false, canTrip: true }, guest: { canMsg: false } } };
     Object.keys(out).forEach(function (k) {
       if (k === 'perms') return;
       if (data && Array.isArray(data[k])) out[k] = data[k];
@@ -943,6 +946,7 @@
       ['📷', S.tech.length, '件数码'],
       ['🎧', S.devices.length, '件设备'],
       ['📚', S.studies.length, '篇指南'],
+      ['🧭', S.trips.length, '篇攻略'],
       ['🔗', S.friends.length, '位友人']
     ];
     $('#heroStats').innerHTML = chips.map(function (c) {
@@ -1301,6 +1305,45 @@
     }).join('');
   }
 
+  /* ---------- 旅行攻略（朋友们共创，可配图） ---------- */
+  var TRIP_EMOJI = { '城市漫游': '🏙️', '自然风光': '🏔️', '海岛': '🏝️', '美食': '🍜', '自驾': '🚗', '露营': '⛺', '境外': '✈️', '其他': '🧭' };
+
+  function renderTrips() {
+    var grid = $('#tripGrid');
+    if (!grid) return;
+    if (!S.trips.length) {
+      grid.innerHTML = emptyHTML('还没有旅行攻略 —— 去过的城市、踩过的坑、舍不得分享的那家小店，都可以写在这里 🧭');
+      return;
+    }
+    grid.innerHTML = sortDesc(S.trips, 'date').map(function (t, i) {
+      var coverImg = (t.imgs && t.imgs[0]) ? '<img src="' + esc(mediaUrl(t.imgs[0])) + '" alt="' + esc(t.title) + '" loading="lazy" decoding="async" />' : '';
+      var emoji = coverImg ? '' : '<span class="t-emoji">' + esc(TRIP_EMOJI[t.category] || '🧭') + '</span>';
+      var facts = '';
+      if (t.days) facts += '<span class="tag">📅 ' + esc(t.days) + '</span>';
+      if (t.budget) facts += '<span class="tag">💰 ' + esc(t.budget) + '</span>';
+      var acts = canManage('trip', t)
+        ? '<div class="t-actions">' +
+            '<button class="act-btn" type="button" data-action="edit-trip" data-id="' + t.id + '" aria-label="编辑">✎</button>' +
+            '<button class="act-btn danger" type="button" data-action="del-trip" data-id="' + t.id + '" aria-label="删除">✕</button>' +
+          '</div>'
+        : '';
+      return '<article class="trip-card card reveal" style="--rd:' + Math.min(i * 70, 350) + 'ms" data-id="' + t.id + '">' +
+        '<div class="trip-cover">' + coverImg + emoji +
+          '<span class="t-loc">📍 ' + esc(t.location || '在路上') + '</span>' +
+          (t.date ? '<span class="t-date">' + esc(t.date) + '</span>' : '') +
+          acts +
+        '</div>' +
+        '<div class="t-body">' +
+          (t.category || facts ? '<div class="t-tags">' + (t.category ? '<span class="tag">' + esc(t.category) + '</span>' : '') + facts + '</div>' : '') +
+          '<h3 class="t-title">' + esc(t.title) + '</h3>' +
+          '<p class="t-summary">' + esc(t.text) + '</p>' +
+          '<div class="author-chip">' + avatarHTML(t, 22, 'av-xs') + ' ✍️ 编写：<b>' + esc(authorsOf(t).map(function (a) { return a.nick; }).join('、')) + '</b>' + (t.time ? '<span class="m-time"> · ' + esc(t.time) + '</span>' : '') + '</div>' +
+          (t.content ? '<button class="read-more" type="button" data-action="read-item" data-kind="trip" data-id="' + t.id + '">阅读全文 →</button>' : '') +
+        '</div>' +
+      '</article>';
+    }).join('');
+  }
+
   function renderFriends() {
     var list = $('#friendList');
     $('#friendCount').textContent = S.friends.length + ' 个';
@@ -1351,6 +1394,7 @@
     renderTech();
     renderDevices();
     renderStudies();
+    renderTrips();
     renderFriends();
     renderMessages();
     applyGuestGate();
@@ -1361,8 +1405,8 @@
   /* ============================================================
      权限 → 界面：按钮显示 / 发帖框 / 账号面板
      ============================================================ */
-  var ADD_PERM = { 'add-moment': 'moment', 'add-travel': 'travel', 'add-tech': 'tech', 'add-device': 'device', 'add-study': 'study', 'add-friend': 'friend' };
-  var QA_PERM = { 'qa-moment': 'moment', 'qa-study': 'study', 'qa-travel': 'travel', 'qa-tech': 'tech', 'qa-device': 'device', 'qa-friend': 'friend' };
+  var ADD_PERM = { 'add-moment': 'moment', 'add-travel': 'travel', 'add-tech': 'tech', 'add-device': 'device', 'add-study': 'study', 'add-trip': 'trip', 'add-friend': 'friend' };
+  var QA_PERM = { 'qa-moment': 'moment', 'qa-study': 'study', 'qa-trip': 'trip', 'qa-travel': 'travel', 'qa-tech': 'tech', 'qa-device': 'device', 'qa-friend': 'friend' };
 
   function syncPermUI() {
     Object.keys(ADD_PERM).forEach(function (act) {
@@ -1398,10 +1442,11 @@
     if (canCommentMoment()) mine.push('跟帖');
     if (canPostMoment()) mine.push('发说说');
     if (permFor('study')) mine.push('写指南');
+    if (permFor('trip')) mine.push('写旅行攻略');
     if (S.perms.member.canEdit) mine.push('编辑全部内容');
     return '你是朋友账号，当前可以：' + (mine.length ? mine.join('、') : '浏览');
   }
-  var ADMIN_PERM_LABEL = { say: '说说', travel: '游记', tech: '数码', device: '设备', study: '指南', friends: '友链', msg: '留言' };
+  var ADMIN_PERM_LABEL = { say: '说说', travel: '游记', tech: '数码', device: '设备', study: '指南', trips: '旅行攻略', friends: '友链', msg: '留言' };
 
   /* 说说墙发帖框：没登录提示登录，没权限说明原因，有权限直接写 */
   function renderComposer() {
@@ -1507,7 +1552,7 @@
   };
   /* 朋友们：说说墙 / 指南 / 友链留言；个人空间：账号 / 游记 / 数码 / 设备 */
   var SECTION_VIEW = {
-    moments: 'friends', study: 'friends', guest: 'friends',
+    moments: 'friends', study: 'friends', trips: 'friends', guest: 'friends', games: 'friends',
     account: 'space', travel: 'space', tech: 'space', devices: 'space', photo: 'space'
   };
   var currentView = '';
@@ -1933,7 +1978,7 @@
     else { px.hidden = true; tx.hidden = false; }
   }
 
-  var READER_KINDS = { travel: 'travels', tech: 'tech', study: 'studies' };
+  var READER_KINDS = { travel: 'travels', tech: 'tech', study: 'studies', trip: 'trips' };
   function openReader(kind, id) {
     var arr = S[READER_KINDS[kind]] || [];
     var item = null;
@@ -1941,7 +1986,10 @@
     if (!item) return;
     var meta = '';
     if (kind === 'travel') meta = esc(item.location || '') + (item.date ? ' · ' + esc(item.date) : '');
-    else meta = esc(item.category || '') + (item.date ? ' · ' + esc(item.date) : '') + ' · ✍️ 编写：' + esc(authorsOf(item).map(function (a) { return a.nick; }).join('、'));
+    else if (kind === 'trip') {
+      meta = esc(item.location || '') + (item.days ? ' · ' + esc(item.days) : '') + (item.budget ? ' · 💰 ' + esc(item.budget) : '') +
+        (item.date ? ' · ' + esc(item.date) : '') + ' · ✍️ 编写：' + esc(authorsOf(item).map(function (a) { return a.nick; }).join('、'));
+    } else meta = esc(item.category || '') + (item.date ? ' · ' + esc(item.date) : '') + ' · ✍️ 编写：' + esc(authorsOf(item).map(function (a) { return a.nick; }).join('、'));
     $('#readerMeta').textContent = meta;
     $('#readerTitle').textContent = item.title || '';
     var body = $('#readerBody');
@@ -2400,6 +2448,55 @@
     wireImgPicker();
   }
 
+  /* 旅行攻略编辑：朋友们都能写，能配图，署名由服务端盖章 */
+  function openTripModal(item) {
+    imgFolder = 'trip';
+    pendingModalImgs = item && Array.isArray(item.imgs) ? item.imgs.slice() : [];
+    uploadItems = [];
+    var owner = isOwnerUser();
+    var initIds = owner
+      ? ((item && Array.isArray(item.authors) && item.authors.length)
+          ? item.authors.map(function (a) { return a.id; })
+          : (item && item.authorId ? [item.authorId] : [myUser ? myUser.id : '']))
+      : [];
+    var fields = [
+      { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：大理三天两晚，环海西路才是精华', value: item ? item.title : '' },
+      { key: 'location', label: '目的地', required: true, max: 40, placeholder: '如：云南 · 大理', value: item ? item.location : '' },
+      { key: 'category', label: '类型', type: 'select', options: ['城市漫游', '自然风光', '海岛', '美食', '自驾', '露营', '境外', '其他'], value: item ? item.category : '城市漫游' },
+      { key: 'days', label: '建议天数（选填）', max: 20, placeholder: '如：3 天 2 晚 / 周末两天', value: item ? (item.days || '') : '' },
+      { key: 'budget', label: '人均花费（选填）', max: 20, placeholder: '如：人均 1500（含住宿）', value: item ? (item.budget || '') : '' },
+      { key: 'date', label: '去的月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
+      { key: 'text', label: '一句话推荐', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '值不值得去？适合谁去？', value: item ? (item.text || '') : '' },
+      { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 怎么去\n\n**交通 / 住宿 / 吃什么 / 踩过的坑**……', value: item ? (item.content || '') : '' }
+    ];
+    if (owner) fields.push({ key: '_authors', label: '编写人（可以选好几个）', type: 'authors', hint: '从已有账号里挑；不选就署你自己。' });
+    fields.push({ key: '_imgs', label: '图片（最多 6 张）', type: 'imgs' });
+    openModal({
+      title: item ? '编辑旅行攻略' : '写一篇旅行攻略',
+      submitText: item ? '保存修改' : '发布攻略 🧭',
+      fields: fields,
+      onSubmit: function (v) {
+        if (uploadsBusy()) return false;
+        var authors = modalAuthorsPayload();
+        var data = {
+          title: v.title.trim(), location: v.location.trim(), category: v.category,
+          days: String(v.days || '').trim(), budget: String(v.budget || '').trim(),
+          date: v.date, text: v.text.trim(), content: v.content || '',
+          imgs: pendingModalImgs.slice(0, 6)
+        };
+        if (authors) data.authors = authors;
+        if (item) {
+          adminMutate('trip.edit', Object.assign({ id: item.id }, data), '攻略已更新 🧭');
+        } else {
+          adminMutate('trip.add', Object.assign({ id: uid(), author: myUser ? myUser.nick : '', time: nowStamp() }, data), '攻略已发布 🧭');
+        }
+        return true;
+      }
+    });
+    if (owner) modalAuthorsInit(initIds);
+    wireImgPicker();
+  }
+
   function openFriendModal(item) {
     openModal({
       title: item ? '编辑友链' : '添加友链',
@@ -2624,6 +2721,7 @@
       case 'qa-tech': $('#qaMenu').classList.remove('open'); goView('space'); openTechModal(null); break;
       case 'qa-device': $('#qaMenu').classList.remove('open'); goView('space'); openDeviceModal(null); break;
       case 'qa-study': $('#qaMenu').classList.remove('open'); goView('friends'); openStudyModal(null); break;
+      case 'qa-trip': $('#qaMenu').classList.remove('open'); goView('friends'); openTripModal(null); break;
       case 'qa-friend': $('#qaMenu').classList.remove('open'); goView('friends'); openFriendModal(null); break;
       case 'add-moment': openMomentModal(null); break;
       case 'edit-moment': openMomentModal(find('moments')); break;
@@ -2640,6 +2738,9 @@
       case 'add-study': openStudyModal(null); break;
       case 'edit-study': openStudyModal(find('studies')); break;
       case 'del-study': confirmDel('study', id, '指南'); break;
+      case 'add-trip': openTripModal(null); break;
+      case 'edit-trip': openTripModal(find('trips')); break;
+      case 'del-trip': confirmDel('trip', id, '攻略'); break;
       case 'add-friend': openFriendModal(null); break;
       case 'edit-friend': openFriendModal(find('friends')); break;
       case 'del-friend': confirmDel('friend', id, '友链'); break;
@@ -2827,7 +2928,7 @@
       });
     });
   }, { rootMargin: '-40% 0px -52% 0px' }) : null;
-  ['moments', 'study', 'guest', 'avalon', 'account', 'travel', 'tech', 'devices'].forEach(function (sec) {
+  ['moments', 'study', 'trips', 'guest', 'games', 'account', 'travel', 'tech', 'devices'].forEach(function (sec) {
     var el = document.getElementById(sec);
     if (el && spyIO) spyIO.observe(el);
   });
