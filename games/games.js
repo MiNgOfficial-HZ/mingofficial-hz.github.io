@@ -31,6 +31,17 @@
     if (link.sheet) on(); else { link.addEventListener('load', on); setTimeout(on, 3000); }
   }
 
+  /* 官方图万一没加载出来（被删/被墙），退回一个 emoji，别留一块破图 */
+  $$('.bg-plate img').forEach(function (img) {
+    var fallback = function () {
+      img.hidden = true;
+      var plate = img.closest('.bg-plate');
+      if (plate) plate.classList.add('no-art');
+    };
+    if (img.complete && img.naturalWidth === 0) fallback();
+    img.addEventListener('error', fallback);
+  });
+
   /* ---------- 帮我选一个 ---------- */
   var LINES = {
     avalon: [
