@@ -1,8 +1,11 @@
-/* 桌游页：只做主题 / 菜单 / 年份这几个小动作（页面内容是静态的） */
+/* 桌游页：主题 / 菜单 / 年份 + 「帮我选一个」小玩点 */
 (function () {
   'use strict';
   var THEME_KEY = 'minghz.theme';
   var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+  /* ---------- 主题 / 菜单 / 年份 ---------- */
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
     try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
@@ -27,4 +30,41 @@
     var on = function () { if (link.media !== 'all') link.media = 'all'; };
     if (link.sheet) on(); else { link.addEventListener('load', on); setTimeout(on, 3000); }
   }
+
+  /* ---------- 帮我选一个 ---------- */
+  var LINES = {
+    avalon: [
+      '就它了：阿瓦隆 —— 人还没来齐的时候，半小时一局刚刚好。',
+      '阿瓦隆 —— 先来一局热热嗓子，看看谁最会装好人。',
+      '阿瓦隆 —— 这次记得盯住那个话最少的人。'
+    ],
+    botc: [
+      '就它了：血染钟楼 —— 人多、时间够，就让说书人陪你们熬一晚。',
+      '血染钟楼 —— 今晚谁也别想早睡，记得死了也要接着说话。',
+      '血染钟楼 —— 反正中毒了也不会有人告诉你。'
+    ]
+  };
+  var last = '';
+  var btn = $('#bgPick');
+  var note = $('#bgPickNote');
+  if (btn) btn.addEventListener('click', function () {
+    var keys = Object.keys(LINES).filter(function (k) { return k !== last; });
+    var key = keys[Math.floor(Math.random() * keys.length)];
+    last = key;
+    $$('.bg-game').forEach(function (c) {
+      var on = c.id === 'game-' + key;
+      c.classList.toggle('picked', on);
+      if (on) {
+        c.classList.remove('pop');
+        void c.offsetWidth;              /* 重新触发动画 */
+        c.classList.add('pop');
+      } else {
+        c.classList.remove('pop');
+      }
+    });
+    var pool = LINES[key];
+    if (note) note.textContent = pool[Math.floor(Math.random() * pool.length)];
+    var card = $('#game-' + key);
+    if (card && card.getBoundingClientRect().top < 0) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 })();

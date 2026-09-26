@@ -19,7 +19,7 @@
   <!-- 字体非阻塞加载：先按 print 低优先级拉取，加载完由 js/app.js 切成 all；首屏直接用系统字体渲染 -->
   <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
-  <link rel="stylesheet" href="css/style.css?v=20260926b" />
+  <link rel="stylesheet" href="css/style.css?v=20260926c" />
 </head>
 <body data-view="home">
   <span id="pageTop" aria-hidden="true"></span>
@@ -70,7 +70,7 @@
 
           <div class="portal-user">
             <button id="userBtn" class="btn btn-primary" type="button">👤 登录 / 我的账户</button>
-            <span class="portal-user-hint">账号由站长发放；登录后可以发帖、跟帖、写指南，也能换自己的头像</span>
+            <span class="portal-user-hint">账号由站长发放；登录后可以发帖、跟帖、写指南、写旅行攻略，也能换自己的头像</span>
           </div>
 
           <p class="portal-split-label">进门请选一扇门 · TWO DOORS</p>
@@ -107,6 +107,7 @@
         <div class="container sub-nav-inner">
           <a href="#account" class="sub-link" id="accountNavLink" hidden>🛡️ 管理界面</a>
           <a href="#travel" class="sub-link">🧳 游记</a>
+          <a href="#footprint" class="sub-link">🗺 足迹</a>
           <a href="#tech" class="sub-link">📷 数码</a>
           <a href="#devices" class="sub-link">🎧 设备</a>
           <a href="#photo" class="sub-link">📷 摄影</a>
@@ -140,11 +141,35 @@
         </div>
       </section>
 
-      <!-- 03 数码生活 -->
-      <section class="section" id="tech">
+      <!-- 03 旅行足迹（中国地图：去过的省份点亮） -->
+      <section class="section" id="footprint">
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">02 · Tech &amp; Life</span>
+            <span class="eyebrow">02 · Footprints</span>
+            <div class="title-row">
+              <h2 class="section-title">旅行足迹</h2>
+              <button class="btn btn-small btn-soft" type="button" data-action="add-footprint" hidden>＋ 点亮一个省</button>
+            </div>
+            <p class="section-sub">去过的省级行政区会亮起来 —— 鼠标放上去（手机上点一下）就能看到那个省里去过的城市。</p>
+          </div>
+          <div class="fp-wrap">
+            <div class="fp-map">
+              <div id="footprintMap"></div>
+              <div class="fp-tip" id="fpTip" hidden></div>
+            </div>
+            <aside class="fp-side">
+              <div class="fp-count" id="fpCount"></div>
+              <div class="fp-list" id="fpList"></div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 数码生活 -->
+      <section class="section section-alt" id="tech">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">03 · Tech &amp; Life</span>
             <div class="title-row">
               <h2 class="section-title">Tech &amp; Life</h2>
               <button class="btn btn-small btn-soft" type="button" data-action="add-tech" hidden>＋ 添加体验</button>
@@ -155,11 +180,11 @@
         </div>
       </section>
 
-      <!-- 04 个人设备 -->
-      <section class="section section-alt" id="devices">
+      <!-- 05 个人设备 -->
+      <section class="section" id="devices">
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">03 · Personal Devices</span>
+            <span class="eyebrow">04 · Personal Devices</span>
             <div class="title-row">
               <h2 class="section-title">Personal Devices</h2>
               <button class="btn btn-small btn-soft" type="button" data-action="add-device" hidden>＋ 添加设备</button>
@@ -170,11 +195,11 @@
         </div>
       </section>
 
-      <!-- 05 摄影空间（点进去是独立的三级页面） -->
-      <section class="section" id="photo">
+      <!-- 06 摄影空间（点进去是独立的三级页面） -->
+      <section class="section section-alt" id="photo">
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">04 · Photography</span>
+            <span class="eyebrow">05 · Photography</span>
             <h2 class="section-title">摄影空间</h2>
             <p class="section-sub">作品名、拍摄地点与时间，都在单独的一页里。</p>
           </div>
@@ -194,7 +219,6 @@
         <div class="container">
           <p class="eyebrow">FRIENDS · 朋友们的客厅</p>
           <h1 class="space-title">MiNg 和他的朋友们</h1>
-          <p class="space-sub">说说墙谁都能发、能跟帖；指南是大家一起写的 —— 每条都标着署名与时间。</p>
         </div>
       </section>
 
@@ -202,6 +226,7 @@
         <div class="container sub-nav-inner">
           <a href="#moments" class="sub-link">💬 说说墙</a>
           <a href="#study" class="sub-link">📚 指南</a>
+          <a href="#trips" class="sub-link">🧭 旅行攻略</a>
           <a href="#guest" class="sub-link">🔗 友链 &amp; 留言</a>
           <a href="#games" class="sub-link">🎲 桌游</a>
         </div>
@@ -237,11 +262,26 @@
         </div>
       </section>
 
-      <!-- 03 友链 & 留言 -->
-      <section class="section" id="guest">
+      <!-- 03 旅行攻略（朋友们共创，可配图） -->
+      <section class="section" id="trips">
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">03 · Link &amp; Connect</span>
+            <span class="eyebrow">03 · Travel Guide</span>
+            <div class="title-row">
+              <h2 class="section-title">旅行攻略</h2>
+              <button class="btn btn-small btn-soft" type="button" data-action="add-trip" hidden>＋ 写一篇攻略</button>
+            </div>
+            <p class="section-sub">去哪、几天、花多少、踩过什么坑 —— 去过的人都来写一笔。登录后人人可写，也能配图。</p>
+          </div>
+          <div class="trip-grid" id="tripGrid"></div>
+        </div>
+      </section>
+
+      <!-- 03 友链 & 留言 -->
+      <section class="section section-alt" id="guest">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">04 · Link &amp; Connect</span>
             <div class="title-row">
               <h2 class="section-title">Link &amp; Connect</h2>
               <button class="btn btn-small btn-soft" type="button" data-action="add-friend" hidden>＋ 添加友链</button>
@@ -290,12 +330,12 @@
       </section>
 
       <!-- 04 桌游（点进去是独立的三级页面：收录阿瓦隆与血染钟楼） -->
-      <section class="section section-alt" id="games">
+      <section class="section" id="games">
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">04 · Board Games</span>
+            <span class="eyebrow">05 · Board Games</span>
             <h2 class="section-title">桌游</h2>
-            <p class="section-sub">长颈鹿的桌游桌，目前摆着两款靠嘴的游戏：<b>阿瓦隆</b>（5~10 人，半小时一局）和<b>血染钟楼</b>（5~15 人，说书人配板发牌）。两款都有完整规则、全部角色卡片，以及能当场开局的在线工具。</p>
+            <p class="section-sub">两款靠嘴的游戏：<b>阿瓦隆</b>、<b>血染钟楼</b>。规则、角色和在线开局都在里面。</p>
           </div>
           <a class="entry-card entry-card-photo reveal" href="/games/">
             <span class="entry-emoji">🎲</span>
@@ -325,11 +365,13 @@
     </div>
   </footer>
 
-  <button class="guest-hint" id="guestHint" type="button" data-action="guest-login" hidden>👤 登录后即可发帖 / 跟帖 / 写指南</button>
+  <button class="guest-hint" id="guestHint" type="button" data-action="guest-login" hidden>👤 登录后即可发帖 / 跟帖 / 写指南 / 写攻略</button>
   <div class="qa-menu" id="qaMenu" aria-label="快捷新建">
     <button type="button" data-action="qa-moment">💬 说说</button>
     <button type="button" data-action="qa-study">📚 指南</button>
+    <button type="button" data-action="qa-trip">🧭 攻略</button>
     <button type="button" data-action="qa-travel">🧳 游记</button>
+    <button type="button" data-action="qa-footprint">🗺 足迹</button>
     <button type="button" data-action="qa-tech">📷 数码</button>
     <button type="button" data-action="qa-device">🎧 设备</button>
     <button type="button" data-action="qa-friend">🔗 友链</button>
@@ -363,6 +405,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260926b" defer></script>
+  <script src="js/app.js?v=20260926c" defer></script>
 </body>
 </html>

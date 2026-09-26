@@ -69,7 +69,7 @@
     if (!myUser) return false;
     if (myUser.role === 'owner') return true;
     /* 个人空间（游记 / 数码 / 设备）是站长的私人地盘：管理员和普通用户只能看 */
-    if (kindRaw === 'travel' || kindRaw === 'tech' || kindRaw === 'device') return false;
+    if (kindRaw === 'travel' || kindRaw === 'footprint' || kindRaw === 'tech' || kindRaw === 'device') return false;
     if (myUser.role === 'admin') return !!S.perms.admin[PERM_MAP[kindRaw]];
     if (kindRaw === 'moment') return memberCan('canPost') || memberCan('canEdit');
     if (kindRaw === 'study') return memberCan('canGuide') || memberCan('canEdit');
@@ -82,7 +82,7 @@
   function canManage(kindRaw, item) {
     if (!myUser) return false;
     if (isOwnerUser()) return true;
-    if (kindRaw === 'travel' || kindRaw === 'tech' || kindRaw === 'device') return false;
+    if (kindRaw === 'travel' || kindRaw === 'footprint' || kindRaw === 'tech' || kindRaw === 'device') return false;
     if (isAdminUser()) return !!S.perms.admin[PERM_MAP[kindRaw]];
     var mine = !!(item && item.authorId && myUser && item.authorId === myUser.id);
     if (kindRaw === 'moment' || kindRaw === 'study' || kindRaw === 'trip') return mine || !!S.perms.member.canEdit;
@@ -757,7 +757,7 @@
   }
 
   /* ---------- 数据 ---------- */
-  var S = { moments: [], travels: [], tech: [], studies: [], trips: [], devices: [], friends: [], messages: [],
+  var S = { moments: [], travels: [], tech: [], studies: [], trips: [], footprints: [], devices: [], friends: [], messages: [],
     perms: { admin: { say: true, travel: true, tech: true, study: true, trips: true, friends: true, msg: true, device: true },
       member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false, canTrip: true }, guest: { canMsg: false } } };
   var cloudOk = false;
@@ -773,6 +773,7 @@
       tech: [],
       studies: [],
       trips: [],
+      footprints: [],
       devices: [],
       friends: [],
       messages: []
@@ -780,7 +781,7 @@
   }
 
   function normalize(data) {
-    var out = { moments: [], travels: [], tech: [], studies: [], trips: [], devices: [], friends: [], messages: [],
+    var out = { moments: [], travels: [], tech: [], studies: [], trips: [], footprints: [], devices: [], friends: [], messages: [],
       perms: { admin: { say: true, travel: true, tech: true, study: true, trips: true, friends: true, msg: true, device: true },
         member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false, canTrip: true }, guest: { canMsg: false } } };
     Object.keys(out).forEach(function (k) {
@@ -947,6 +948,7 @@
       ['🎧', S.devices.length, '件设备'],
       ['📚', S.studies.length, '篇指南'],
       ['🧭', S.trips.length, '篇攻略'],
+      ['🗺', S.footprints.length, '个省点亮'],
       ['🔗', S.friends.length, '位友人']
     ];
     $('#heroStats').innerHTML = chips.map(function (c) {
@@ -1235,6 +1237,136 @@
     }).join('');
   }
 
+  /* ============================================================
+     旅行足迹：中国地图（去过的省份点亮）
+     · 边界数据是 assets/china-map.js（懒加载，182KB，只在用到时才拉）
+     · 数据一条 = 一个省级行政区：{ province, cities[], note }
+     ============================================================ */
+  var chinaMapPromise = null;
+  var currentFootprint = '';     /* 列表里点中的省（地图上高亮） */
+  var pinnedFootprint = '';      /* 手机上点出来的气泡（再点一次收起） */
+
+  function ensureChinaMap(cb) {
+    if (window.CHINA_MAP) { cb(true); return; }
+    if (!chinaMapPromise) {
+      chinaMapPromise = new Promise(function (resolve) {
+        var s = document.createElement('script');
+        s.src = '/assets/china-map.js?v=1';
+        s.async = true;
+        s.onload = function () { resolve(!!window.CHINA_MAP); };
+        s.onerror = function () { resolve(false); };
+        document.head.appendChild(s);
+      });
+    }
+    chinaMapPromise.then(cb);
+  }
+
+  function footprintOf(name) {
+    for (var i = 0; i < S.footprints.length; i++) {
+      if (S.footprints[i].province === name) return S.footprints[i];
+    }
+    return null;
+  }
+
+  function renderFootprints() {
+    var box = $('#footprintMap');
+    if (!box) return;
+    var cityTotal = 0;
+    S.footprints.forEach(function (f) { cityTotal += (f.cities || []).length; });
+    var count = $('#fpCount');
+    if (count) {
+      count.innerHTML = S.footprints.length
+        ? '<b>' + S.footprints.length + '</b> / 34 个省级行政区已点亮 · 共 <b>' + cityTotal + '</b> 座城市' +
+          '<span class="fp-legend"><i class="fp-dot on"></i>去过<i class="fp-dot"></i>还没去</span>'
+        : '<span class="fp-muted">地图还是灰的 —— 去过的省份点亮一下就会亮起来 🗺</span>';
+    }
+    renderFootprintList();
+    ensureChinaMap(function (ok) {
+      if (!ok) { box.innerHTML = '<p class="fp-muted">地图数据没加载出来，刷新一下页面再试试。</p>'; return; }
+      var m = window.CHINA_MAP;
+      box.innerHTML = '<svg class="cn-map" viewBox="0 0 ' + m.w + ' ' + m.h + '" role="img" aria-label="中国地图 · 旅行足迹">' +
+        m.provinces.map(function (p) {
+          var on = !!footprintOf(p.name);
+          return '<path d="' + p.d + '" data-province="' + esc(p.name) + '" class="cn-prov' + (on ? ' on' : '') + '" tabindex="-1"></path>';
+        }).join('') + '</svg>';
+      bindFootprintMap();
+      highlightFootprint(currentFootprint);
+    });
+  }
+
+  function renderFootprintList() {
+    var list = $('#fpList');
+    if (!list) return;
+    if (!S.footprints.length) {
+      list.innerHTML = '<p class="fp-muted" style="padding:10px 4px">还没有点亮的省份。</p>';
+      return;
+    }
+    list.innerHTML = S.footprints.slice().sort(function (a, b) {
+      return (b.cities || []).length - (a.cities || []).length;
+    }).map(function (f) {
+      return '<div class="fp-row' + (currentFootprint === f.province ? ' on' : '') + '" data-action="focus-footprint" data-province="' + esc(f.province) + '">' +
+        '<div class="fp-rowhead"><b>' + esc(f.province) + '</b><span class="fp-n">' + (f.cities || []).length + ' 城</span>' +
+          actionsHTML('footprint', f) +
+        '</div>' +
+        '<div class="fp-cities">' + esc((f.cities || []).join(' · ')) + '</div>' +
+        (f.note ? '<div class="fp-note">' + esc(f.note) + '</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  function highlightFootprint(name) {
+    $$('.cn-prov').forEach(function (p) {
+      p.classList.toggle('hl', !!name && p.getAttribute('data-province') === name);
+    });
+  }
+
+  function hideFootprintTip() {
+    var tip = $('#fpTip');
+    if (tip) tip.hidden = true;
+  }
+
+  function showFootprintTip(name, x, y) {
+    var tip = $('#fpTip'), wrap = $('#footprintMap');
+    if (!tip || !wrap) return;
+    var f = footprintOf(name);
+    tip.innerHTML = '<div class="fp-tiphead"><b>' + esc(name) + '</b>' + (f ? '<span class="fp-on">已点亮</span>' : '') + '</div>' +
+      (f
+        ? '<div class="fp-tipcities">📍 ' + esc((f.cities || []).join(' · ') || '（这个省还没填城市）') + '</div>'
+        : '<div class="fp-tipnone">还没去过</div>') +
+      (f && f.note ? '<div class="fp-tipnone">' + esc(f.note) + '</div>' : '');
+    tip.hidden = false;
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var left = Math.max(6, Math.min(x + 14, w - tw - 6));
+    var top = Math.max(6, Math.min(y + 14, h - th - 6));
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  function bindFootprintMap() {
+    var svg = $('#footprintMap svg');
+    if (!svg || svg.getAttribute('data-bound')) return;
+    svg.setAttribute('data-bound', '1');
+    svg.addEventListener('mousemove', function (e) {
+      var el = e.target.closest ? e.target.closest('.cn-prov') : null;
+      if (!el) { hideFootprintTip(); return; }
+      var r = $('#footprintMap').getBoundingClientRect();
+      showFootprintTip(el.getAttribute('data-province'), e.clientX - r.left, e.clientY - r.top);
+    });
+    svg.addEventListener('mouseleave', function () { hideFootprintTip(); });
+    /* 手机：点一下省 → 钉住气泡；再点一下收起 */
+    svg.addEventListener('click', function (e) {
+      var el = e.target.closest ? e.target.closest('.cn-prov') : null;
+      if (!el) return;
+      var name = el.getAttribute('data-province');
+      if (pinnedFootprint === name) { pinnedFootprint = ''; hideFootprintTip(); return; }
+      pinnedFootprint = name;
+      var r = $('#footprintMap').getBoundingClientRect();
+      var bb = el.getBoundingClientRect();
+      showFootprintTip(name, bb.left - r.left + bb.width / 2, bb.top - r.top + bb.height / 2);
+    });
+  }
+
   function galleryHTML(imgs, title) {
     if (!imgs || !imgs.length) return '';
     var cover = '<button class="tg-cover" type="button" data-action="open-img" data-url="' + esc(mediaUrl(imgs[0])) + '"><img src="' + esc(mediaUrl(imgs[0])) + '" alt="' + esc(title) + '" loading="lazy" decoding="async" /></button>';
@@ -1368,6 +1500,16 @@
     if (!S.messages.length) { list.innerHTML = emptyHTML('还没有留言，来抢沙发吧 🛋️'); return; }
     list.innerHTML = sortDesc(S.messages, 'time').map(function (m) {
       var initial = Array.from(m.name || '友')[0] || '友';
+      /* 跟进状态：所有人都能看到「待跟进 / 已解决 + 解决时间」 */
+      var solved = !!m.solvedAt;
+      var statusChip = solved
+        ? '<span class="m-status done" title="' + esc(m.solvedBy ? '由 ' + m.solvedBy + ' 标记为已解决' : '已解决') + '">✅ 已解决 · ' + esc(m.solvedAt) + relSuffix(m.solvedAt) + '</span>'
+        : '<span class="m-status pending">⏳ 待跟进</span>';
+      var solveBtn = canManage('msg', m)
+        ? '<button class="act-btn' + (solved ? ' ok' : '') + '" type="button" data-action="solve-msg" data-id="' + m.id + '" data-solved="' + (solved ? '0' : '1') +
+          '" aria-label="' + (solved ? '撤销已解决' : '标记为已解决') + '" title="' + (solved ? '撤销「已解决」，回到待跟进' : '标记为「已解决」，并记下时间（所有人可见）') + '">' +
+          (solved ? '↩' : '✓') + '</button>'
+        : '';
       var ownerMail = '';
       if (isOwnerRole() && m.email) {
         var mailSubject = encodeURIComponent('回复：' + (m.name || '访客') + ' 在 MiNgHZ 的留言');
@@ -1378,7 +1520,9 @@
         avatarHTML({ nick: m.name, author: m.name, avatar: m.avatar }, 42, 'av-md') +
         '<div class="m-body">' +
           '<div class="m-head"><span class="m-name">' + esc(m.name) + '</span><time>' + esc(m.time) + '</time>' +
+          statusChip +
           ipTag(m) +
+          solveBtn +
           (canManage('msg', m) ? '<button class="act-btn danger" type="button" data-action="del-msg" data-id="' + m.id + '" aria-label="删除">✕</button>' : '') + '</div>' +
           ownerMail +
           '<p class="m-text">' + esc(m.text) + '</p>' +
@@ -1391,6 +1535,7 @@
     renderStats();
     renderMoments();
     renderTravels();
+    renderFootprints();
     renderTech();
     renderDevices();
     renderStudies();
@@ -1405,8 +1550,8 @@
   /* ============================================================
      权限 → 界面：按钮显示 / 发帖框 / 账号面板
      ============================================================ */
-  var ADD_PERM = { 'add-moment': 'moment', 'add-travel': 'travel', 'add-tech': 'tech', 'add-device': 'device', 'add-study': 'study', 'add-trip': 'trip', 'add-friend': 'friend' };
-  var QA_PERM = { 'qa-moment': 'moment', 'qa-study': 'study', 'qa-trip': 'trip', 'qa-travel': 'travel', 'qa-tech': 'tech', 'qa-device': 'device', 'qa-friend': 'friend' };
+  var ADD_PERM = { 'add-moment': 'moment', 'add-travel': 'travel', 'add-footprint': 'footprint', 'add-tech': 'tech', 'add-device': 'device', 'add-study': 'study', 'add-trip': 'trip', 'add-friend': 'friend' };
+  var QA_PERM = { 'qa-moment': 'moment', 'qa-study': 'study', 'qa-trip': 'trip', 'qa-travel': 'travel', 'qa-footprint': 'footprint', 'qa-tech': 'tech', 'qa-device': 'device', 'qa-friend': 'friend' };
 
   function syncPermUI() {
     Object.keys(ADD_PERM).forEach(function (act) {
@@ -1553,7 +1698,7 @@
   /* 朋友们：说说墙 / 指南 / 友链留言；个人空间：账号 / 游记 / 数码 / 设备 */
   var SECTION_VIEW = {
     moments: 'friends', study: 'friends', trips: 'friends', guest: 'friends', games: 'friends',
-    account: 'space', travel: 'space', tech: 'space', devices: 'space', photo: 'space'
+    account: 'space', travel: 'space', footprint: 'space', tech: 'space', devices: 'space', photo: 'space'
   };
   var currentView = '';
   var mountMsgTs = null;   /* 由留言表单那一段赋值：进入视图后再挂人机验证 */
@@ -2497,6 +2642,35 @@
     wireImgPicker();
   }
 
+  /* 旅行足迹编辑：只有站长能用（个人空间是站长的地盘） */
+  function openFootprintModal(item) {
+    ensureChinaMap(function () {
+      var all = window.CHINA_MAP ? window.CHINA_MAP.provinces.map(function (p) { return p.name; }) : [];
+      var used = {};
+      S.footprints.forEach(function (f) { if (!item || f.id !== item.id) used[f.province] = 1; });
+      var options = all.filter(function (n) { return !used[n]; });
+      if (item && options.indexOf(item.province) < 0) options.unshift(item.province);
+      if (!options.length) { toast('34 个省级行政区都点亮了，厉害 🎉', 'info'); return; }
+      openModal({
+        title: item ? '编辑足迹' : '点亮一个省',
+        submitText: item ? '保存修改' : '点亮它 🗺',
+        fields: [
+          { key: 'province', label: '省级行政区', type: 'select', options: options, value: item ? item.province : options[0], required: true },
+          { key: 'cities', label: '去过的城市', type: 'textarea', required: true, max: 300, rows: 3, placeholder: '杭州、宁波、绍兴（顿号 / 逗号 / 空格分开都行）', value: item ? (item.cities || []).join('、') : '' },
+          { key: 'note', label: '备注（选填）', max: 60, placeholder: '如：2023 年夏天自驾 / 还想再去', value: item ? (item.note || '') : '' }
+        ],
+        onSubmit: function (v) {
+          var cities = String(v.cities || '').split(/[、,，;；\/\s]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+          if (!cities.length) { toast('至少写一个去过的城市吧', 'error'); return false; }
+          var data = { province: v.province, cities: cities.slice(0, 40), note: String(v.note || '').trim() };
+          if (item) adminMutate('footprint.edit', Object.assign({ id: item.id }, data), '足迹已更新 🗺');
+          else adminMutate('footprint.add', Object.assign({ id: uid(), time: nowStamp() }, data), '已点亮 ' + v.province + ' 🗺');
+          return true;
+        }
+      });
+    });
+  }
+
   function openFriendModal(item) {
     openModal({
       title: item ? '编辑友链' : '添加友链',
@@ -2741,10 +2915,35 @@
       case 'add-trip': openTripModal(null); break;
       case 'edit-trip': openTripModal(find('trips')); break;
       case 'del-trip': confirmDel('trip', id, '攻略'); break;
+      case 'qa-footprint': $('#qaMenu').classList.remove('open'); goView('space'); openFootprintModal(null); break;
+      case 'add-footprint': openFootprintModal(null); break;
+      case 'edit-footprint': openFootprintModal(find('footprints')); break;
+      case 'del-footprint': confirmDel('footprint', id, '足迹'); break;
+      case 'focus-footprint': {
+        var prov = btn.getAttribute('data-province');
+        currentFootprint = (currentFootprint === prov) ? '' : prov;
+        highlightFootprint(currentFootprint);
+        renderFootprintList();
+        if (currentFootprint) {
+          var el = document.querySelector('.cn-prov[data-province="' + currentFootprint + '"]');
+          var wrap = $('#footprintMap');
+          if (el && wrap) {
+            var wr = wrap.getBoundingClientRect(), br = el.getBoundingClientRect();
+            showFootprintTip(currentFootprint, br.left - wr.left + br.width / 2, br.top - wr.top + br.height / 2);
+          }
+        } else hideFootprintTip();
+        break;
+      }
       case 'add-friend': openFriendModal(null); break;
       case 'edit-friend': openFriendModal(find('friends')); break;
       case 'del-friend': confirmDel('friend', id, '友链'); break;
       case 'del-msg': confirmDel('msg', id, '留言'); break;
+      case 'solve-msg': {
+        var wantSolved = btn.getAttribute('data-solved') === '1';
+        adminMutate('msg.solve', { id: id, solved: wantSolved },
+          wantSolved ? '已标记为「已解决」✅ 时间会显示给所有人' : '已撤销，回到「待跟进」');
+        break;
+      }
     }
   });
 
@@ -2928,7 +3127,7 @@
       });
     });
   }, { rootMargin: '-40% 0px -52% 0px' }) : null;
-  ['moments', 'study', 'trips', 'guest', 'games', 'account', 'travel', 'tech', 'devices'].forEach(function (sec) {
+  ['moments', 'study', 'trips', 'guest', 'games', 'account', 'travel', 'footprint', 'tech', 'devices'].forEach(function (sec) {
     var el = document.getElementById(sec);
     if (el && spyIO) spyIO.observe(el);
   });
