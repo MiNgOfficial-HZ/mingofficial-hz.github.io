@@ -51,7 +51,7 @@
   app.innerHTML =
     '<section class="role-head"><div class="container">' +
       '<p class="av-crumbs"><a href="/#home">首页</a> › <a href="/#friends">MiNg 和他的朋友们</a> › ' +
-      '<a href="/botc/">血染钟楼</a> › <b>' + esc(r.name) + '</b></p>' +
+      '<a href="/games/">桌游</a> › <a href="/botc/">血染钟楼</a> › <b>' + esc(r.name) + '</b></p>' +
       '<div class="role-hd">' +
         '<span class="role-ico">' + esc(r.icon) + '</span>' +
         '<div><div class="role-name">' + esc(r.name) + '</div>' +

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>桌游 · 阿瓦隆 &amp; 血染钟楼 · MiNgHZ</title>
+  <meta name="description" content="长颈鹿的桌游桌：阿瓦隆（5~10 人）与血染钟楼（5~15 人）的完整规则、全部角色卡片，以及两套可以当场开局的在线工具。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+  <meta property="og:title" content="桌游 · 阿瓦隆 &amp; 血染钟楼 · MiNgHZ" />
+  <meta property="og:description" content="规则、角色、在线开局都在这里 —— 选一个游戏坐下吧。" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="/assets/logo.jpg" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="/css/style.css?v=20260921m" />
+  <link rel="stylesheet" href="/games/games.css?v=1" />
+</head>
+<body data-view="games">
+  <span id="pageTop" aria-hidden="true"></span>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="/#home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
+        <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="/#home" class="nav-link">首页</a>
+        <a href="/#space" class="nav-link">MiNg的个人空间</a>
+        <a href="/#friends" class="nav-link">MiNg和他的朋友们</a>
+        <a href="/about/" class="nav-link">关于</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-soft btn-small" href="/avalon/play/">🎲 开一局</a>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="bg-main" id="top">
+    <section class="bg-head">
+      <div class="container">
+        <p class="bg-crumbs"><a href="/#home">首页</a> › <a href="/#friends">MiNg 和他的朋友们</a> › <b>桌游</b></p>
+        <h1 class="bg-title">桌游 <em>BOARD GAMES</em></h1>
+        <p class="bg-lead">
+          长颈鹿的桌游桌。这里目前摆着两款"靠嘴"的游戏：<b>阿瓦隆</b>和<b>血染钟楼</b>。
+          每一款都有完整规则、全部角色卡片，还有一套能当场开局的在线工具 ——
+          手机发身份、按住才显示，线下开局不用再买牌。
+        </p>
+        <div class="bg-facts">
+          <span class="bg-pill">🎲 2 款游戏</span>
+          <span class="bg-pill">🃏 31 个角色卡片</span>
+          <span class="bg-pill">📱 两套在线开局工具</span>
+          <span class="bg-pill">🙋 玩家都不用注册账号</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-band">
+      <div class="container">
+        <p class="bg-eyebrow">PICK A GAME · 选一个坐下</p>
+        <h2 class="bg-h2">两款游戏，两种玩法</h2>
+        <p class="bg-sub">简单的区别：<b>阿瓦隆比的是"谁说谎说得好"</b>，<b>血染钟楼比的是"谁的信息是真的"</b>。</p>
+
+        <div class="bg-grid">
+          <!-- 阿瓦隆 -->
+          <article class="bg-card avalon">
+            <div class="bg-card-top">
+              <span class="bg-card-ico">🎲</span>
+              <span>
+                <span class="bg-card-name">阿瓦隆</span>
+                <span class="bg-card-en">THE RESISTANCE: AVALON</span>
+              </span>
+            </div>
+            <div class="bg-facts">
+              <span class="bg-pill">👥 5 – 10 人</span>
+              <span class="bg-pill">⏱ 20 – 40 分钟</span>
+              <span class="bg-pill">🗣 没有淘汰</span>
+            </div>
+            <p class="bg-card-one">
+              好人连续完成 <b>3 次任务</b>就赢 —— 但最后一刻刺客还有一次指认梅林的机会；坏人则靠破坏 3 次任务，
+              或者靠那一次指认直接翻盘。
+            </p>
+            <ul class="bg-feats">
+              <li><b>9 个角色</b>：梅林、派西维尔、忠臣、刺客、莫甘娜、莫德雷德、奥伯伦、爪牙，外加可选的信物「湖中仙女」</li>
+              <li><b>人数配置表 + 任务人数</b>：5~10 人该怎么配、第 4 轮什么时候需要两张失败票，一页写清楚</li>
+              <li><b>在线开局</b>：站长当上帝建房，朋友输房间码入座，身份只在本人手机上显示</li>
+            </ul>
+            <div class="bg-actions">
+              <a class="btn btn-primary" href="/avalon/">📖 规则与人物 →</a>
+              <a class="btn btn-soft" href="/avalon/play/">🎲 在线开局 →</a>
+            </div>
+          </article>
+
+          <!-- 血染钟楼 -->
+          <article class="bg-card clocktower">
+            <div class="bg-card-top">
+              <span class="bg-card-ico">🎭</span>
+              <span>
+                <span class="bg-card-name">血染钟楼</span>
+                <span class="bg-card-en">BLOOD ON THE CLOCKTOWER</span>
+              </span>
+            </div>
+            <div class="bg-facts">
+              <span class="bg-pill">👥 5 – 15 人</span>
+              <span class="bg-pill">⏱ 30 – 90 分钟</span>
+              <span class="bg-pill">💀 死了还能说话</span>
+            </div>
+            <p class="bg-card-one">
+              说书人<b>先配板再发牌</b>：好人的目标只有一个 —— 找出恶魔。难的是中毒、醉酒、假阳性，
+              会让你连自己手里的信息都不敢相信。
+            </p>
+            <ul class="bg-feats">
+              <li><b>22 个角色</b>（暗流涌动）：13 镇民 / 4 外来者 / 4 爪牙 / 1 恶魔，每个都有官方能力 + 打法</li>
+              <li><b>配板表与夜晚顺序</b>：5~15 人各放几个阵营、男爵怎么 +2 外来者、首夜和之后每夜按什么顺序叫人</li>
+              <li><b>在线工具</b>：说书人配板 → 发牌 → 夜序向导 → 魔典标记 → 白天提名处决 → 胜负判定与复盘</li>
+            </ul>
+            <div class="bg-actions">
+              <a class="btn btn-primary" href="/botc/">📖 规则与角色 →</a>
+              <a class="btn btn-soft" href="/botc/play/">🧑‍⚖️ 在线工具 →</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-band bg-band-alt">
+      <div class="container">
+        <p class="bg-eyebrow">COMPARE · 有什么区别</p>
+        <h2 class="bg-h2">一张表看懂两个游戏</h2>
+        <div class="bg-table-wrap">
+          <table class="bg-table">
+            <thead>
+              <tr><th>对比</th><th class="av">🎲 阿瓦隆</th><th class="ct">🎭 血染钟楼</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>人数</td><td class="av">5 – 10 人</td><td class="ct">5 – 15 人</td></tr>
+              <tr><td>一局时长</td><td class="av">20 – 40 分钟</td><td class="ct">30 – 90 分钟</td></tr>
+              <tr><td>身份怎么来</td><td class="av">按人数套固定配置，随机发牌</td><td class="ct">说书人先配板，再洗牌发牌</td></tr>
+              <tr><td>上帝（说书人）</td><td class="av">可选（站长当上帝，也可以只发牌）</td><td class="ct">必需 —— 说书人就是这场戏的导演</td></tr>
+              <tr><td>死亡</td><td class="av">没有淘汰，所有人从头说话到尾</td><td class="ct">会死；但死人还能发言，还能投一张幽灵票</td></tr>
+              <tr><td>信息可信吗</td><td class="av">梅林看到的几乎都是真的（除了莫德雷德）</td><td class="ct">中毒 / 醉酒 / 假阳性 —— 你的信息可能就是假的</td></tr>
+              <tr><td>输赢怎么定</td><td class="av">3 次任务成功 + 躲过刺客指认</td><td class="ct">恶魔死亡（小心猩红女郎接任）/ 只剩两人 / 圣人被处决</td></tr>
+              <tr><td>本站的在线工具</td><td class="av">在线开局：房间码入场，上帝面板推进流程</td><td class="ct">在线工具：配板 + 夜序向导 + 魔典 + 提名处决</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-band">
+      <div class="container">
+        <p class="bg-eyebrow">WHICH ONE · 第一次玩选哪个</p>
+        <h2 class="bg-h2">不知道玩哪个？这样选</h2>
+        <div class="bg-pick">
+          <div class="bg-pick-card">
+            <h3>🎲 先玩阿瓦隆，如果你…</h3>
+            <ul>
+              <li>只想玩 <b>半小时</b>，人还没到齐；</li>
+              <li>喜欢<b>纯嘴炮</b>：没有技能信息，全靠观察和投票；</li>
+              <li>第一次接触这类游戏，想先学会"怎么装好人"；</li>
+              <li>不想有人提前出局 —— 阿瓦隆没有淘汰。</li>
+            </ul>
+          </div>
+          <div class="bg-pick-card">
+            <h3>🎭 先玩血染钟楼，如果你…</h3>
+            <ul>
+              <li>人多（<b>10 人以上</b>），而且有整晚的时间；</li>
+              <li>喜欢<b>推理链</b>：把每个人的信息拼成一张网；</li>
+              <li>愿意接受"死了也能继续说话"的节奏；</li>
+              <li>想要一位<b>说书人</b>替你们把规则和节奏全兜住。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
+      <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav"><a href="/#friends">← 回到 MiNg 和他的朋友们</a></p>
+      <p class="footer-hint">页面里的规则参考《The Resistance: Avalon》与《Blood on the Clocktower》（暗流涌动）；本站为个人学习整理，与发行商无关。</p>
+    </div>
+  </footer>
+
+  <script src="/games/games.js?v=1" defer></script>
+</body>
+</html>
