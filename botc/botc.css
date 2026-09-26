@@ -1,0 +1,163 @@
+/* ============================================================
+   血染钟楼 · 三级页（规则 + 角色）/ 四级页（角色详情）/ 在线工具
+   复用阿瓦隆那套组件类名（下面 @import 进来），这里只补血染自己的东西
+   ============================================================ */
+@import url('/avalon/avalon.css');
+
+:root {
+  --bt-blood: #8e1b2c;
+  --bt-blood-soft: rgba(142, 27, 44, 0.10);
+  --bt-demon: #6d28d9;
+  --bt-demon-soft: rgba(109, 40, 217, 0.12);
+  --bt-night: #1c2233;
+}
+[data-theme="dark"] {
+  --bt-blood: #ff7a8a;
+  --bt-blood-soft: rgba(255, 122, 138, 0.14);
+  --bt-demon: #c4a6ff;
+  --bt-demon-soft: rgba(196, 166, 255, 0.16);
+  --bt-night: #0e1422;
+}
+
+/* ---------- 血染自己的配色 ---------- */
+.botc-page .av-title em { color: var(--bt-blood); }
+.av-title em.bt { color: var(--bt-blood); }
+.bt-hero-facts .av-pill { border-color: var(--line-strong); }
+
+/* 阵营：镇民（好人绿）/ 外来者（紫）/ 爪牙（红）/ 恶魔（深紫红） */
+.av-pill.camp-townsfolk { color: var(--av-good); border-color: var(--av-good); background: var(--av-good-soft); }
+.av-pill.camp-outsider { color: var(--av-item); border-color: var(--av-item); background: var(--av-item-soft); }
+.av-pill.camp-minion { color: var(--av-evil); border-color: var(--av-evil); background: var(--av-evil-soft); }
+.av-pill.camp-demon { color: var(--bt-demon); border-color: var(--bt-demon); background: var(--bt-demon-soft); }
+
+.av-card.is-outsider::before { background: var(--av-item); }
+.av-card.is-minion::before { background: var(--av-evil); }
+.av-card.is-demon::before { background: var(--bt-demon); }
+.av-card.is-townsfolk::before { background: var(--av-good); }
+
+.g-chip.townsfolk { color: var(--av-good); border-color: var(--av-good); background: var(--av-good-soft); }
+.g-chip.outsider { color: var(--av-item); border-color: var(--av-item); background: var(--av-item-soft); }
+.g-chip.minion { color: var(--av-evil); border-color: var(--av-evil); background: var(--av-evil-soft); }
+.g-chip.demon { color: var(--bt-demon); border-color: var(--bt-demon); background: var(--bt-demon-soft); }
+
+.g-idcard.camp-townsfolk { border-color: var(--av-good); background: var(--av-good-soft); }
+.g-idcard.camp-outsider { border-color: var(--av-item); background: var(--av-item-soft); }
+.g-idcard.camp-minion { border-color: var(--av-evil); background: var(--av-evil-soft); }
+.g-idcard.camp-demon { border-color: var(--bt-demon); background: var(--bt-demon-soft); }
+
+/* 官方能力原文 */
+.bt-official {
+  margin-top: 16px; padding: 16px 18px; border-radius: 16px;
+  border: 1px solid var(--line-strong); background: var(--surface-2);
+  font-size: 0.94rem; line-height: 1.75;
+}
+.bt-official .bt-tag {
+  display: block; font-family: var(--font-tech); font-size: 0.7rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+}
+.bt-timing {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 2px;
+  padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+  border: 1px dashed var(--line-strong); color: var(--muted);
+}
+
+/* ---------- 夜晚顺序 ---------- */
+.bt-nights { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+@media (max-width: 780px) { .bt-nights { grid-template-columns: 1fr; } }
+.bt-night {
+  border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 18px;
+}
+.bt-night h3 { font-size: 0.98rem; display: flex; align-items: center; gap: 8px; }
+.bt-night .bt-night-sub { color: var(--muted); font-size: 0.8rem; margin-top: 6px; }
+.nt-list { margin-top: 14px; display: grid; gap: 8px; }
+.nt-item {
+  display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: flex-start;
+  padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line);
+}
+.nt-item.is-special { border-color: var(--bt-blood); background: var(--bt-blood-soft); }
+.nt-k {
+  font-family: var(--font-tech); font-weight: 700; color: var(--muted); font-size: 0.82rem; line-height: 1.5;
+}
+.nt-name { font-weight: 600; font-size: 0.9rem; }
+.nt-note { color: var(--muted); font-size: 0.82rem; line-height: 1.6; margin-top: 3px; }
+
+/* ---------- 在线工具 ---------- */
+.g-seat .tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.g-seat.dead { opacity: 0.62; }
+.g-seat.dead .nick { text-decoration: line-through; text-decoration-color: var(--av-evil); }
+.g-seat .state {
+  position: absolute; top: 8px; right: 34px; font-size: 0.7rem; color: var(--muted);
+}
+.g-seat .role { font-size: 0.76rem; margin-top: 6px; }
+.tagx {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
+  font-size: 0.7rem; border: 1px solid var(--line-strong); color: var(--muted);
+}
+.tagx.poison { color: var(--av-evil); border-color: var(--av-evil); background: var(--av-evil-soft); }
+.tagx.protect { color: var(--av-good); border-color: var(--av-good); background: var(--av-good-soft); }
+.tagx.ghost { color: var(--av-item); border-color: var(--av-item); background: var(--av-item-soft); }
+.tagx.dead { color: var(--av-evil); border-color: var(--av-evil); background: var(--av-evil-soft); }
+
+.bt-days { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.bt-daychip {
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line);
+  font-size: 0.8rem; color: var(--muted); background: var(--surface-2);
+}
+.bt-daychip.on { color: var(--ink); border-color: var(--accent); font-weight: 600; }
+.bt-daychip.night { border-style: dashed; }
+
+.bt-console-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bt-console-head h2 { flex: 1; min-width: 160px; }
+.bt-phase {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px;
+  font-family: var(--font-tech); font-size: 0.78rem; letter-spacing: 0.08em;
+  border: 1px solid var(--line-strong); background: var(--surface-2);
+}
+.bt-phase.night { border-color: var(--bt-demon); color: var(--bt-demon); background: var(--bt-demon-soft); }
+.bt-phase.day { border-color: var(--av-gold); color: var(--av-gold); background: var(--av-gold-soft); }
+
+.bt-bag { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.bt-bag button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+  font-size: 0.8rem; cursor: pointer; font-family: inherit;
+}
+.bt-bag button:hover { border-color: var(--line-strong); color: var(--ink); }
+.bt-bag button.on { color: var(--ink); font-weight: 600; }
+.bt-bag button.on.townsfolk { border-color: var(--av-good); background: var(--av-good-soft); color: var(--av-good); }
+.bt-bag button.on.outsider { border-color: var(--av-item); background: var(--av-item-soft); color: var(--av-item); }
+.bt-bag button.on.minion { border-color: var(--av-evil); background: var(--av-evil-soft); color: var(--av-evil); }
+.bt-bag button.on.demon { border-color: var(--bt-demon); background: var(--bt-demon-soft); color: var(--bt-demon); }
+.bt-bag-sum { color: var(--muted); font-size: 0.84rem; margin-top: 12px; line-height: 1.7; }
+.bt-bag-sum b { color: var(--ink); font-family: var(--font-tech); }
+.bt-bag-sum .bad { color: var(--av-evil); font-weight: 600; }
+
+.bt-nompick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.bt-nompick button {
+  padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2);
+  color: var(--ink); font-size: 0.82rem; cursor: pointer; font-family: inherit;
+}
+.bt-nompick button:hover { border-color: var(--line-strong); }
+.bt-nompick button.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; font-weight: 600; }
+
+.g-msgs { display: grid; gap: 8px; margin-top: 12px; }
+.g-msg {
+  padding: 11px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg);
+  font-size: 0.87rem; line-height: 1.65;
+}
+.g-msg .g-msg-meta { font-size: 0.72rem; color: var(--muted); font-family: var(--font-tech); margin-bottom: 4px; }
+.g-msg.mine { border-color: var(--accent); }
+
+.bt-live {
+  display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted);
+}
+.bt-live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--av-good); }
+.bt-live.off .dot { background: var(--muted); }
+
+.bt-hint-list { color: var(--muted); font-size: 0.86rem; line-height: 1.8; padding-left: 20px; margin: 10px 0 0 0; }
+.bt-hint-list b { color: var(--ink); }
+
+@media (max-width: 560px) {
+  .g-seat .state { right: 30px; }
+  .nt-item { grid-template-columns: 26px 1fr; gap: 10px; padding: 9px 10px; }
+}

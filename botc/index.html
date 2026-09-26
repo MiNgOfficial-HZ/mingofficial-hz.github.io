@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>血染钟楼 · 规则与角色 · MiNgHZ</title>
+  <meta name="description" content="血染钟楼（Blood on the Clocktower）中文规则、22 个角色卡片与在线工具：暗流涌动剧本的镇民、外来者、爪牙与恶魔，配板表、夜晚顺序、提名处决全都有。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+  <meta property="og:title" content="血染钟楼 · 规则与角色 · MiNgHZ" />
+  <meta property="og:description" content="5~15 人的说书人游戏：规则、22 个角色、配板表，还有一个能当场开局的在线工具。" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="/assets/logo.jpg" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="/css/style.css?v=20260921m" />
+  <link rel="stylesheet" href="/botc/botc.css?v=1" />
+</head>
+<body data-view="botc" class="botc-page">
+  <span id="pageTop" aria-hidden="true"></span>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="/#home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
+        <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="/#home" class="nav-link">首页</a>
+        <a href="/#space" class="nav-link">MiNg的个人空间</a>
+        <a href="/#friends" class="nav-link">MiNg和他的朋友们</a>
+        <a href="/about/" class="nav-link">关于</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-primary btn-small" href="/botc/play/">🧑‍⚖️ 开一局</a>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="av-main" id="top">
+    <section class="av-head">
+      <div class="container">
+        <p class="av-crumbs"><a href="/#home">首页</a> › <a href="/#friends">MiNg 和他的朋友们</a> › <b>血染钟楼</b></p>
+        <h1 class="av-title">血染钟楼 <em class="bt">BLOOD ON THE CLOCKTOWER</em></h1>
+        <p class="av-lead">
+          你好，欢迎来到长颈鹿的「血染钟楼 Blood on the Clocktower」使用简介。这一页会讲清楚这个游戏的完整规则、22 个角色的能力与打法，
+          配上人数配板表和夜晚顺序；如果你是熟手，也可以直接跳到在线工具，当一次说书人。
+          最后提醒一句：<b>死了不等于出局，闭嘴的死者才是坏人最好的朋友。</b>
+        </p>
+        <div class="av-facts bt-hero-facts">
+          <span class="av-pill">👥 5 – 15 人</span>
+          <span class="av-pill">⏱ 一局 30 – 90 分钟</span>
+          <span class="av-pill">🧑‍⚖️ 1 个说书人（上帝）</span>
+          <span class="av-pill">🗣 死亡后依然可以说话</span>
+          <span class="av-pill">📜 入门剧本：暗流涌动</span>
+        </div>
+        <div class="av-head-actions">
+          <a class="btn btn-primary" href="/botc/play/">🧑‍⚖️ 在线工具（站长当说书人）</a>
+          <a class="btn btn-soft" href="#roles">👤 先看角色</a>
+        </div>
+      </div>
+    </section>
+
+    <nav class="av-tabs" id="btTabs" aria-label="血染钟楼页内导航">
+      <div class="container av-tabs-inner">
+        <a class="av-tab on" href="#howto">🎯 怎么玩</a>
+        <a class="av-tab" href="#roles">👤 角色</a>
+        <a class="av-tab" href="#setup">👥 配板表</a>
+        <a class="av-tab" href="#night">🌙 夜晚顺序</a>
+        <a class="av-tab" href="#terms">📖 术语</a>
+        <a class="av-tab" href="#faq">❓ 常见问题</a>
+        <a class="av-tab" href="#online">📱 在线工具</a>
+      </div>
+    </nav>
+
+    <!-- ========== 怎么玩 ========== -->
+    <section class="av-band" id="howto">
+      <div class="container">
+        <p class="av-eyebrow">RULES · 玩法</p>
+        <h2 class="av-h2">一局是这样走完的</h2>
+        <p class="av-sub">先说结论：<b>好人杀掉恶魔就赢</b>（但小心猩红女郎接任）；<b>邪恶把好人拖到最后就赢</b> —— 只剩两个人还活着、或者圣人被处决、或者恶魔活到最后一个好人倒下。</p>
+        <div class="av-flow" id="btFlow"></div>
+        <div class="tip-box" style="margin-top:18px">
+          <b>胜负条件速记</b>：<b>好人赢</b> = 恶魔死亡（且猩红女郎没能接任）；<b>邪恶赢</b> = 只剩 2 名玩家存活而恶魔还活着 / 圣人被处决 / 恶魔活到最后。
+          另外两条特殊胜利：剩 <b>3 名玩家存活且当天没有处决</b>，好人直接获胜（镇长的底牌）；恶魔被杀时如果场上还有 <b>5 名以上存活玩家</b>，猩红女郎会接任恶魔，游戏继续。
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 角色 ========== -->
+    <section class="av-band av-band-alt" id="roles">
+      <div class="container">
+        <p class="av-eyebrow">CHARACTERS · 角色</p>
+        <h2 class="av-h2">22 个角色，四种立场</h2>
+        <p class="av-sub">
+          <b>镇民</b>是好人里的主力，<b>外来者</b>也是好人但常常帮倒忙，<b>爪牙</b>是恶魔的帮凶，<b>恶魔</b>只有一个 ——
+          他的死就是好人的目标。点开任意一张卡片，进去看他的官方能力、他知道什么、以及该怎么打。
+        </p>
+        <div class="av-roles" id="btRoles"></div>
+        <noscript>
+          <p class="av-hint" style="margin-top:16px">
+            你的浏览器关闭了 JavaScript。角色详情仍可直接访问：
+            <a href="/botc/roles/washerwoman/">洗衣妇</a>、<a href="/botc/roles/librarian/">图书管理员</a>、
+            <a href="/botc/roles/investigator/">调查员</a>、<a href="/botc/roles/chef/">厨师</a>、
+            <a href="/botc/roles/empath/">共情者</a>、<a href="/botc/roles/fortune_teller/">占卜师</a>、
+            <a href="/botc/roles/undertaker/">送葬者</a>、<a href="/botc/roles/monk/">武僧</a>、
+            <a href="/botc/roles/ravenkeeper/">渡鸦看守</a>、<a href="/botc/roles/virgin/">处女</a>、
+            <a href="/botc/roles/slayer/">猎手</a>、<a href="/botc/roles/soldier/">士兵</a>、
+            <a href="/botc/roles/mayor/">镇长</a>、<a href="/botc/roles/butler/">管家</a>、
+            <a href="/botc/roles/drunk/">醉汉</a>、<a href="/botc/roles/recluse/">隐士</a>、
+            <a href="/botc/roles/saint/">圣人</a>、<a href="/botc/roles/poisoner/">投毒者</a>、
+            <a href="/botc/roles/spy/">间谍</a>、<a href="/botc/roles/scarlet_woman/">猩红女郎</a>、
+            <a href="/botc/roles/baron/">男爵</a>、<a href="/botc/roles/imp/">小恶魔</a>。
+          </p>
+        </noscript>
+      </div>
+    </section>
+
+    <!-- ========== 配板表 ========== -->
+    <section class="av-band" id="setup">
+      <div class="container">
+        <p class="av-eyebrow">SETUP · 配板</p>
+        <h2 class="av-h2">多少人局，各放几个阵营的角色</h2>
+        <p class="av-sub">
+          血染钟楼的角色不是随机抽的：<b>说书人按这张表决定阵容，再洗牌发牌</b>。
+          所以每一局都是"设计过的一局" —— 这也是它比随机发牌更耐玩的地方。
+        </p>
+        <div class="av-table-wrap">
+          <table class="av-table" id="btTable">
+            <thead>
+              <tr>
+                <th>人数</th><th>镇民</th><th>外来者</th><th>爪牙</th><th>恶魔</th><th>合计</th><th>男爵在场时</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="av-hint av-table-note">
+          <b>男爵</b>是爪牙之一，他的能力是"本局额外加入 2 名外来者" —— 所以有男爵的局，外来者 +2、镇民 −2（表里最后一列已经算好）。
+          说书人在配板时可以用这一点，故意让好人的阵容更"残缺"一点。
+        </p>
+      </div>
+    </section>
+
+    <!-- ========== 夜晚顺序 ========== -->
+    <section class="av-band av-band-alt" id="night">
+      <div class="container">
+        <p class="av-eyebrow">NIGHT ORDER · 说书人的台本</p>
+        <h2 class="av-h2">晚上按这个顺序叫人</h2>
+        <p class="av-sub">只有"夜里会醒"的角色才会被叫到；没列在这里的角色今晚可以继续睡。顺序错了会让信息互相穿帮，所以照表念最稳。</p>
+        <div class="bt-nights" id="btNights"></div>
+        <p class="av-hint" style="margin-top:14px">在线工具里内置了这份夜序：说书人只要顺着点"下一位"，就不会叫错人。</p>
+      </div>
+    </section>
+
+    <!-- ========== 术语 ========== -->
+    <section class="av-band" id="terms">
+      <div class="container">
+        <p class="av-eyebrow">GLOSSARY · 桌面黑话</p>
+        <h2 class="av-h2">听懂这几句，就能上桌</h2>
+        <div class="av-terms" id="btTerms"></div>
+      </div>
+    </section>
+
+    <!-- ========== FAQ ========== -->
+    <section class="av-band av-band-alt" id="faq">
+      <div class="container">
+        <p class="av-eyebrow">FAQ · 常见问题</p>
+        <h2 class="av-h2">新手最常问的几个问题</h2>
+        <div class="av-faq" id="btFaq"></div>
+      </div>
+    </section>
+
+    <!-- ========== 在线工具 ========== -->
+    <section class="av-band" id="online">
+      <div class="container">
+        <p class="av-eyebrow">PLAY ONLINE · 在线工具</p>
+        <h2 class="av-h2">想玩了？当一次说书人吧</h2>
+        <p class="av-sub">
+          站长（说书人）建房 → 朋友输入房间码入场（<b>不用注册账号</b>）→ 说书人配好这一局的角色 → 一键发牌 →
+          每个人的手机上只显示自己的身份（<b>按住才显示</b>）。
+        </p>
+        <div class="av-launch">
+          <div class="av-launch-card">
+            <h3>🧑‍⚖️ 在线工具里有什么</h3>
+            <ol>
+              <li><b>配板</b>：按人数自动给出合法阵容，点一点就能替换角色 —— 男爵会自动帮你 +2 外来者；</li>
+              <li><b>发牌</b>：身份在服务端洗牌，只发到本人手机上，别人永远看不到；</li>
+              <li><b>夜序向导</b>：内置首夜 / 后续夜晚的完整顺序，顺着点就不会叫错；</li>
+              <li><b>状态标记</b>：中毒、醉酒、保护、死亡、幽灵票用过没有，都能一个一个标；</li>
+              <li><b>提名与处决</b>：白天记提名、点举手票、判处决，自动提示"还差几票"；</li>
+              <li><b>私密信息</b>：说书人给某个人发一条只有他看得见的提示（占卜师的结果、洗衣妇的信息都这么给）；</li>
+              <li><b>胜负判定与复盘</b>：工具会提示条件达成（恶魔死了、只剩两人、圣人被处决），最后公开全部身份复盘。</li>
+            </ol>
+            <div class="av-head-actions">
+              <a class="btn btn-primary" href="/botc/play/">进入在线工具 →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
+      <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav"><a href="/#friends">← 回到 MiNg 和他的朋友们</a></p>
+      <p class="footer-hint">规则参考《Blood on the Clocktower》官方入门剧本《暗流涌动》(Trouble Brewing)；本站为个人学习整理，与发行商无关。</p>
+    </div>
+  </footer>
+
+  <script src="/botc/botc-data.js?v=1" defer></script>
+  <script src="/botc/botc.js?v=1" defer></script>
+</body>
+</html>

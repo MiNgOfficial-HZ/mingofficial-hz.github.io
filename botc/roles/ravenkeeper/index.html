@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>渡鸦看守 Ravenkeeper · 血染钟楼角色 · MiNgHZ</title>
+  <meta name="description" content="血染钟楼 · 渡鸦看守 Ravenkeeper（镇民）：如果你在夜里死亡，你会被唤醒，选择一名玩家并得知他的角色。 他的视野、打法与常见误区。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+  <link rel="icon" href="/assets/logo.jpg" />
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="/css/style.css?v=20260921m" />
+  <link rel="stylesheet" href="/botc/botc.css?v=1" />
+</head>
+<body data-view="botc" data-role="ravenkeeper" class="botc-page">
+  <span id="pageTop" aria-hidden="true"></span>
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="/#home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
+        <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="/botc/" class="nav-link">血染钟楼</a>
+        <a href="/botc/#roles" class="nav-link">全部角色</a>
+        <a href="/botc/#night" class="nav-link">夜晚顺序</a>
+        <a href="/botc/play/" class="nav-link">在线工具</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-primary btn-small" href="/botc/play/">🧑‍⚖️ 开一局</a>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+  <main class="av-main" id="top"><div id="roleApp"></div></main>
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
+      <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav"><a href="/botc/">← 血染钟楼：规则与角色</a></p>
+    </div>
+  </footer>
+  <script src="/botc/botc-data.js?v=1" defer></script>
+  <script src="/botc/roles/role.js?v=1" defer></script>
+</body>
+</html>
