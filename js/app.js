@@ -708,12 +708,12 @@
           '<button class="btn btn-soft btn-small" type="button" data-action="perms-save" style="margin-top:12px">保存权限</button>' +
           '<p class="panel-tip">默认：管理员可管理内容板块；朋友账号可留言 + 跟帖 + 写旅行攻略（共创），发帖 / 写指南需要在这里打开；朋友只能改自己发的内容。游客仅可浏览。</p></div>';
       }
-      var maintBlock = (myUser && myUser.role === 'owner')
+      var maintBlock = (myUser && (myUser.role === 'owner' || myUser.role === 'admin'))
         ? '<div class="perm-block maint-block">' +
             '<h4>🛠️ 网站维护</h4>' +
             '<p class="panel-tip">' + (maintOn()
-              ? '<b style="color:var(--accent)">当前：维护中</b> —— 访客只能停在主页看到「维护中」，所有功能都进不去；<b>你自己不受影响</b>，随时可以一键关闭。'
-              : '当前：正常运行。开启后所有访客会被定到主页的「维护中」提示，写操作一律被服务端挡住（你自己照常使用）。') + '</p>' +
+              ? '<b style="color:var(--accent)">当前：维护中</b> —— 其他人只能停在主页看到「维护中」，连账号都登不进来；<b>站长与管理员不受影响</b>，随时可以一键关闭。'
+              : '当前：正常运行。开启后其他人会被定到主页的「维护中」提示、也无法登录，写操作一律被服务端挡住（站长与管理员照常使用）。') + '</p>' +
             (maintOn() && S.maint && S.maint.at ? '<p class="panel-tip">开启于 ' + esc(S.maint.at) + (S.maint.by ? ' · 由 ' + esc(S.maint.by) + ' 操作' : '') + '</p>' : '') +
             '<button class="btn ' + (maintOn() ? 'btn-soft' : 'btn-soft') + ' btn-small" type="button" data-action="toggle-maint" data-on="' + (maintOn() ? '0' : '1') + '" style="margin-top:10px">' +
               (maintOn() ? '✅ 一键关闭维护，恢复网站' : '🛠️ 开启网站维护') + '</button>' +
@@ -1625,7 +1625,8 @@
      · 站长：完全不受影响（照常登录、浏览、管理），主页上有一条一键关闭的提示
      ============================================================ */
   function maintOn() { return !!(S.maint && S.maint.on); }
-  function maintLocked() { return maintOn() && !isOwnerUser(); }
+  /* 维护期间站长与管理员照常通行；其他人只能停在主页 */
+  function maintLocked() { return maintOn() && !isOwnerUser() && !isAdminUser(); }
 
   function applyMaintUI() {
     var locked = maintLocked();
@@ -1638,7 +1639,7 @@
       meta.textContent = (locked && mt.at) ? ('维护开始于 ' + mt.at + (mt.by ? ' · 由 ' + mt.by + ' 操作' : '')) : '';
     }
     var note = $('#maintOwnerNote');
-    if (note) note.hidden = !(maintOn() && isOwnerUser());
+    if (note) note.hidden = !(maintOn() && (isOwnerUser() || isAdminUser()));
     /* 维护期间登录入口必须留着：站长要能进来一键关闭维护，其他账号也要能正常登录 */
     var loginWrap = $('#maintLoginWrap');
     if (loginWrap) loginWrap.hidden = !(locked && !myUser);
@@ -1648,7 +1649,7 @@
     var userText = $('#maintUserText');
     if (userText) {
       userText.textContent = keepLogged
-        ? ('你已登录为「' + (myUser.nick || myUser.name || '') + '」，维护期间只有站长能操作，稍后再来试试。')
+        ? ('你已登录为「' + (myUser.nick || myUser.name || '') + '」，维护期间只有站长和管理员能操作，稍后再来试试。')
         : '';
     }
     if (locked) {

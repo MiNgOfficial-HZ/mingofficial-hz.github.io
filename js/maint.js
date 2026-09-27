@@ -1,8 +1,8 @@
 /* ============================================================
-   网站维护模式 · 二级/三级页面统一检查
-   在 /photo/ /about/ /games/ /avalon/ /botc/ 等页面上运行：
-   · 维护中且访客不是站长 → 直接定到主页（那里会显示「维护中」）
-   · 站长本人不受影响，照常浏览
+  网站维护模式 · 二级/三级页面统一检查
+  在 /photo/ /about/ /games/ /avalon/ /botc/ 等页面上运行：
+   · 维护中且访客不是站长/管理员 → 直接定到主页（那里会显示「维护中」）
+   · 站长与管理员不受影响，照常浏览
    ============================================================ */
 (function () {
   'use strict';
@@ -25,8 +25,9 @@
 
   function check(json) {
     var on = !!(json && json.db && json.db.maint && json.db.maint.on);
-    var isOwner = !!(json && json.user && json.user.role === 'owner');
-    if (on && !isOwner) { location.replace('/'); return; }
+    var role = (json && json.user && json.user.role) || '';
+    var privileged = (role === 'owner' || role === 'admin');
+    if (on && !privileged) { location.replace('/'); return; }
     show();
   }
 

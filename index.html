@@ -19,7 +19,7 @@
   <!-- 字体非阻塞加载：先按 print 低优先级拉取，加载完由 js/app.js 切成 all；首屏直接用系统字体渲染 -->
   <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
-  <link rel="stylesheet" href="css/style.css?v=20260927b" />
+  <link rel="stylesheet" href="css/style.css?v=20260927c" />
 </head>
 <body data-view="home">
   <span id="pageTop" aria-hidden="true"></span>
@@ -81,7 +81,7 @@
             <p class="maint-text">长颈鹿正在给站点做保养，修好马上就回来。<br />给你带来的不便，还请见谅 🙏</p>
             <p class="maint-meta" id="maintMeta"></p>
             <div class="maint-login" id="maintLoginWrap" hidden>
-              <p class="maint-login-hint">站长 / 已有账号的朋友可以照常登录，登录后站长可以直接关闭维护。</p>
+              <p class="maint-login-hint">维护期间只有<b>站长</b>和<b>管理员</b>可以登录，其他账号会提示「本站正在维护，请稍后」。</p>
               <button class="btn btn-primary btn-small" type="button" data-action="guest-login">🔐 登录</button>
             </div>
             <div class="maint-login" id="maintUserNote" hidden>
@@ -427,7 +427,7 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260927b" defer></script>
-  <script src="/js/maint.js?v=2" defer></script>
+  <script src="js/app.js?v=20260927c" defer></script>
+  <script src="/js/maint.js?v=3" defer></script>
 </body>
 </html>
