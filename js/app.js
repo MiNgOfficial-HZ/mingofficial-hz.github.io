@@ -977,8 +977,13 @@
       cloudFetch().then(function (res) {
         S = normalize(res.db);
         if (res.hasUser) {
+          var hadSession = !!mySession;
           setMyUser(res.user);
-          if (!res.user) saveUserSession('');
+          if (!res.user) {
+            saveUserSession('');
+            /* 本来登录着，现在服务端说没这号人了，而且正在维护 → 是被强制下线的 */
+            if (hadSession && maintOn()) maintKicked = true;
+          }
           refreshAdminState();
         } else {
           restoreUser();
@@ -1007,6 +1012,33 @@
   setInterval(function () {
     if (pendingOp && !cloudOk) adminMutate(pendingOp.action, pendingOp.item, null, true);
   }, 20000);
+
+  /* 维护模式看门狗：开着页面的人也能及时发现自己被强制下线（只在真的发生变化时才重绘） */
+  function maintWatchdog() {
+    if (!mySession || isOwnerUser() || isAdminUser()) return;
+    cloudFetch().then(function (res) {
+      if (!res.hasUser) return;
+      var kickedNow = !res.user;
+      var next = normalize(res.db);
+      var maintChanged = !!(next.maint && next.maint.on) !== maintOn();
+      if (!kickedNow && !maintChanged) return;
+      var hadSession = !!mySession;
+      S = next;
+      setMyUser(res.user);
+      if (kickedNow) {
+        saveUserSession('');
+        if (hadSession && maintOn()) maintKicked = true;
+      }
+      refreshAdminState();
+      writeCache();
+      renderAll();
+    }).catch(function () { /* 网络抖动就下次再说 */ });
+  }
+  setInterval(maintWatchdog, 60000);
+  /* 后台标签页的定时器会被浏览器节流，切回前台时立刻补查一次 */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') maintWatchdog();
+  });
 
   /* ---------- 渲染 ---------- */
   function emptyHTML(msg) { return '<div class="empty">' + msg + '</div>'; }
@@ -1627,6 +1659,8 @@
   function maintOn() { return !!(S.maint && S.maint.on); }
   /* 维护期间站长与管理员照常通行；其他人只能停在主页 */
   function maintLocked() { return maintOn() && !isOwnerUser() && !isAdminUser(); }
+  /* 维护期间被服务端强制下线的标记：给这些人一句说明，而不是莫名其妙变回游客 */
+  var maintKicked = false;
 
   function applyMaintUI() {
     var locked = maintLocked();
@@ -1643,6 +1677,8 @@
     /* 维护期间登录入口必须留着：站长要能进来一键关闭维护，其他账号也要能正常登录 */
     var loginWrap = $('#maintLoginWrap');
     if (loginWrap) loginWrap.hidden = !(locked && !myUser);
+    var kicked = $('#maintKickedNote');
+    if (kicked) kicked.hidden = !(locked && maintKicked && !myUser);
     var userNote = $('#maintUserNote');
     var keepLogged = !!(locked && myUser);
     if (userNote) userNote.hidden = !keepLogged;

@@ -1629,3 +1629,46 @@ body.maint-mode .guest-hint,
 body.maint-mode #syncChip { display: none !important; }
 body.maint-mode .view-panel:not(#viewHome) { display: none !important; }
 body.maint-mode .maint-card { display: block; }
+
+/* ============================================================
+   长颈鹿彩蛋：第一次打开主页时，长颈鹿带队从右走到左
+   纯 CSS + 内联 SVG 剪影，不吃图片请求；全程 pointer-events: none
+   ============================================================ */
+.gp-parade {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 106px;
+  z-index: 12; pointer-events: none; overflow: hidden;
+  color: color-mix(in srgb, var(--ink) 44%, transparent);
+}
+.gp-animal {
+  position: absolute; bottom: 8px; left: 0;
+  transform: translateX(105vw);
+  animation: gp-cross 11.5s cubic-bezier(0.34, 0, 0.66, 1) forwards;
+  will-change: transform;
+}
+.gp-walk { display: block; animation: gp-bob 0.62s ease-in-out infinite alternate; }
+/* svg 自带 width/height 属性，定高即可按比例出宽，不做百分比（会循环成 0） */
+.gp-animal svg { display: block; width: auto; fill: currentColor; }
+.gp-giraffe svg { height: 94px; }
+.gp-elephant svg { height: 64px; }
+.gp-zebra svg { height: 60px; }
+.gp-lion svg { height: 54px; }
+
+@keyframes gp-cross {
+  from { transform: translateX(calc(100vw + 120px)); }
+  to { transform: translateX(-260px); }
+}
+@keyframes gp-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-3px); }
+}
+
+@media (max-width: 720px) {
+  .gp-parade { height: 80px; }
+  .gp-giraffe svg { height: 68px; }
+  .gp-elephant svg { height: 48px; }
+  .gp-zebra svg { height: 45px; }
+  .gp-lion svg { height: 41px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gp-parade { display: none; }
+}
