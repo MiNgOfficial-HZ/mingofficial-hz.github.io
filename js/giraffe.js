@@ -138,7 +138,8 @@
   /* 控制台 / 网址参数都能重播 */
   window.mhzGiraffe = start;
 
+  /* DOM 就绪就出发：等 load 会把彩蛋拖到字体图片都下完，慢网络下就看不见了 */
   function queue() { setTimeout(start, 700); }
-  if (document.readyState === 'complete') queue();
-  else window.addEventListener('load', queue, { once: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', queue, { once: true });
+  else queue();
 })();
