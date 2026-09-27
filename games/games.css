@@ -37,7 +37,8 @@
   display: grid; place-items: center; overflow: hidden; padding: 16px;
 }
 @media (max-width: 860px) { .bg-plate { height: 210px; } }
-.bg-game.avalon .bg-plate { background: linear-gradient(165deg, #f8f4ea, #e6dcc6); }
+/* 阿瓦隆用官方 logo（白字黑边）：底色跟着盒面走，深色青铜调，logo 才立得住 */
+.bg-game.avalon .bg-plate { background: radial-gradient(circle at 50% 30%, #4c3b28, #241b12 78%); }
 .bg-game.clocktower .bg-plate { background: radial-gradient(circle at 50% 28%, #2c1a26, #12070e 72%); }
 .bg-plate img {
   display: block; max-height: 100%; max-width: 100%; object-fit: contain;
@@ -45,7 +46,7 @@
 }
 /* 图片没加载出来时的兜底：显示一个 emoji，不至于是一块破图 */
 .bg-plate.no-art::after { content: attr(data-fallback); font-size: 3.2rem; line-height: 1; }
-.bg-game.avalon .bg-plate img { max-height: 100%; }
+.bg-game.avalon .bg-plate img { max-height: 100%; max-width: 94%; }
 .bg-game.clocktower .bg-plate img { max-width: 88%; }
 
 .bg-name { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px; }
