@@ -1641,7 +1641,8 @@ body.maint-mode .maint-card { display: block; }
 }
 .gp-animal {
   position: absolute; bottom: 8px; left: 0;
-  transform: translateX(105vw);
+  /* 基准位置必须和动画起点一致：否则还没轮到的动物会先停在左边，看着像抢跑 */
+  transform: translateX(calc(100vw + 120px));
   animation: gp-cross 11.5s cubic-bezier(0.34, 0, 0.66, 1) forwards;
   will-change: transform;
 }
