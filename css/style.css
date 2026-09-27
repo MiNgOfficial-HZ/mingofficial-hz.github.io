@@ -1588,3 +1588,44 @@ body:not(.is-owner) #accountNavLink { display: none !important; }
 .m-status .m-time { font-size: 0.7rem; color: inherit; opacity: 0.85; }
 .act-btn.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
 .act-btn.ok:hover { color: var(--ok); border-color: var(--ok); }
+
+/* ---------- 网站维护模式 ---------- */
+.maint-card {
+  max-width: 620px; margin: 42px auto 0; padding: 38px 32px 34px;
+  text-align: center;
+}
+.maint-emoji { font-size: 2.8rem; line-height: 1; }
+.maint-title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(1.4rem, 3.4vw, 2rem); letter-spacing: -0.02em; margin-top: 14px;
+}
+.maint-text { color: var(--muted); font-size: 0.95rem; line-height: 1.9; margin-top: 12px; }
+.maint-meta { color: var(--muted); font-size: 0.76rem; margin-top: 18px; opacity: 0.85; }
+.maint-owner-note {
+  max-width: 620px; margin: 26px auto 0; padding: 14px 18px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 14px; background: var(--accent-soft); color: var(--ink);
+  font-size: 0.86rem; line-height: 1.7;
+  display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+}
+.maint-login {
+  margin-top: 22px; padding-top: 18px;
+  border-top: 1px dashed color-mix(in srgb, var(--ink) 14%, transparent);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.maint-login-hint { color: var(--muted); font-size: 0.78rem; line-height: 1.7; margin: 0; }
+
+/* 维护中：把入口、导航、快捷按钮全部收起来，只留 logo + 维护提示 */
+body.maint-mode .main-nav,
+body.maint-mode .portal-entries,
+body.maint-mode .portal-user,
+body.maint-mode .portal-split-label,
+body.maint-mode .hero-stats,
+body.maint-mode .portal-sub .warn-en,
+body.maint-mode .footer-nav,
+body.maint-mode .fab,
+body.maint-mode .qa-menu,
+body.maint-mode .guest-hint,
+body.maint-mode #syncChip { display: none !important; }
+body.maint-mode .view-panel:not(#viewHome) { display: none !important; }
+body.maint-mode .maint-card { display: block; }

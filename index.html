@@ -19,7 +19,7 @@
   <!-- 字体非阻塞加载：先按 print 低优先级拉取，加载完由 js/app.js 切成 all；首屏直接用系统字体渲染 -->
   <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
-  <link rel="stylesheet" href="css/style.css?v=20260927a" />
+  <link rel="stylesheet" href="css/style.css?v=20260927b" />
 </head>
 <body data-view="home">
   <span id="pageTop" aria-hidden="true"></span>
@@ -67,6 +67,28 @@
             <span class="warn-en">WARNING！GIRAFFES！</span>
           </p>
           <div class="hero-stats" id="heroStats"></div>
+
+          <!-- 站长视角：维护模式提示（只有站长能看到这一条） -->
+          <div class="maint-owner-note" id="maintOwnerNote" hidden>
+            🛠️ <b>维护模式已开启</b>：访客现在只会看到下面的「维护中」提示，你自己不受影响。
+            <button class="btn btn-soft btn-small" type="button" data-action="maint-off">一键关闭维护</button>
+          </div>
+
+          <!-- 维护中：所有人（站长除外）只能停在这里 -->
+          <div class="maint-card card" id="maintPanel" hidden>
+            <div class="maint-emoji">🛠️</div>
+            <h2 class="maint-title">网站正在维护中…</h2>
+            <p class="maint-text">长颈鹿正在给站点做保养，修好马上就回来。<br />给你带来的不便，还请见谅 🙏</p>
+            <p class="maint-meta" id="maintMeta"></p>
+            <div class="maint-login" id="maintLoginWrap" hidden>
+              <p class="maint-login-hint">站长 / 已有账号的朋友可以照常登录，登录后站长可以直接关闭维护。</p>
+              <button class="btn btn-primary btn-small" type="button" data-action="guest-login">🔐 登录</button>
+            </div>
+            <div class="maint-login" id="maintUserNote" hidden>
+              <p class="maint-login-hint" id="maintUserText"></p>
+              <button class="btn btn-ghost btn-small" type="button" data-action="logout-user">🚪 退出登录</button>
+            </div>
+          </div>
 
           <div class="portal-user">
             <button id="userBtn" class="btn btn-primary" type="button">👤 登录 / 我的账户</button>
@@ -405,6 +427,7 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260927a" defer></script>
+  <script src="js/app.js?v=20260927b" defer></script>
+  <script src="/js/maint.js?v=2" defer></script>
 </body>
 </html>

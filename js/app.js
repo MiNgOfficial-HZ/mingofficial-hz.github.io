@@ -708,7 +708,18 @@
           '<button class="btn btn-soft btn-small" type="button" data-action="perms-save" style="margin-top:12px">保存权限</button>' +
           '<p class="panel-tip">默认：管理员可管理内容板块；朋友账号可留言 + 跟帖 + 写旅行攻略（共创），发帖 / 写指南需要在这里打开；朋友只能改自己发的内容。游客仅可浏览。</p></div>';
       }
-      $('#modalBody').innerHTML = (rows || '<p class="confirm-text">还没有任何账号</p>') + permBlock +
+      var maintBlock = (myUser && myUser.role === 'owner')
+        ? '<div class="perm-block maint-block">' +
+            '<h4>🛠️ 网站维护</h4>' +
+            '<p class="panel-tip">' + (maintOn()
+              ? '<b style="color:var(--accent)">当前：维护中</b> —— 访客只能停在主页看到「维护中」，所有功能都进不去；<b>你自己不受影响</b>，随时可以一键关闭。'
+              : '当前：正常运行。开启后所有访客会被定到主页的「维护中」提示，写操作一律被服务端挡住（你自己照常使用）。') + '</p>' +
+            (maintOn() && S.maint && S.maint.at ? '<p class="panel-tip">开启于 ' + esc(S.maint.at) + (S.maint.by ? ' · 由 ' + esc(S.maint.by) + ' 操作' : '') + '</p>' : '') +
+            '<button class="btn ' + (maintOn() ? 'btn-soft' : 'btn-soft') + ' btn-small" type="button" data-action="toggle-maint" data-on="' + (maintOn() ? '0' : '1') + '" style="margin-top:10px">' +
+              (maintOn() ? '✅ 一键关闭维护，恢复网站' : '🛠️ 开启网站维护') + '</button>' +
+          '</div>'
+        : '';
+      $('#modalBody').innerHTML = maintBlock + (rows || '<p class="confirm-text">还没有任何账号</p>') + permBlock +
         '<p class="panel-tip">账号密码请私下发给访客；「设为管理」授予管理员角色；两步验证开启后需动态码登录，忘记设备时可用「重置两步验证」兜底。</p>';
     });
   }
@@ -812,7 +823,7 @@
   }
 
   /* ---------- 数据 ---------- */
-  var S = { moments: [], travels: [], tech: [], studies: [], trips: [], footprints: [], devices: [], friends: [], messages: [],
+  var S = { moments: [], travels: [], tech: [], studies: [], trips: [], footprints: [], devices: [], friends: [], messages: [], maint: null,
     perms: { admin: { say: true, travel: true, tech: true, study: true, trips: true, friends: true, msg: true, device: true },
       member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false, canTrip: true }, guest: { canMsg: false } } };
   var cloudOk = false;
@@ -836,13 +847,15 @@
   }
 
   function normalize(data) {
-    var out = { moments: [], travels: [], tech: [], studies: [], trips: [], footprints: [], devices: [], friends: [], messages: [],
+    var out = { moments: [], travels: [], tech: [], studies: [], trips: [], footprints: [], devices: [], friends: [], messages: [], maint: null,
       perms: { admin: { say: true, travel: true, tech: true, study: true, trips: true, friends: true, msg: true, device: true },
         member: { canMsg: true, canEdit: false, canPost: false, canComment: true, canGuide: false, canTrip: true }, guest: { canMsg: false } } };
     Object.keys(out).forEach(function (k) {
       if (k === 'perms') return;
       if (data && Array.isArray(data[k])) out[k] = data[k];
     });
+    /* 维护模式是个对象（不是数组），要单独接住，否则每次刷新数据就丢了 */
+    if (data && data.maint && typeof data.maint === 'object') out.maint = data.maint;
     if (data && data.perms) {
       var src = data.perms;
       ['admin', 'member', 'guest'].forEach(function (g) {
@@ -868,6 +881,9 @@
         studies: S.studies,
         devices: S.devices,
         friends: S.friends,
+        trips: S.trips,
+        footprints: S.footprints,
+        maint: S.maint || null,
         perms: S.perms,
         messages: S.messages.map(function (m) {
           var c = {};
@@ -1599,7 +1615,58 @@
     renderMessages();
     applyGuestGate();
     syncPermUI();
+    applyMaintUI();
     bindReveal();
+  }
+
+  /* ============================================================
+     网站维护模式：站长在管理面板一键开启
+     · 访客：只能停在主页，看到「维护中」，所有入口/导航/快捷按钮都收起来
+     · 站长：完全不受影响（照常登录、浏览、管理），主页上有一条一键关闭的提示
+     ============================================================ */
+  function maintOn() { return !!(S.maint && S.maint.on); }
+  function maintLocked() { return maintOn() && !isOwnerUser(); }
+
+  function applyMaintUI() {
+    var locked = maintLocked();
+    document.body.classList.toggle('maint-mode', locked);
+    var card = $('#maintPanel');
+    if (card) card.hidden = !locked;
+    var meta = $('#maintMeta');
+    if (meta) {
+      var mt = S.maint || {};
+      meta.textContent = (locked && mt.at) ? ('维护开始于 ' + mt.at + (mt.by ? ' · 由 ' + mt.by + ' 操作' : '')) : '';
+    }
+    var note = $('#maintOwnerNote');
+    if (note) note.hidden = !(maintOn() && isOwnerUser());
+    /* 维护期间登录入口必须留着：站长要能进来一键关闭维护，其他账号也要能正常登录 */
+    var loginWrap = $('#maintLoginWrap');
+    if (loginWrap) loginWrap.hidden = !(locked && !myUser);
+    var userNote = $('#maintUserNote');
+    var keepLogged = !!(locked && myUser);
+    if (userNote) userNote.hidden = !keepLogged;
+    var userText = $('#maintUserText');
+    if (userText) {
+      userText.textContent = keepLogged
+        ? ('你已登录为「' + (myUser.nick || myUser.name || '') + '」，维护期间只有站长能操作，稍后再来试试。')
+        : '';
+    }
+    if (locked) {
+      if (!$('#reader').hidden) closeReader();
+      if (!$('#lightbox').hidden) closeLightbox();
+      if (currentView !== 'home') setView('home', {});
+    }
+  }
+
+  function setMaint(on, done) {
+    apiPost('/api/site/maint', { session: mySession, on: !!on }).then(function (res) {
+      if (!res.ok || !res.json.ok) { toast((res.json && res.json.error) || '操作失败', 'error'); return; }
+      S.maint = res.json.maint || { on: !!on };
+      writeCache();
+      renderAll();
+      toast(on ? '已开启维护模式 🛠️ 访客现在只能看到主页提示' : '已关闭维护模式 ✅ 网站恢复正常');
+      if (done) done();
+    }).catch(function () { toast('网络异常，操作失败', 'error'); });
   }
 
   /* ============================================================
@@ -1762,6 +1829,8 @@
 
   function setView(name, opts) {
     opts = opts || {};
+    /* 维护期间：除了站长，谁都被按回主页 */
+    if (maintLocked() && name !== 'home') name = 'home';
     if (VIEWS.indexOf(name) < 0) name = 'home';
     var changed = name !== currentView;
     currentView = name;
@@ -2140,6 +2209,7 @@
   }
 
   function openModal(opts) {
+    if (maintLocked()) { toast('网站正在维护中，稍后再来 🛠️', 'info'); return; }
     currentFields = opts.fields || [];
     currentSubmit = opts.onSubmit;
     pendingConfirm = null;
@@ -2190,6 +2260,7 @@
 
   var READER_KINDS = { travel: 'travels', tech: 'tech', study: 'studies', trip: 'trips' };
   function openReader(kind, id) {
+    if (maintLocked()) { toast('网站正在维护中，稍后再来 🛠️', 'info'); return; }
     var arr = S[READER_KINDS[kind]] || [];
     var item = null;
     for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) { item = arr[i]; break; } }
@@ -2963,6 +3034,12 @@
         });
         break;
       }
+      case 'toggle-maint': {
+        var wantMaint = btn.getAttribute('data-on') === '1';
+        setMaint(wantMaint, function () { openPanelModal(); });
+        break;
+      }
+      case 'maint-off': setMaint(false, function () { renderAll(); }); break;
       case 'panel-role': panelAction('setRole', id, btn.getAttribute('data-role')); break;
       case 'panel-del': openConfirm({
         title: '删除这个用户？',
@@ -3243,6 +3320,7 @@
   });
 
   function openLightbox(url) {
+    if (maintLocked()) { toast('网站正在维护中，稍后再来 🛠️', 'info'); return; }
     var lb = $('#lightbox');
     $('#lightboxImg').src = url;
     lb.hidden = false;
