@@ -64,11 +64,11 @@
   function isAdminUser() { return !!myUser && myUser.role === 'admin'; }
   function memberCan(key) { return !!myUser && myUser.role === 'member' && !!S.perms.member[key]; }
 
-  /* 新增内容的权限（谁能发说说 / 写指南 / 加游记…） */
+  /* 新增内容的权限（谁能发说说 / 写指南 / 加长文…） */
   function permFor(kindRaw) {
     if (!myUser) return false;
     if (myUser.role === 'owner') return true;
-    /* 个人空间（游记 / 数码 / 设备）是站长的私人地盘：管理员和普通用户只能看 */
+    /* 个人空间（长文 / 数码 / 设备）是站长的私人地盘：管理员和普通用户只能看 */
     if (kindRaw === 'travel' || kindRaw === 'footprint' || kindRaw === 'tech' || kindRaw === 'device') return false;
     if (myUser.role === 'admin') return !!S.perms.admin[PERM_MAP[kindRaw]];
     if (kindRaw === 'moment') return memberCan('canPost') || memberCan('canEdit');
@@ -695,7 +695,7 @@
           return '<div class="perm-group">' + title + '</div>' + rows2;
         };
         permBlock = '<div class="perm-block"><h4>🎛 权限管理（滑块即开关）</h4>' +
-          pg('管理员 · 可管理板块', [['admin.say', '说说'], ['admin.travel', '游记'], ['admin.tech', '数码'], ['admin.device', '设备'], ['admin.study', '指南'], ['admin.trips', '旅行攻略'], ['admin.friends', '友链'], ['admin.msg', '留言']]) +
+          pg('管理员 · 可管理板块', [['admin.say', '说说'], ['admin.travel', '长文'], ['admin.tech', '数码'], ['admin.device', '设备'], ['admin.study', '指南'], ['admin.trips', '旅行攻略'], ['admin.friends', '友链'], ['admin.msg', '留言']]) +
           pg('朋友账号（成员）· 说白了就是「能做什么」', [
             ['member.canMsg', '发留言'],
             ['member.canPost', '在说说墙发帖'],
@@ -1317,7 +1317,7 @@
 
   function renderTravels() {
     var grid = $('#travelGrid');
-    if (!S.travels.length) { grid.innerHTML = emptyHTML('游记空空如也，点右上角 <b>＋</b> 添加第一篇 ✍️'); return; }
+    if (!S.travels.length) { grid.innerHTML = emptyHTML('长文空空如也，点右上角 <b>＋</b> 添加第一篇 ✍️'); return; }
     grid.innerHTML = sortDesc(S.travels, 'date').map(function (t, i) {
       var tags = (t.tags || []).map(function (x) { return '<span class="tag">' + esc(x) + '</span>'; }).join('');
       return '<article class="travel-card card reveal" style="--rd:' + Math.min(i * 70, 350) + 'ms" data-id="' + t.id + '">' +
@@ -1750,7 +1750,7 @@
     if (S.perms.member.canEdit) mine.push('编辑全部内容');
     return '你是朋友账号，当前可以：' + (mine.length ? mine.join('、') : '浏览');
   }
-  var ADMIN_PERM_LABEL = { say: '说说', travel: '游记', tech: '数码', device: '设备', study: '指南', trips: '旅行攻略', friends: '友链', msg: '留言' };
+  var ADMIN_PERM_LABEL = { say: '说说', travel: '长文', tech: '数码', device: '设备', study: '指南', trips: '旅行攻略', friends: '友链', msg: '留言' };
 
   /* 说说墙发帖框：没登录提示登录，没权限说明原因，有权限直接写 */
   function renderComposer() {
@@ -1811,7 +1811,7 @@
         '<button class="acct-btn" type="button" data-action="open-panel">🛡️ 管理面板<small>发放账号 / 权限开关 / 重置密码</small></button>' +
         '<button class="acct-btn" type="button" data-action="logout-user">🚪 退出登录<small>在公用设备上记得退出</small></button>' +
       '</div>' +
-      '<p class="acct-note">你是站长：游记 / 数码 / 设备只有你能改；朋友们那扇门里的说说墙、指南、友链留言的权限，在「管理面板 → 权限管理」里随时开关。</p>' +
+      '<p class="acct-note">你是站长：长文 / 数码 / 设备只有你能改；朋友们那扇门里的说说墙、指南、友链留言的权限，在「管理面板 → 权限管理」里随时开关。</p>' +
       '</div>';
   }
 
@@ -1854,7 +1854,7 @@
     space: 'MiNg 的个人空间 · MiNgHZ',
     friends: 'MiNg 和他的朋友们 · MiNgHZ'
   };
-  /* 朋友们：说说墙 / 指南 / 友链留言；个人空间：账号 / 游记 / 数码 / 设备 */
+  /* 朋友们：说说墙 / 指南 / 友链留言；个人空间：账号 / 长文 / 数码 / 设备 */
   var SECTION_VIEW = {
     moments: 'friends', study: 'friends', trips: 'friends', guest: 'friends', games: 'friends',
     account: 'space', travel: 'space', footprint: 'space', tech: 'space', devices: 'space', photo: 'space'
@@ -2400,7 +2400,7 @@
 
   function openTravelModal(item) {
     openModal({
-      title: item ? '编辑游记' : '添加游记',
+      title: item ? '编辑长文' : '添加长文',
       submitText: item ? '保存修改' : '添加 ✨',
       fields: [
         { key: 'title', label: '标题', required: true, max: 40, placeholder: '如：杭州 · 西湖散记', value: item ? item.title : '' },
@@ -2414,9 +2414,9 @@
       onSubmit: function (v) {
         var tags = v.tags.split(/[,，、]/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 5);
         if (item) {
-          adminMutate('travel.edit', { id: item.id, title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), content: v.content || '', tags: tags }, '游记已更新 🧳');
+          adminMutate('travel.edit', { id: item.id, title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), content: v.content || '', tags: tags }, '长文已更新 ✍️');
         } else {
-          adminMutate('travel.add', { id: uid(), title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim() || '🌏', grad: Math.floor(Math.random() * 8), summary: v.summary.trim(), content: v.content || '', tags: tags }, '游记已添加 🧳');
+          adminMutate('travel.add', { id: uid(), title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim() || '🌏', grad: Math.floor(Math.random() * 8), summary: v.summary.trim(), content: v.content || '', tags: tags }, '长文已添加 ✍️');
         }
         return true;
       }
@@ -3116,7 +3116,7 @@
       case 'del-moment': confirmDel('moment', id, '说说'); break;
       case 'add-travel': openTravelModal(null); break;
       case 'edit-travel': openTravelModal(find('travels')); break;
-      case 'del-travel': confirmDel('travel', id, '游记'); break;
+      case 'del-travel': confirmDel('travel', id, '长文'); break;
       case 'add-tech': openTechModal(null); break;
       case 'edit-tech': openTechModal(find('tech')); break;
       case 'del-tech': confirmDel('tech', id, '体验'); break;
