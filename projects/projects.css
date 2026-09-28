@@ -1,0 +1,185 @@
+/* ============================================================
+   项目展示（三级页面 /projects/ + 个人空间里的项目预览）
+   与主站共用 style.css，这里只加这一页需要的东西
+   ============================================================ */
+
+/* ---------- 页头 ---------- */
+.proj-head { padding: 56px 0 22px; border-bottom: 1px solid var(--line); }
+.proj-head .crumbs { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; }
+.proj-head .crumbs a { color: var(--muted); }
+.proj-head .crumbs a:hover { color: var(--accent); }
+.proj-head .crumbs span { color: var(--ink); }
+.proj-title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(1.8rem, 4vw, 2.7rem); letter-spacing: -0.03em;
+}
+.proj-sub { color: var(--muted); font-size: 0.95rem; margin-top: 10px; max-width: 660px; }
+
+.proj-toolbar { display: flex; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.proj-search-wrap { position: relative; flex: 1 1 260px; min-width: 0; display: flex; align-items: center; }
+.proj-search-ico { position: absolute; left: 13px; font-size: 0.82rem; opacity: 0.7; pointer-events: none; }
+.proj-search {
+  width: 100%; padding: 11px 14px 11px 36px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  background: var(--surface); color: var(--ink);
+  font-family: inherit; font-size: 0.86rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.proj-search::placeholder { color: var(--muted); }
+.proj-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.proj-sort-wrap {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 6px 4px 14px; border: 1px solid var(--line-strong); border-radius: 999px;
+  background: var(--surface);
+}
+.proj-sort-label { font-size: 0.74rem; color: var(--muted); letter-spacing: 0.06em; }
+.proj-select {
+  border: none; background: transparent; color: var(--ink);
+  font-family: inherit; font-size: 0.82rem; padding: 6px 4px; cursor: pointer;
+}
+.proj-select:focus { outline: none; }
+.proj-status { margin-top: 14px; color: var(--muted); font-size: 0.78rem; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.proj-status .dot { opacity: 0.5; }
+.proj-status b { color: var(--ink); font-weight: 600; }
+.proj-status .live { color: var(--ok); }
+.proj-status .cached { color: var(--accent); }
+
+/* ---------- 主体 ---------- */
+.proj-body { padding: 34px 24px 78px; }
+.proj-note {
+  border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 12px; background: var(--surface);
+  color: var(--muted); font-size: 0.82rem; line-height: 1.75;
+  padding: 12px 16px; margin-bottom: 26px;
+}
+.proj-block { margin-bottom: 46px; }
+.proj-block:last-child { margin-bottom: 0; }
+.proj-block-head { margin-bottom: 16px; }
+.proj-block-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(1.25rem, 2.4vw, 1.7rem); letter-spacing: -0.02em;
+}
+.proj-block-sub { color: var(--muted); font-size: 0.82rem; margin-top: 6px; }
+
+/* ---------- 筛选 chips ---------- */
+.proj-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.proj-chips-lang { margin-bottom: 20px; }
+.proj-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+  font-family: inherit; font-size: 0.79rem; line-height: 1;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.proj-chip:hover { color: var(--ink); border-color: var(--line-strong); }
+.proj-chip.on { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+.proj-chip .cnt { font-family: var(--font-latin); font-size: 0.68rem; opacity: 0.7; }
+.proj-chip.fork-toggle.on { color: var(--ink); background: var(--surface-2); }
+
+/* ---------- 项目卡片 ---------- */
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
+.proj-featured { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+
+.proj-card {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 10px;
+  padding: 20px 20px 18px;
+  border: 1px solid var(--line); border-radius: 18px; background: var(--surface);
+  animation: projIn 0.45s ease both; animation-delay: var(--rd, 0ms);
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+.proj-card:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+.proj-card::after {
+  content: ""; position: absolute; right: -30%; bottom: -70%;
+  width: 210px; height: 210px; border-radius: 50%;
+  background: radial-gradient(closest-side, var(--accent-soft), transparent);
+  opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+}
+.proj-card:hover::after { opacity: 1; }
+.proj-card.is-featured { border-color: var(--line-strong); }
+.proj-card.is-featured::before {
+  content: ""; position: absolute; left: 20px; right: 20px; top: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+}
+@keyframes projIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .proj-card, .proj-mini { animation: none; } }
+
+.proj-card-top { display: flex; align-items: flex-start; gap: 12px; }
+.proj-emoji {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
+  display: grid; place-items: center; font-size: 1.15rem;
+  background: var(--surface-2); border: 1px solid var(--line);
+}
+.proj-headline { flex: 1; min-width: 0; }
+.proj-name {
+  font-family: var(--font-latin); font-weight: 600; font-size: 0.98rem;
+  letter-spacing: -0.01em; word-break: break-word;
+}
+.proj-name a { color: var(--ink); }
+.proj-name a:hover { color: var(--accent); }
+.proj-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.proj-badge {
+  font-size: 0.66rem; padding: 3px 9px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--muted);
+}
+.proj-badge.star { color: var(--accent); border-color: transparent; background: var(--accent-soft); }
+.proj-badge.fork, .proj-badge.archived { color: var(--muted); }
+
+.proj-desc { color: var(--muted); font-size: 0.86rem; line-height: 1.72; }
+.proj-desc.en { font-size: 0.82rem; opacity: 0.9; }
+.proj-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.proj-tags .tag { font-size: 0.68rem; padding: 3px 10px; }
+
+.proj-meta {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 0.74rem;
+}
+.proj-meta .mlang { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.proj-lang-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.proj-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.proj-links a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px; font-size: 0.78rem;
+  border: 1px solid var(--line-strong); color: var(--ink);
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.proj-links a:hover { color: var(--accent); border-color: var(--accent); }
+.proj-links a.primary { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+.proj-links a.primary:hover { background: var(--accent); color: #fff; }
+
+.proj-empty { color: var(--muted); text-align: center; padding: 34px 0 6px; font-size: 0.86rem; }
+.proj-loading { color: var(--muted); font-size: 0.86rem; padding: 10px 0 4px; }
+
+@media (max-width: 560px) {
+  .proj-head { padding: 44px 0 18px; }
+  .proj-body { padding: 26px 24px 64px; }
+  .proj-grid { grid-template-columns: 1fr; }
+  .proj-toolbar { gap: 8px; }
+  .proj-search-wrap { flex: 1 1 100%; }
+  .proj-chip { padding: 10px 15px; }
+}
+
+/* ---------- 个人空间里的预览（首页 #projects 区块） ---------- */
+.proj-preview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .proj-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .proj-preview { grid-template-columns: 1fr; } }
+.proj-mini {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 20px 20px 18px;
+  border: 1px solid var(--line); border-radius: 18px; background: var(--surface);
+  animation: projIn 0.45s ease both; animation-delay: var(--rd, 0ms);
+  transition: transform 0.22s ease, border-color 0.22s ease;
+}
+.proj-mini:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+.proj-mini .proj-emoji { margin-bottom: 2px; }
+.proj-mini-name { font-family: var(--font-latin); font-weight: 600; font-size: 0.92rem; word-break: break-word; }
+.proj-mini-desc {
+  color: var(--muted); font-size: 0.82rem; line-height: 1.7;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.proj-mini-meta { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.72rem; margin-top: auto; }
+.proj-mini-meta .mlang { display: inline-flex; align-items: center; gap: 6px; }
+.proj-more { margin-top: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.proj-more .proj-more-hint { color: var(--muted); font-size: 0.76rem; }

@@ -965,7 +965,6 @@
     if (cached) {
       S = normalize(cached);
       renderAll();
-      prefetchKatexIfNeeded(JSON.stringify(S));
     }
 
     /* 先让浏览器把首屏画出来，再去请求云端：首次载入感觉快很多 */
@@ -992,7 +991,6 @@
         writeCache();
         setSync('cloud', '☁️ 已同步');
         renderAll();
-        prefetchKatexIfNeeded(JSON.stringify(S));
       }).catch(function () {
         if (mySession) restoreUser();
         if (cached) {
@@ -1374,6 +1372,14 @@
   function renderFootprints() {
     var box = $('#footprintMap');
     if (!box) return;
+    renderFootprintCount();
+    renderFootprintList();
+    if (window.CHINA_MAP) { paintFootprintMap(); return; }
+    box.innerHTML = '<p class="fp-muted fp-loading">地图加载中… 🗺</p>';
+    mountFootprintLoader();
+  }
+
+  function renderFootprintCount() {
     var cityTotal = 0;
     S.footprints.forEach(function (f) { cityTotal += (f.cities || []).length; });
     var count = $('#fpCount');
@@ -1383,18 +1389,48 @@
           '<span class="fp-legend"><i class="fp-dot on"></i>去过<i class="fp-dot"></i>还没去</span>'
         : '<span class="fp-muted">地图还是灰的 —— 去过的省份点亮一下就会亮起来 🗺</span>';
     }
-    renderFootprintList();
+  }
+
+  /* 地图 182KB：只有真的滚到「旅行足迹」附近才拉，首屏一个字节都不下 */
+  var fpMapObserver = null;
+  function mountFootprintLoader() {
+    var sec = document.getElementById('footprint');
+    if (!sec || window.CHINA_MAP || fpMapObserver) return;
+    if (!('IntersectionObserver' in window)) { loadFootprintMap(); return; }
+    fpMapObserver = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        if (!entries[i].isIntersecting) continue;
+        if (fpMapObserver) { fpMapObserver.disconnect(); fpMapObserver = null; }
+        loadFootprintMap();
+        return;
+      }
+    }, { rootMargin: '400px 0px' });
+    fpMapObserver.observe(sec);
+  }
+
+  function loadFootprintMap() {
+    if (window.CHINA_MAP) { paintFootprintMap(); return; }
     ensureChinaMap(function (ok) {
-      if (!ok) { box.innerHTML = '<p class="fp-muted">地图数据没加载出来，刷新一下页面再试试。</p>'; return; }
-      var m = window.CHINA_MAP;
-      box.innerHTML = '<svg class="cn-map" viewBox="0 0 ' + m.w + ' ' + m.h + '" role="img" aria-label="中国地图 · 旅行足迹">' +
-        m.provinces.map(function (p) {
-          var on = !!footprintOf(p.name);
-          return '<path d="' + p.d + '" data-province="' + esc(p.name) + '" class="cn-prov' + (on ? ' on' : '') + '" tabindex="-1"></path>';
-        }).join('') + '</svg>';
-      bindFootprintMap();
-      highlightFootprint(currentFootprint);
+      if (!ok) {
+        var box = $('#footprintMap');
+        if (box) box.innerHTML = '<p class="fp-muted">地图数据没加载出来，刷新一下页面再试试。</p>';
+        return;
+      }
+      paintFootprintMap();
     });
+  }
+
+  function paintFootprintMap() {
+    var box = $('#footprintMap');
+    if (!box || !window.CHINA_MAP) return;
+    var m = window.CHINA_MAP;
+    box.innerHTML = '<svg class="cn-map" viewBox="0 0 ' + m.w + ' ' + m.h + '" role="img" aria-label="中国地图 · 旅行足迹">' +
+      m.provinces.map(function (p) {
+        var on = !!footprintOf(p.name);
+        return '<path d="' + p.d + '" data-province="' + esc(p.name) + '" class="cn-prov' + (on ? ' on' : '') + '" tabindex="-1"></path>';
+      }).join('') + '</svg>';
+    bindFootprintMap();
+    highlightFootprint(currentFootprint);
   }
 
   function renderFootprintList() {
@@ -1857,7 +1893,8 @@
   /* 朋友们：说说墙 / 指南 / 友链留言；个人空间：账号 / 长文 / 数码 / 设备 */
   var SECTION_VIEW = {
     moments: 'friends', study: 'friends', trips: 'friends', guest: 'friends', games: 'friends',
-    account: 'space', travel: 'space', footprint: 'space', tech: 'space', devices: 'space', photo: 'space'
+    account: 'space', travel: 'space', footprint: 'space', tech: 'space', devices: 'space',
+    photo: 'space', projects: 'space'
   };
   var currentView = '';
   var mountMsgTs = null;   /* 由留言表单那一段赋值：进入视图后再挂人机验证 */
@@ -1985,13 +2022,6 @@
         n.textContent = tex;
       });
     });
-  }
-
-  /* 内容里出现公式时，空闲时先把 KaTeX 拉下来，点开文章就不用等 */
-  function prefetchKatexIfNeeded(text) {
-    if (!text || text.indexOf('$') < 0) return;
-    var later = window.requestIdleCallback || function (fn) { setTimeout(fn, 1200); };
-    later(function () { ensureKatex(function () {}); });
   }
 
   /* ============================================================
@@ -3341,7 +3371,7 @@
       });
     });
   }, { rootMargin: '-40% 0px -52% 0px' }) : null;
-  ['moments', 'study', 'trips', 'guest', 'games', 'account', 'travel', 'footprint', 'tech', 'devices'].forEach(function (sec) {
+  ['moments', 'study', 'trips', 'guest', 'games', 'account', 'travel', 'footprint', 'tech', 'devices', 'photo', 'projects'].forEach(function (sec) {
     var el = document.getElementById(sec);
     if (el && spyIO) spyIO.observe(el);
   });

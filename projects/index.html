@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com https://api.github.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>项目 · Projects | MiNgHZ</title>
+  <meta name="description" content="MiNgHZ 的 GitHub 项目展示：桌宠、Android 应用与这个小站本身 —— 自动同步自 github.com/MiNgOfficial-HZ。" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0c" />
+  <link rel="icon" href="/assets/logo.jpg" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.github.com" crossorigin />
+  <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
+  <link rel="stylesheet" href="/css/style.css?v=20260927g" />
+  <link rel="stylesheet" href="/projects/projects.css?v=1" />
+</head>
+<body data-view="projects">
+  <span id="pageTop" aria-hidden="true"></span>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a class="brand" href="/#home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
+        <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="主导航">
+        <a href="/#home" class="nav-link">首页</a>
+        <a href="/#space" class="nav-link">MiNg的个人空间</a>
+        <a href="/#friends" class="nav-link">MiNg和他的朋友们</a>
+        <a href="/about/" class="nav-link">关于</a>
+      </nav>
+      <div class="header-actions">
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
+        <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="proj-head">
+      <div class="container">
+        <p class="crumbs"><a href="/#home">首页</a> › <a href="/#space">MiNg 的个人空间</a> › <span>项目</span></p>
+        <h1 class="proj-title">🧩 项目 · Projects</h1>
+        <p class="proj-sub">我写过的那些东西，都放在 GitHub 上 —— 这一页会自动同步过去，改了代码这里也跟着变。</p>
+        <div class="proj-toolbar">
+          <label class="proj-search-wrap">
+            <span class="proj-search-ico" aria-hidden="true">🔍</span>
+            <input id="projSearch" class="proj-search" type="search" autocomplete="off" placeholder="搜项目名 / 语言 / 标签…（按 / 快速定位）" aria-label="搜索项目" />
+          </label>
+          <label class="proj-sort-wrap">
+            <span class="proj-sort-label">排序</span>
+            <select id="projSort" class="proj-select" aria-label="排序方式">
+              <option value="pushed">最近更新</option>
+              <option value="stars">星标最多</option>
+              <option value="name">按名称</option>
+            </select>
+          </label>
+          <button id="projRefresh" class="btn btn-ghost btn-small" type="button">↻ 刷新</button>
+          <a id="projProfile" class="btn btn-soft btn-small" href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">GitHub 主页 ↗</a>
+        </div>
+        <div class="proj-status" id="projStats">正在读取 GitHub…</div>
+      </div>
+    </section>
+
+    <section class="container proj-body">
+      <p class="proj-note" id="projNote" hidden></p>
+
+      <div class="proj-block" id="projFeaturedWrap" hidden>
+        <div class="proj-block-head">
+          <h2 class="proj-block-title">⭐ 精选项目</h2>
+          <p class="proj-block-sub">我自己最想先给你看的那几个。</p>
+        </div>
+        <div class="proj-featured" id="projFeatured"></div>
+      </div>
+
+      <div class="proj-block">
+        <div class="proj-block-head">
+          <h2 class="proj-block-title">全部项目</h2>
+          <p class="proj-block-sub" id="projAllSub"></p>
+        </div>
+        <div class="proj-chips" id="projCats" role="group" aria-label="按分类筛选"></div>
+        <div class="proj-chips proj-chips-lang" id="projLangs" role="group" aria-label="按语言筛选"></div>
+        <div class="proj-grid" id="projGrid"></div>
+        <p class="proj-empty" id="projEmpty" hidden>没有符合条件的项目 —— 换个关键词或点一下「全部」试试。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
+      <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
+      <p class="footer-hint footer-nav"><a href="/#space">← 回到 MiNg 的个人空间</a> &nbsp;·&nbsp; <a href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">github.com/MiNgOfficial-HZ ↗</a></p>
+      <p class="footer-hint">项目数据来自 GitHub 公开接口，只读取仓库名 / 简介 / 语言 / 星标与更新时间。</p>
+    </div>
+  </footer>
+
+  <script src="/projects/projects-data.js?v=1" defer></script>
+  <script src="/projects/projects.js?v=1" defer></script>
+  <script src="/js/maint.js?v=3" defer></script>
+</body>
+</html>

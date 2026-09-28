@@ -20,6 +20,7 @@
   <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
   <link rel="stylesheet" href="css/style.css?v=20260927g" />
+  <link rel="stylesheet" href="/projects/projects.css?v=1" />
 </head>
 <body data-view="home">
   <span id="pageTop" aria-hidden="true"></span>
@@ -133,6 +134,7 @@
           <a href="#tech" class="sub-link">📷 数码</a>
           <a href="#devices" class="sub-link">🎧 设备</a>
           <a href="#photo" class="sub-link">📷 摄影</a>
+          <a href="#projects" class="sub-link">🧩 项目</a>
         </div>
       </nav>
 
@@ -231,6 +233,23 @@
             <h3 class="entry-title">进入取景器 →</h3>
             <span class="entry-cta">点这里进入摄影空间</span>
           </a>
+        </div>
+      </section>
+
+      <!-- 07 项目（GitHub · 点进去是独立的三级页面 /projects/） -->
+      <section class="section" id="projects">
+        <div class="container">
+          <div class="section-head reveal">
+            <span class="eyebrow">06 · GitHub · Projects</span>
+            <h2 class="section-title">项目</h2>
+            <p class="section-sub">我在 GitHub 上写的东西：桌面宠物、Android 应用、还有这个小站本身。项目页会自动同步 GitHub，改了代码那里就跟着变。</p>
+          </div>
+          <div class="proj-preview" id="projPreview"></div>
+          <div class="proj-more reveal">
+            <a class="btn btn-primary btn-small" href="/projects/">查看全部项目 →</a>
+            <a class="btn btn-ghost btn-small" href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">github.com/MiNgOfficial-HZ ↗</a>
+            <span class="proj-more-hint" id="projPreviewHint">数据来自 GitHub 公开接口</span>
+          </div>
         </div>
       </section>
     </div>
@@ -430,5 +449,7 @@
   <script src="js/app.js?v=20260927g" defer></script>
   <script src="/js/maint.js?v=3" defer></script>
   <script src="/js/giraffe.js?v=3" defer></script>
+  <script src="/projects/projects-data.js?v=1" defer></script>
+  <script src="/projects/projects-home.js?v=1" defer></script>
 </body>
 </html>
