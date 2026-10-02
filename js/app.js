@@ -1768,6 +1768,7 @@
     document.body.classList.toggle('is-owner', isOwnerUser());
     renderComposer();
     renderAccount();
+    paintReaderTools();   /* 阅读器开着的时候登录 / 退出，导出按钮要跟着变 */
   }
 
   function permSummary() {
@@ -2326,12 +2327,22 @@
   }
 
   var READER_KINDS = { travel: 'travels', tech: 'tech', study: 'studies', trip: 'trips' };
+  var currentReader = null;       /* 当前打开的文章（导出要用） */
+
+  /* 导出权限：只要登录了就行（朋友账号 / 管理员 / 站长），游客不能导出 */
+  function canExport() { return !!myUser; }
+  function paintReaderTools() {
+    var tools = $('#readerTools');
+    if (tools) tools.hidden = !canExport();
+  }
+
   function openReader(kind, id) {
     if (maintLocked()) { toast('网站正在维护中，稍后再来 🛠️', 'info'); return; }
     var arr = S[READER_KINDS[kind]] || [];
     var item = null;
     for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) { item = arr[i]; break; } }
     if (!item) return;
+    currentReader = { kind: kind, id: id, item: item };
     var meta = '';
     if (kind === 'travel') meta = esc(item.location || '') + (item.date ? ' · ' + esc(item.date) : '');
     else if (kind === 'trip') {
@@ -2345,11 +2356,78 @@
     hydrateMath(body);
     $('#reader').hidden = false;
     document.body.style.overflow = 'hidden';
+    paintReaderTools();
   }
   function closeReader() {
     $('#reader').hidden = true;
     $('#readerBody').innerHTML = '';
     document.body.style.overflow = '';
+    currentReader = null;
+  }
+
+  /* ---------- 导出 Markdown（走服务端，游客会被 401 拦掉） ---------- */
+  function exportReaderMarkdown() {
+    if (!currentReader) { toast('先打开一篇文章再导出吧', 'error'); return; }
+    if (!canExport()) { toast('登录后才能导出（游客不能导出）', 'error'); return; }
+    toast('正在生成 Markdown…', 'info');
+    apiPost('/api/export', { session: mySession, kind: currentReader.kind, id: currentReader.id }).then(function (res) {
+      if (res.status === 401 || res.status === 403) { toast((res.json && res.json.error) || '登录后才能导出', 'error'); return; }
+      if (!res.ok || !res.json || !res.json.markdown) { toast((res.json && res.json.error) || '导出失败，稍后再试', 'error'); return; }
+      var blob = new Blob([res.json.markdown], { type: 'text/markdown;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = res.json.filename || 'export.md';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { try { a.remove(); URL.revokeObjectURL(url); } catch (e) {} }, 2000);
+      toast('已导出 Markdown ⬇️');
+    }).catch(function (e) {
+      toast('导出失败：' + ((e && e.message) || '网络异常'), 'error');
+    });
+  }
+
+  /* ---------- 导出 PDF（浏览器打印排版：文字可选中、中文不会糊） ---------- */
+  function exportReaderPdf() {
+    if (!currentReader) { toast('先打开一篇文章再导出吧', 'error'); return; }
+    if (!canExport()) { toast('登录后才能导出（游客不能导出）', 'error'); return; }
+    var body = $('#readerBody');
+    var item = currentReader.item;
+    var imgs = Array.isArray(item.imgs) ? item.imgs : [];
+    var extra = null;
+    if (imgs.length) {
+      extra = document.createElement('div');
+      extra.className = 'print-gallery';
+      extra.innerHTML = '<h2>图片</h2>' + imgs.map(function (u) {
+        return '<img src="' + esc(mediaUrl(u)) + '" alt="' + esc(item.title || '') + '" />';
+      }).join('');
+      body.appendChild(extra);
+    }
+    var oldTitle = document.title;
+    document.title = item.title || oldTitle;
+    toast('在弹出的打印窗口里选「另存为 PDF」就行 🖨️', 'info');
+    var cleaned = false;
+    var cleanup = function () {
+      if (cleaned) return;
+      cleaned = true;
+      document.body.classList.remove('printing');
+      document.title = oldTitle;
+      if (extra) extra.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    var wait = Promise.all(Array.prototype.map.call(body.querySelectorAll('img'), function (im) {
+      if (im.complete) return Promise.resolve();
+      return new Promise(function (r) {
+        im.onload = im.onerror = function () { r(); };
+        setTimeout(r, 1500);
+      });
+    }));
+    wait.then(function () {
+      document.body.classList.add('printing');
+      setTimeout(function () { try { window.print(); } catch (e) { cleanup(); toast('当前浏览器不支持直接打印', 'error'); } }, 120);
+      setTimeout(cleanup, 60000);   /* 有些浏览器不触发 afterprint，兜底收回 */
+    });
   }
 
   function validateField(f, v) {
@@ -2952,6 +3030,8 @@
     switch (act) {
       case 'close-modal': closeModal(); break;
       case 'submit-modal': submitModal(); break;
+      case 'export-md': exportReaderMarkdown(); break;
+      case 'export-pdf': exportReaderPdf(); break;
       case 'confirm-ok': {
         var cb = pendingConfirm;
         closeModal();

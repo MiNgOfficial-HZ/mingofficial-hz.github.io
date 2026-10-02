@@ -242,7 +242,6 @@
           <div class="section-head reveal">
             <span class="eyebrow">06 · GitHub · Projects</span>
             <h2 class="section-title">项目</h2>
-            <p class="section-sub">我在 GitHub 上写的东西：桌面宠物、Android 应用、还有这个小站本身。项目页会自动同步 GitHub，改了代码那里就跟着变。</p>
           </div>
           <div class="proj-preview" id="projPreview"></div>
           <div class="proj-more reveal">
@@ -424,6 +423,10 @@
   <div class="reader" id="reader" hidden>
     <div class="reader-panel">
       <button class="lightbox-close" type="button" aria-label="关闭文章">✕</button>
+      <div class="reader-tools" id="readerTools" hidden>
+        <button class="btn btn-soft btn-small" type="button" data-action="export-pdf">🖨️ 导出 PDF</button>
+        <button class="btn btn-soft btn-small" type="button" data-action="export-md">⬇️ 导出 Markdown</button>
+      </div>
       <div class="reader-meta" id="readerMeta"></div>
       <h2 class="reader-title" id="readerTitle"></h2>
       <article class="md-body" id="readerBody"></article>

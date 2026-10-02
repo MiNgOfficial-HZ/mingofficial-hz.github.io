@@ -147,14 +147,6 @@
       (tip ? '<span class="dot">·</span><span>' + esc(tip) + '</span>' : '');
   }
 
-  function note(msg) {
-    var el = $('#projNote');
-    if (!el) return;
-    if (!msg) { el.hidden = true; el.innerHTML = ''; return; }
-    el.hidden = false;
-    el.innerHTML = msg;
-  }
-
   /* ---------- 筛选 chips ---------- */
   function renderChips() {
     /* 计数只算「这会儿能看到的」：归档的不算，Fork 看开关 */
@@ -307,11 +299,10 @@
     try { localStorage.setItem(LS_KEY, JSON.stringify({ t: Date.now(), repos: list })); } catch (e) {}
   }
 
-  function useFallback(reasonHtml) {
+  function useFallback() {
     var fb = CFG.fallback || [];
     var when = CFG.fallbackUpdatedAt ? new Date(CFG.fallbackUpdatedAt + 'T00:00:00') : new Date();
     setRepos(fb, 'fallback', when.getTime());
-    if (reasonHtml) note(reasonHtml);
   }
 
   function load(force) {
@@ -343,18 +334,11 @@
         if (!Array.isArray(list)) throw new Error('bad payload');
         writeCache(list);
         setRepos(list, 'live', Date.now());
-        note('');
       })
-      .catch(function (err) {
-        var msg;
-        if (err && (err.status === 403 || err.status === 429)) {
-          msg = 'GitHub 的匿名调用额度暂时用完了（同一个出口 IP 每小时 60 次）。下面先显示<b>最近一次抓到的清单</b>，额度大约在 <b>' +
-            (err.reset ? fmtDate(err.reset) : '一小时内') + '</b> 恢复。';
-        } else {
-          msg = '这会儿读不到 GitHub（可能断网或被浏览器拦下了），下面先显示<b>最近一次抓到的清单</b>。';
-        }
-        if (cache) { setRepos(cache.repos, 'cache', cache.t); note(msg + ' 这张缓存的时间是 ' + fmtDate(cache.t) + '。'); }
-        else { useFallback(msg + ' 这份清单的时间是 ' + esc(CFG.fallbackUpdatedAt || '—') + '。'); }
+      .catch(function () {
+        /* 拿不到新数据就安静地退到缓存 / 兜底清单：状态行里已经写明「本地缓存 / 最近一次清单」和时间 */
+        if (cache) setRepos(cache.repos, 'cache', cache.t);
+        else useFallback();
       })
       .then(function () {
         if (btn) { btn.disabled = false; btn.textContent = '↻ 刷新'; }
