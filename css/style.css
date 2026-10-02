@@ -834,6 +834,22 @@ body.admin-mode .admin-only { display: inline-flex; }
 .reader-tools[hidden] { display: none; }
 .print-gallery { display: none; }   /* 配图只在打印/导出 PDF 时出现 */
 
+/* 修改日志：附在长文结尾的小字（时间 · 谁改的 · 改了什么大类） */
+.edit-log {
+  margin-top: 30px; padding-top: 14px;
+  border-top: 1px dashed var(--line-strong);
+  font-size: 0.76rem; color: var(--muted);
+}
+.edit-log h4 {
+  font-family: var(--font-tech); font-size: 0.76rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.edit-log ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.edit-log li { display: flex; gap: 10px; flex-wrap: wrap; line-height: 1.65; }
+.edit-log time { font-family: var(--font-latin); opacity: 0.9; }
+.edit-log .who { color: var(--ink); opacity: 0.72; }
+.edit-log .what { color: var(--muted); }
+
 /* ---------- 导出 PDF：打印排版（只在打印时生效，屏幕上不变） ---------- */
 @media print {
   body.printing { background: #fff !important; }
@@ -870,6 +886,10 @@ body.admin-mode .admin-only { display: inline-flex; }
     display: block; margin: 0 auto 10pt; max-width: 100%; max-height: 150mm;
     page-break-inside: avoid; break-inside: avoid;
   }
+  body.printing .edit-log { margin-top: 14pt; padding-top: 8pt; border-top: 1px dashed #bbb; color: #555; font-size: 8pt; }
+  body.printing .edit-log h4 { color: #555; font-size: 8pt; }
+  body.printing .edit-log .who { color: #333; opacity: 1; }
+  body.printing .edit-log .what { color: #555; }
   @page { margin: 16mm 14mm; }
 }
 .md-body { font-size: 0.95rem; line-height: 1.95; color: var(--ink); word-break: break-word; }

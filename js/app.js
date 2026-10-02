@@ -2336,6 +2336,26 @@
     if (tools) tools.hidden = !canExport();
   }
 
+  /* ---------- 修改日志：附在长文结尾的小字（最新在前） ---------- */
+  function editLogOf(item) {
+    if (item && Array.isArray(item.history) && item.history.length) return item.history.slice().reverse();
+    /* 老文章没记过日志：用现成的署名与时间兜底一条 */
+    return [{ t: (item && item.time) || '', by: (item && item.author) || '', act: '新增这篇文章' }];
+  }
+  function appendEditLog(root, item) {
+    if (!root) return;
+    var rows = editLogOf(item);
+    if (!rows.length) return;
+    var box = document.createElement('div');
+    box.className = 'edit-log';
+    box.innerHTML = '<h4>🕘 修改日志</h4><ul>' + rows.map(function (h) {
+      return '<li><time>' + esc(h.t || '') + '</time>' +
+        '<span class="who">' + esc(h.by || '') + '</span>' +
+        '<span class="what">' + esc(h.act || '修改') + '</span></li>';
+    }).join('') + '</ul>';
+    root.appendChild(box);
+  }
+
   function openReader(kind, id) {
     if (maintLocked()) { toast('网站正在维护中，稍后再来 🛠️', 'info'); return; }
     var arr = S[READER_KINDS[kind]] || [];
@@ -2354,6 +2374,7 @@
     var body = $('#readerBody');
     body.innerHTML = mdToHtml(item.content || item.text || item.summary || '暂无内容');
     hydrateMath(body);
+    appendEditLog(body, item);
     $('#reader').hidden = false;
     document.body.style.overflow = 'hidden';
     paintReaderTools();
