@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+  <script src="/js/theme-init.js?v=20261003-dashboard"></script>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -12,15 +13,15 @@
   <meta property="og:title" content="MiNg Official Website" />
   <meta property="og:description" content="一半是生活，一半是热爱。" />
   <meta property="og:type" content="website" />
-  <link rel="icon" href="assets/logo.jpg" />
+  <link rel="icon" href="/assets/logo.jpg" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://api.giraffeming.online" crossorigin />
-  <link rel="preload" as="image" href="assets/logo.jpg" />
+  <link rel="preload" as="image" href="/assets/logo.jpg" />
   <!-- 字体非阻塞加载：先按 print 低优先级拉取，加载完由 js/app.js 切成 all；首屏直接用系统字体渲染 -->
   <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
-  <link rel="stylesheet" href="css/style.css?v=20260927g" />
-  <link rel="stylesheet" href="/projects/projects.css?v=1" />
+  <link rel="stylesheet" href="/css/style.css?v=20261003-dashboard" />
+  <link rel="stylesheet" href="/css/directory.css?v=20261003-dashboard" />
 </head>
 <body data-view="home">
   <span id="pageTop" aria-hidden="true"></span>
@@ -34,18 +35,19 @@
 
   <header class="site-header" id="siteHeader">
     <div class="container header-inner">
-      <a class="brand" href="#home" data-action="go-view" data-view="home">
-        <span class="brand-mark" style="background-image:url('assets/logo.jpg')"></span>
+      <a class="brand" href="/" data-action="go-view" data-view="home">
+        <span class="brand-mark" style="background-image:url('/assets/logo.jpg')"></span>
         <span class="brand-text"><b>MiNgHZ</b><small>DIGITAL LAB</small></span>
       </a>
       <nav class="main-nav" id="mainNav" aria-label="主导航">
-        <a href="#home" class="nav-link" data-action="go-view" data-view="home">首页</a>
-        <a href="#space" class="nav-link" data-action="go-view" data-view="space">MiNg的个人空间</a>
-        <a href="#friends" class="nav-link" data-action="go-view" data-view="friends">MiNg和他的朋友们</a>
+        <a href="/" class="nav-link" data-action="go-view" data-view="home">首页</a>
+        <a href="/space/" class="nav-link" data-action="go-view" data-view="space">MiNg的个人空间</a>
+        <a href="/friends/" class="nav-link" data-action="go-view" data-view="friends">MiNg和他的朋友们</a>
         <a href="/about/" class="nav-link">关于</a>
       </nav>
       <div class="header-actions">
         <span id="syncChip" class="sync-chip syncing" role="status" title="数据云端同步状态">🔄 同步中…</span>
+        <button id="headerUserBtn" class="header-account" type="button" data-action="guest-login">登录</button>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深浅主题">☀️</button>
         <button id="menuToggle" class="icon-btn menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">☰</button>
       </div>
@@ -53,11 +55,16 @@
   </header>
 
   <main id="top">
+    <nav class="page-crumbs container" id="sectionBreadcrumb" aria-label="当前位置" hidden>
+      <a href="/" data-action="go-view" data-view="home">首页</a><span aria-hidden="true">/</span>
+      <a href="/space/" id="sectionParentLink" data-action="go-view" data-view="space">个人空间</a><span aria-hidden="true">/</span>
+      <span id="sectionCrumbTitle" aria-current="page"></span>
+    </nav>
     <!-- ============================ 主页（门户） ============================ -->
     <div class="view-panel" id="viewHome">
       <section class="portal">
         <div class="container">
-          <p class="hero-kicker">HZ DIGITAL LAB · TECH × LIFE × CREATION</p>
+          <p class="hero-kicker">MiNgHZ · Personal website</p>
           <h1 class="portal-title">
             <span class="pt-l1">这里是</span>
             <em class="pt-mid">MiNgHZ</em>
@@ -67,7 +74,7 @@
             长颈鹿出没，谨防撞伤。<br />
             <span class="warn-en">WARNING！GIRAFFES！</span>
           </p>
-          <div class="hero-stats" id="heroStats"></div>
+          <div class="hero-stats" id="heroStats" hidden></div>
 
           <!-- 站长视角：维护模式提示（只有站长能看到这一条） -->
           <div class="maint-owner-note" id="maintOwnerNote" hidden>
@@ -93,22 +100,22 @@
 
           <div class="portal-user">
             <button id="userBtn" class="btn btn-primary" type="button">👤 登录 / 我的账户</button>
-            <span class="portal-user-hint">账号由站长发放；登录后可以发帖、跟帖、写指南、写旅行攻略，也能换自己的头像</span>
+            <span class="portal-user-hint">有账号的朋友可以登录，写点东西。</span>
           </div>
 
-          <p class="portal-split-label">进门请选一扇门 · TWO DOORS</p>
+          <p class="portal-split-label">随便逛逛</p>
           <div class="portal-entries">
-            <a class="entry-card" href="#friends" data-action="go-view" data-view="friends">
-              <span class="entry-emoji">🤝</span>
-              <span class="entry-kicker">ENTRY · 01 · 朋友们的客厅</span>
+            <a class="entry-card" href="/friends/" data-action="go-view" data-view="friends">
+              <span class="entry-symbol" aria-hidden="true">↗</span>
+              <span class="entry-kicker">Friends</span>
               <h2 class="entry-title">MiNg 和他的朋友们</h2>
-              <span class="entry-cta">去做客 / 发一条 →</span>
+              <span class="entry-cta">说说、指南、旅行攻略，还有一起玩的桌游。</span>
             </a>
-            <a class="entry-card entry-card-main" href="#space" data-action="go-view" data-view="space">
-              <span class="entry-emoji">🧑‍🚀</span>
-              <span class="entry-kicker">ENTRY · 02 · 我的地盘</span>
+            <a class="entry-card entry-card-main" href="/space/" data-action="go-view" data-view="space">
+              <span class="entry-symbol" aria-hidden="true">↗</span>
+              <span class="entry-kicker">Personal space</span>
               <h2 class="entry-title">MiNg 的个人空间</h2>
-              <span class="entry-cta">进我的书房 →</span>
+              <span class="entry-cta">我写的东西、去过的地方、用过的设备。</span>
             </a>
           </div>
 
@@ -118,60 +125,89 @@
 
     <!-- ============================ MiNg 的个人空间 ============================ -->
     <div class="view-panel" id="viewSpace" hidden>
-      <section class="space-head">
+      <section class="space-head" id="spaceHeading">
         <div class="container">
-          <p class="eyebrow">PERSONAL SPACE · 我的地盘</p>
+          <p class="eyebrow">Personal space</p>
           <h1 class="space-title">MiNg 的个人空间</h1>
-          <p class="space-sub">长颈鹿的个人领地，出没概率高，请注意安全。是长颈鹿的好朋友或者是其他野生动物请前往「MiNg 和他的朋友们」那边。</p>
+          <p class="space-sub">写东西，出门走走，偶尔折腾设备。</p>
         </div>
       </section>
 
-      <nav class="sub-nav" id="subNav" aria-label="个人空间导航">
-        <div class="container sub-nav-inner">
-          <a href="#account" class="sub-link" id="accountNavLink" hidden>🛡️ 管理界面</a>
-          <a href="#travel" class="sub-link">✍️ 长文</a>
-          <a href="#footprint" class="sub-link">🗺 足迹</a>
-          <a href="#tech" class="sub-link">📷 数码</a>
-          <a href="#devices" class="sub-link">🎧 设备</a>
-          <a href="#photo" class="sub-link">📷 摄影</a>
-          <a href="#projects" class="sub-link">🧩 项目</a>
-        </div>
-      </nav>
-
-      <!-- 01 管理界面（只有站长能看到：账号、权限、发放账号） -->
-      <section class="section" id="account" hidden>
+<!-- 01 管理界面（只有站长能看到：账号、权限、发放账号） -->
+      <section class="section owner-area" id="account" hidden>
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">ADMIN · 管理界面</span>
+            <span class="eyebrow">仅自己可见</span>
             <h2 class="section-title">管理界面</h2>
-            <p class="section-sub">发放账号、开关朋友们的权限、重置密码与两步验证 —— 只有站长看得到这一块。</p>
+            <p class="section-sub">账号、权限与网站设置。</p>
           </div>
           <div id="accountPanel"></div>
         </div>
       </section>
 
-      <!-- 02 旅行日志 -->
-      <section class="section section-alt" id="travel">
+      <section class="directory container" id="spaceDirectory" aria-label="个人空间六个板块入口">
+        <div class="directory-grid">
+          <a class="directory-card directory-writing" href="/space/writing/">
+            <span class="directory-label">Thinking</span>
+            <h2>长文</h2><p>旅行记录、随笔与一些想法。</p>
+            <span class="directory-bottom"><span data-directory-count="writing">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="34" y="18" width="98" height="122" rx="3"/><path d="M49 46h64M49 61h52M49 76h60M49 91h42M49 117h22"/><path d="m115 132 28-42 8 5-28 42-12 6z"/></svg>
+          </a>
+          <a class="directory-card directory-footprint" href="/space/footprints/">
+            <span class="directory-label">Footprints</span>
+            <h2>足迹</h2><p>把去过的地方记在地图上。</p>
+            <span class="directory-bottom"><span data-directory-count="footprint">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 121c17-39 45 9 61-24s-4-36 24-47" stroke-dasharray="4 7"/><circle cx="23" cy="121" r="5"/><path d="M109 21c-13 0-23 10-23 23 0 18 23 39 23 39s23-21 23-39c0-13-10-23-23-23z"/><circle cx="109" cy="43" r="7"/></svg>
+          </a>
+          <a class="directory-card directory-tech" href="/space/tech/">
+            <span class="directory-label">Tech & Life</span>
+            <h2>数码生活</h2><p>我用过的设备和使用体验。</p>
+            <span class="directory-bottom"><span data-directory-count="tech">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="18" y="29" width="133" height="85" rx="5"/><path d="M29 40h111v63H29zM67 115v14M102 115v14M51 130h67"/><path d="m43 78 19-15 20 20 30-31 17 13"/></svg>
+          </a>
+          <a class="directory-card directory-devices" href="/space/devices/">
+            <span class="directory-label">Personal Devices</span>
+            <h2>数码设备</h2><p>桌上和包里的常用设备。</p>
+            <span class="directory-bottom"><span data-directory-count="devices">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="32" y="32" width="51" height="98" rx="8"/><path d="M49 41h17M51 120h13"/><rect x="96" y="69" width="50" height="58" rx="13"/><path d="M103 53V40c0-21 34-21 34 0v13M100 49v19M140 49v19"/></svg>
+          </a>
+          <a class="directory-card directory-photo" href="/photo/">
+            <span class="directory-label">Photography</span>
+            <h2>摄影</h2><p>照片、地点与拍摄时间。</p>
+            <span class="directory-bottom"><span data-directory-count="photo">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="15" y="42" width="140" height="89" rx="7"/><path d="m50 42 9-17h49l10 17M27 57h19"/><circle cx="90" cy="86" r="30"/><circle cx="90" cy="86" r="20"/></svg>
+          </a>
+          <a class="directory-card directory-projects" href="/projects/">
+            <span class="directory-label">Projects</span>
+            <h2>项目</h2><p>GitHub 上的项目和小工具。</p>
+            <span class="directory-bottom"><span data-directory-count="projects">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 27h130v105H20zM20 51h130"/><circle cx="31" cy="39" r="1"/><circle cx="42" cy="39" r="1"/><path d="m57 68-18 17 18 17m54-34 18 17-18 17M91 65l-14 42"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- 02 长文 -->
+      <section class="section section-alt" id="travel" hidden>
         <div class="container">
           <div class="section-head reveal">
             <span class="eyebrow">01 · Thinking</span>
             <div class="title-row">
-              <h2 class="section-title">Thinking</h2>
+              <h1 class="section-title">长文 <small>Thinking</small></h1>
               <button class="btn btn-small btn-soft" type="button" data-action="add-travel" hidden>＋ 添加长文</button>
             </div>
-            <p class="section-sub">走过的路、看过的风景，用卡片收藏成册。</p>
+            <p class="section-sub">旅行记录、想法，以及一些没法三言两语说完的事。</p>
           </div>
           <div class="travel-grid" id="travelGrid"></div>
         </div>
       </section>
 
       <!-- 03 旅行足迹（中国地图：去过的省份点亮） -->
-      <section class="section" id="footprint">
+      <section class="section" id="footprint" hidden>
         <div class="container">
           <div class="section-head reveal">
             <span class="eyebrow">02 · Footprints</span>
             <div class="title-row">
-              <h2 class="section-title">旅行足迹</h2>
+              <h1 class="section-title">旅行足迹</h1>
               <button class="btn btn-small btn-soft" type="button" data-action="add-footprint" hidden>＋ 点亮一个省</button>
             </div>
             <p class="section-sub">去过的省级行政区会亮起来 —— 鼠标放上去（手机上点一下）就能看到那个省里去过的城市。</p>
@@ -190,27 +226,27 @@
       </section>
 
       <!-- 04 数码生活 -->
-      <section class="section section-alt" id="tech">
+      <section class="section section-alt" id="tech" hidden>
         <div class="container">
           <div class="section-head reveal">
             <span class="eyebrow">03 · Tech &amp; Life</span>
             <div class="title-row">
-              <h2 class="section-title">Tech &amp; Life</h2>
+              <h1 class="section-title">数码生活 <small>Tech &amp; Life</small></h1>
               <button class="btn btn-small btn-soft" type="button" data-action="add-tech" hidden>＋ 添加体验</button>
             </div>
-            <p class="section-sub">新玩具的第一印象，与长期使用的真实感受。</p>
+            <p class="section-sub">开箱之后，接着记录实际使用的感受。</p>
           </div>
           <div class="timeline" id="techList"></div>
         </div>
       </section>
 
       <!-- 05 个人设备 -->
-      <section class="section" id="devices">
+      <section class="section" id="devices" hidden>
         <div class="container">
           <div class="section-head reveal">
             <span class="eyebrow">04 · Personal Devices</span>
             <div class="title-row">
-              <h2 class="section-title">Personal Devices</h2>
+              <h1 class="section-title">数码设备 <small>Personal Devices</small></h1>
               <button class="btn btn-small btn-soft" type="button" data-action="add-device" hidden>＋ 添加设备</button>
             </div>
             <p class="section-sub">随身与桌面上的那些设备。</p>
@@ -220,65 +256,55 @@
       </section>
 
       <!-- 06 摄影空间（点进去是独立的三级页面） -->
-      <section class="section section-alt" id="photo">
+<!-- 07 项目（GitHub · 点进去是独立的三级页面 /projects/） -->
+</div>
+
+    <!-- ============================ MiNg 和他的朋友们 ============================ -->
+    <div class="view-panel" id="viewFriends" hidden>
+      <section class="space-head space-head-friends" id="friendsHeading">
         <div class="container">
-          <div class="section-head reveal">
-            <span class="eyebrow">05 · Photography</span>
-            <h2 class="section-title">摄影空间</h2>
-            <p class="section-sub">作品名、拍摄地点与时间，都在单独的一页里。</p>
-          </div>
-          <a class="entry-card entry-card-photo reveal" href="/photo/">
-            <span class="entry-emoji">📷</span>
-            <span class="entry-kicker">打开摄影空间</span>
-            <h3 class="entry-title">进入取景器 →</h3>
-            <span class="entry-cta">点这里进入摄影空间</span>
+          <p class="eyebrow">Friends</p>
+          <h1 class="space-title">MiNg 和他的朋友们</h1>
+          <p class="space-sub">朋友们在这里聊聊天、写写笔记，也约下一场桌游。</p>
+        </div>
+      </section>
+
+<section class="directory container" id="friendsDirectory" aria-label="朋友们四个板块入口">
+        <div class="directory-grid">
+          <a class="directory-card directory-moments" href="/friends/moments/">
+            <span class="directory-label">Talks</span>
+            <h2>说说墙</h2><p>近况、闲聊，想到什么说什么。</p>
+            <span class="directory-bottom"><span data-directory-count="moments">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 24h116v76H62l-23 21v-21H18zM51 115h78l21 19v-19h10V58h-13"/><path d="M37 48h76M37 67h51"/></svg>
+          </a>
+          <a class="directory-card directory-guides" href="/friends/guides/">
+            <span class="directory-label">Study & Guide</span>
+            <h2>指南</h2><p>学过的东西，顺手记下来。</p>
+            <span class="directory-bottom"><span data-directory-count="guides">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M83 38C64 25 38 22 18 29v92c24-7 44-4 65 8 21-12 41-15 65-8V29c-20-7-46-4-65 9v91M33 49l34 7M33 68l34 7M99 56l34-7M99 75l34-7"/></svg>
+          </a>
+          <a class="directory-card directory-trips" href="/friends/trips/">
+            <span class="directory-label">Travel Guide</span>
+            <h2>旅行攻略</h2><p>路线、花费，还有踩过的坑。</p>
+            <span class="directory-bottom"><span data-directory-count="trips">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 35 44-13 46 14 43-13v101l-43 13-46-14-44 13zM61 23v100M107 36v101"/><path d="m29 107 15-22 24 9 22-34 40 8" stroke-dasharray="3 5"/><circle cx="130" cy="68" r="5"/></svg>
+          </a>
+          <a class="directory-card directory-games" href="/games/">
+            <span class="directory-label">Board Games</span>
+            <h2>桌游</h2><p>阿瓦隆 / 血染钟楼，今晚玩哪个？</p>
+            <span class="directory-bottom"><span data-directory-count="games">打开看看</span><span class="directory-arrow" aria-hidden="true">↗</span></span>
+            <svg class="directory-art" viewBox="0 0 170 155" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="26" y="25" width="90" height="103" rx="8" transform="rotate(-10 71 77)"/><rect x="62" y="46" width="84" height="93" rx="7"/><circle cx="86" cy="71" r="3"/><circle cx="122" cy="71" r="3"/><circle cx="104" cy="92" r="3"/><circle cx="86" cy="114" r="3"/><circle cx="122" cy="114" r="3"/></svg>
           </a>
         </div>
       </section>
 
-      <!-- 07 项目（GitHub · 点进去是独立的三级页面 /projects/） -->
-      <section class="section" id="projects">
-        <div class="container">
-          <div class="section-head reveal">
-            <span class="eyebrow">06 · GitHub · Projects</span>
-            <h2 class="section-title">项目</h2>
-          </div>
-          <div class="proj-preview" id="projPreview"></div>
-          <div class="proj-more reveal">
-            <a class="btn btn-primary btn-small" href="/projects/">查看全部项目 →</a>
-            <a class="btn btn-ghost btn-small" href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">github.com/MiNgOfficial-HZ ↗</a>
-            <span class="proj-more-hint" id="projPreviewHint">数据来自 GitHub 公开接口</span>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- ============================ MiNg 和他的朋友们 ============================ -->
-    <div class="view-panel" id="viewFriends" hidden>
-      <section class="space-head space-head-friends">
-        <div class="container">
-          <p class="eyebrow">FRIENDS · 朋友们的客厅</p>
-          <h1 class="space-title">MiNg 和他的朋友们</h1>
-        </div>
-      </section>
-
-      <nav class="sub-nav" id="subNavFriends" aria-label="朋友们导航">
-        <div class="container sub-nav-inner">
-          <a href="#moments" class="sub-link">💬 说说墙</a>
-          <a href="#study" class="sub-link">📚 指南</a>
-          <a href="#trips" class="sub-link">🧭 旅行攻略</a>
-          <a href="#guest" class="sub-link">🔗 友链 &amp; 留言</a>
-          <a href="#games" class="sub-link">🎲 桌游</a>
-        </div>
-      </nav>
-
       <!-- 01 说说墙 -->
-      <section class="section" id="moments">
+      <section class="section" id="moments" hidden>
         <div class="container">
           <div class="section-head reveal">
             <span class="eyebrow">01 · Talks</span>
             <div class="title-row">
-              <h2 class="section-title">说说墙</h2>
+              <h1 class="section-title">说说墙</h1>
             </div>
             <p class="section-sub">野生动物都来说话</p>
           </div>
@@ -288,27 +314,27 @@
       </section>
 
       <!-- 02 指南 -->
-      <section class="section section-alt" id="study">
+      <section class="section section-alt" id="study" hidden>
         <div class="container">
           <div class="section-head reveal">
             <span class="eyebrow">02 · Study &amp; Guide</span>
             <div class="title-row">
-              <h2 class="section-title">Study &amp; Guide</h2>
+              <h1 class="section-title">指南 <small>Study &amp; Guide</small></h1>
               <button class="btn btn-small btn-soft" type="button" data-action="add-study" hidden>＋ 写一篇指南</button>
             </div>
-            <p class="section-sub">野生动物共创的教程站与笔记空间，欢迎留言加入。</p>
+            <p class="section-sub">一起写的教程与学习笔记。</p>
           </div>
           <div class="timeline" id="studyList"></div>
         </div>
       </section>
 
       <!-- 03 旅行攻略（朋友们共创，可配图） -->
-      <section class="section" id="trips">
+      <section class="section" id="trips" hidden>
         <div class="container">
           <div class="section-head reveal">
             <span class="eyebrow">03 · Travel Guide</span>
             <div class="title-row">
-              <h2 class="section-title">旅行攻略</h2>
+              <h1 class="section-title">旅行攻略</h1>
               <button class="btn btn-small btn-soft" type="button" data-action="add-trip" hidden>＋ 写一篇攻略</button>
             </div>
             <p class="section-sub">去哪、几天、花多少、踩过什么坑 —— 去过的人都来写一笔。登录后人人可写，也能配图。</p>
@@ -321,17 +347,17 @@
       <section class="section section-alt" id="guest">
         <div class="container">
           <div class="section-head reveal">
-            <span class="eyebrow">04 · Link &amp; Connect</span>
+            <span class="eyebrow">Link &amp; Connect</span>
             <div class="title-row">
-              <h2 class="section-title">Link &amp; Connect</h2>
+              <h2 class="section-title">友链与留言</h2>
               <button class="btn btn-small btn-soft" type="button" data-action="add-friend" hidden>＋ 添加友链</button>
             </div>
-            <p class="section-sub">来过、聊过、交换过链接，就是朋友。</p>
+            <p class="section-sub">留句话，或者把你的网站也放在这里。</p>
           </div>
           <div class="guest-grid">
             <div class="guest-main">
               <div class="card guest-gate" id="guestGate" hidden>
-                <p>🛡️ 留言功能当前仅对<b>已登录访客</b>开放。<br/><span class="field-hint">站长可在个人空间「账号与权限」里开启游客留言。</span></p>
+                <p>🛡️ 留言功能当前仅对<b>已登录访客</b>开放。<br/><span class="field-hint">站长可在个人空间「管理界面」里开启游客留言。</span></p>
                 <button class="btn btn-soft btn-small" type="button" data-action="guest-login">登录后留言 →</button>
               </div>
               <form class="card msg-form reveal" id="msgForm" novalidate>
@@ -351,7 +377,7 @@
                   <label for="msgText">想说的话 *</label>
                   <textarea id="msgText" name="text" rows="4" maxlength="300" placeholder="随便写点什么吧～" required></textarea>
                 </div>
-                <button class="btn btn-primary btn-block" type="submit">发送留言 ✨</button>
+                <button class="btn btn-primary btn-block" type="submit">发送留言</button>
               </form>
               <div class="msg-list" id="msgList"></div>
             </div>
@@ -370,22 +396,7 @@
       </section>
 
       <!-- 04 桌游（点进去是独立的三级页面：收录阿瓦隆与血染钟楼） -->
-      <section class="section" id="games">
-        <div class="container">
-          <div class="section-head reveal">
-            <span class="eyebrow">05 · Board Games</span>
-            <h2 class="section-title">桌游</h2>
-            <p class="section-sub">两款靠嘴的游戏：<b>阿瓦隆</b>、<b>血染钟楼</b>。规则、角色和在线开局都在里面。</p>
-          </div>
-          <a class="entry-card entry-card-photo reveal" href="/games/">
-            <span class="entry-emoji">🎲</span>
-            <span class="entry-kicker">打开桌游桌</span>
-            <h3 class="entry-title">阿瓦隆 · 血染钟楼 →</h3>
-            <span class="entry-cta">规则 / 角色 / 在线开局都在里面：选一个坐下吧</span>
-          </a>
-        </div>
-      </section>
-    </div>
+</div>
   </main>
 
   <footer class="site-footer">
@@ -393,9 +404,9 @@
       <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
       <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
       <p class="footer-hint footer-nav">
-        <a href="#space" data-action="go-view" data-view="space">MiNg的个人空间 →</a>
+        <a href="/space/" data-action="go-view" data-view="space">MiNg的个人空间 →</a>
         &nbsp;·&nbsp;
-        <a href="#friends" data-action="go-view" data-view="friends">MiNg和他的朋友们 →</a>
+        <a href="/friends/" data-action="go-view" data-view="friends">MiNg和他的朋友们 →</a>
       </p>
       <p class="footer-hint footer-nav"><a href="/about/">关于我 · Yanming HUANG →</a></p>
       <p class="footer-hint"><span class="credit-copy" data-tip="实时写入GitHub，若您在本网页活动，则默认允许此写入与日志记录">数据实时云端同步（GitHub）</span></p>
@@ -449,10 +460,8 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20260927g" defer></script>
+  <script src="/js/app.js?v=20261003-dashboard" defer></script>
   <script src="/js/maint.js?v=3" defer></script>
   <script src="/js/giraffe.js?v=3" defer></script>
-  <script src="/projects/projects-data.js?v=1" defer></script>
-  <script src="/projects/projects-home.js?v=1" defer></script>
 </body>
 </html>

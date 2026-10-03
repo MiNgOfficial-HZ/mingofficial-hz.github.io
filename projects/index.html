@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+  <script src="/js/theme-init.js?v=20261003-dashboard"></script>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'self'; connect-src https://api.giraffeming.online https://challenges.cloudflare.com https://api.github.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https:; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; form-action 'self'; upgrade-insecure-requests" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -13,7 +14,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://api.github.com" crossorigin />
   <link id="gfontLink" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Long+Cang&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Rajdhani:wght@600;700&family=Titillium+Web:ital,wght@1,700&display=swap" />
-  <link rel="stylesheet" href="/css/style.css?v=20260927g" />
+  <link rel="stylesheet" href="/css/style.css?v=20261003-dashboard" />
+  <link rel="stylesheet" href="/css/directory.css?v=20261003-dashboard" />
   <link rel="stylesheet" href="/projects/projects.css?v=1" />
 </head>
 <body data-view="projects">
@@ -27,8 +29,8 @@
       </a>
       <nav class="main-nav" id="mainNav" aria-label="主导航">
         <a href="/#home" class="nav-link">首页</a>
-        <a href="/#space" class="nav-link">MiNg的个人空间</a>
-        <a href="/#friends" class="nav-link">MiNg和他的朋友们</a>
+        <a href="/space/" class="nav-link">MiNg的个人空间</a>
+        <a href="/friends/" class="nav-link">MiNg和他的朋友们</a>
         <a href="/about/" class="nav-link">关于</a>
       </nav>
       <div class="header-actions">
@@ -41,7 +43,7 @@
   <main id="top">
     <section class="proj-head">
       <div class="container">
-        <p class="crumbs"><a href="/#home">首页</a> › <a href="/#space">MiNg 的个人空间</a> › <span>项目</span></p>
+        <p class="crumbs"><a href="/#home">首页</a> › <a href="/space/">MiNg 的个人空间</a> › <span>项目</span></p>
         <h1 class="proj-title">🧩 项目 · Projects</h1>
         <div class="proj-toolbar">
           <label class="proj-search-wrap">
@@ -89,7 +91,7 @@
     <div class="container">
       <p class="footer-brand">Minghz<a class="footer-top" href="#pageTop" title="回到顶部" aria-label="回到顶部">▲</a></p>
       <p class="footer-line">TECH × LIFE × CREATION · © <span id="year"></span> MiNgHZ</p>
-      <p class="footer-hint footer-nav"><a href="/#space">← 回到 MiNg 的个人空间</a> &nbsp;·&nbsp; <a href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">github.com/MiNgOfficial-HZ ↗</a></p>
+      <p class="footer-hint footer-nav"><a href="/space/">← 回到 MiNg 的个人空间</a> &nbsp;·&nbsp; <a href="https://github.com/MiNgOfficial-HZ" target="_blank" rel="noopener noreferrer">github.com/MiNgOfficial-HZ ↗</a></p>
       <p class="footer-hint">项目数据来自 GitHub 公开接口，只读取仓库名 / 简介 / 语言 / 星标与更新时间。</p>
     </div>
   </footer>

@@ -2,7 +2,29 @@
 
 > 一半是生活，一半是热爱。 · 参考风格：tzblog.tech（简洁、卡片式、温暖色调）
 
-访问：**https://mingofficial-hz.github.io/**
+访问：**https://giraffeming.online/**
+
+## 页面目录（2026-10-03）
+
+首页进入两个二级主页。个人空间只显示两列三行的入口；站长登录后，管理面板出现在这些入口上方。朋友们主页显示两列两行的入口，友链与留言仍留在主页。点击入口进入独立页面，刷新、收藏和返回都可以使用。
+
+| 主页 | 内容 | 路径 |
+| --- | --- | --- |
+| 个人空间 `/space/` | 长文 / 足迹 / 数码生活 / 数码设备 | `/space/writing/` / `/space/footprints/` / `/space/tech/` / `/space/devices/` |
+| 个人空间 `/space/` | 摄影 / 项目 | `/photo/` / `/projects/` |
+| 朋友们 `/friends/` | 说说墙 / 指南 / 旅行攻略 / 桌游 | `/friends/moments/` / `/friends/guides/` / `/friends/trips/` / `/games/` |
+| 朋友们 `/friends/` | 友链与留言 | 留在当前主页 |
+
+旧的 `#space`、`#friends` 和内容锚点链接会转到相应页面。管理面板根据服务端返回的 `owner` 角色显示，管理员、朋友和游客均不可见；原有服务端写入权限继续生效。
+
+新页面由根目录 `index.html` 模板和 `js/app.js` 路由表生成，共享脚本和样式。修改模板或路由后，提交前运行：
+
+```sh
+node scripts/build-pages.mjs
+node scripts/test-pages.mjs
+```
+
+视觉样式位于 `css/directory.css`，保留中英文名称、品牌字体和长颈鹿元素，采用冷灰、墨黑和少量蓝色，支持深浅主题及手机双列布局。
 
 ## 功能模块
 

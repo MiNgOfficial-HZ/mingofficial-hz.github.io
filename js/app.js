@@ -14,6 +14,8 @@
 
   /* ---------- 登录状态（账号密码会话，12 小时有效） ---------- */
   var isAdmin = false;
+  var bootPending = true;
+  var bootMaintenanceReroute = false;
 
   function syncAdminUI() {
     document.body.classList.toggle('admin-mode', isAdmin);
@@ -28,6 +30,11 @@
     }
     var gh = $('#guestHint');
     if (gh) gh.hidden = !!myUser;
+    var hu = $('#headerUserBtn');
+    if (hu) {
+      hu.textContent = myUser ? '账户' : '登录';
+      hu.setAttribute('data-action', myUser ? 'open-mine' : 'guest-login');
+    }
   }
 
   function apiPost(path, body) {
@@ -832,9 +839,7 @@
 
   function seed() {
     return {
-      moments: [
-        { id: uid(), emoji: '🌅', text: '傍晚在江边走了很久，风把一整天的疲惫都吹跑了。', time: nowStamp() }
-      ],
+      moments: [],
       travels: [],
       tech: [],
       studies: [],
@@ -974,6 +979,7 @@
     };
     afterPaint(function () {
       cloudFetch().then(function (res) {
+        bootPending = false;
         S = normalize(res.db);
         if (res.hasUser) {
           var hadSession = !!mySession;
@@ -990,6 +996,10 @@
         cloudOk = true;
         writeCache();
         setSync('cloud', '☁️ 已同步');
+        if (bootMaintenanceReroute) {
+          bootMaintenanceReroute = false;
+          applyLocation(true);
+        }
         renderAll();
       }).catch(function () {
         if (mySession) restoreUser();
@@ -1315,7 +1325,7 @@
 
   function renderTravels() {
     var grid = $('#travelGrid');
-    if (!S.travels.length) { grid.innerHTML = emptyHTML('长文空空如也，点右上角 <b>＋</b> 添加第一篇 ✍️'); return; }
+    if (!S.travels.length) { grid.innerHTML = emptyHTML(permFor('travel') ? '还没有长文。可以从右上角添加。' : '这里还没有长文。'); return; }
     grid.innerHTML = sortDesc(S.travels, 'date').map(function (t, i) {
       var tags = (t.tags || []).map(function (x) { return '<span class="tag">' + esc(x) + '</span>'; }).join('');
       return '<article class="travel-card card reveal" style="--rd:' + Math.min(i * 70, 350) + 'ms" data-id="' + t.id + '">' +
@@ -1672,6 +1682,7 @@
 
   function renderAll() {
     renderStats();
+    renderDirectoryCounts();
     renderMoments();
     renderTravels();
     renderFootprints();
@@ -1727,7 +1738,11 @@
     if (locked) {
       if (!$('#reader').hidden) closeReader();
       if (!$('#lightbox').hidden) closeLightbox();
-      if (currentView !== 'home') setView('home', {});
+      if (currentView !== 'home') {
+        /* 缓存不包含身份；先显示维护提示，等服务端确认角色再决定是否改网址。 */
+        if (bootPending) { bootMaintenanceReroute = true; setView('home', {}); }
+        else goView('home', false);
+      }
     }
   }
 
@@ -1762,7 +1777,7 @@
     document.body.classList.toggle('can-post-any', any);
     /* 管理界面只有站长看得到（管理员 / 普通用户进个人空间只能看） */
     var acctSection = $('#account');
-    if (acctSection) acctSection.hidden = !isOwnerUser();
+    if (acctSection) acctSection.hidden = !(isOwnerUser() && currentView === 'space' && !currentSection);
     var acctLink = $('#accountNavLink');
     if (acctLink) acctLink.hidden = !isOwnerUser();
     document.body.classList.toggle('is-owner', isOwnerUser());
@@ -1886,97 +1901,142 @@
      6 个板块都属于「个人空间」；#guest 会被移动到当前视图里复用（不复制 DOM）
      ============================================================ */
   var VIEWS = ['home', 'space', 'friends'];
-  var VIEW_TITLES = {
-    home: 'MiNg Official Website',
-    space: 'MiNg 的个人空间 · MiNgHZ',
-    friends: 'MiNg 和他的朋友们 · MiNgHZ'
+  var VIEW_PATHS = { home: '/', space: '/space/', friends: '/friends/' };
+  var VIEW_TITLES = { home: 'MiNg Official Website', space: 'MiNg 的个人空间 · MiNgHZ', friends: 'MiNg 和他的朋友们 · MiNgHZ' };
+  var SECTION_ROUTES = {
+    travel: { view: 'space', path: '/space/writing/', title: '长文' },
+    footprint: { view: 'space', path: '/space/footprints/', title: '足迹' },
+    tech: { view: 'space', path: '/space/tech/', title: '数码生活' },
+    devices: { view: 'space', path: '/space/devices/', title: '数码设备' },
+    moments: { view: 'friends', path: '/friends/moments/', title: '说说墙' },
+    study: { view: 'friends', path: '/friends/guides/', title: '指南' },
+    trips: { view: 'friends', path: '/friends/trips/', title: '旅行攻略' }
   };
-  /* 朋友们：说说墙 / 指南 / 友链留言；个人空间：账号 / 长文 / 数码 / 设备 */
-  var SECTION_VIEW = {
-    moments: 'friends', study: 'friends', trips: 'friends', guest: 'friends', games: 'friends',
-    account: 'space', travel: 'space', footprint: 'space', tech: 'space', devices: 'space',
-    photo: 'space', projects: 'space'
-  };
+  var LEGACY_EXTERNAL = { photo: '/photo/', projects: '/projects/', games: '/games/' };
   var currentView = '';
-  var mountMsgTs = null;   /* 由留言表单那一段赋值：进入视图后再挂人机验证 */
+  var currentSection = '';
+  var mountMsgTs = null;
+
+  function renderDirectoryCounts() {
+    var counts = {
+      writing: [S.travels, '篇长文'], footprint: [S.footprints, '个省级行政区'],
+      tech: [S.tech, '篇使用记录'], devices: [S.devices, '件设备'],
+      moments: [S.moments, '条说说'], guides: [S.studies, '篇指南'], trips: [S.trips, '篇攻略']
+    };
+    Object.keys(counts).forEach(function (key) {
+      var el = document.querySelector('[data-directory-count="' + key + '"]');
+      if (el) el.textContent = counts[key][0].length + ' ' + counts[key][1];
+    });
+  }
 
   function viewPanel(name) { return document.getElementById('view' + name.charAt(0).toUpperCase() + name.slice(1)); }
 
   function setView(name, opts) {
     opts = opts || {};
-    /* 维护期间：除了站长，谁都被按回主页 */
-    if (maintLocked() && name !== 'home') name = 'home';
+    var section = opts.section || '';
+    if (maintLocked() && name !== 'home') { name = 'home'; section = ''; }
     if (VIEWS.indexOf(name) < 0) name = 'home';
-    var changed = name !== currentView;
+    if (section && (!SECTION_ROUTES[section] || SECTION_ROUTES[section].view !== name)) section = '';
+    var changed = name !== currentView || section !== currentSection;
     currentView = name;
+    currentSection = section;
     document.body.setAttribute('data-view', name);
-    VIEWS.forEach(function (v) {
-      var el = viewPanel(v);
-      if (el) el.hidden = (v !== name);
+    document.body.setAttribute('data-section', section);
+    VIEWS.forEach(function (v) { var el = viewPanel(v); if (el) el.hidden = v !== name; });
+    Object.keys(SECTION_ROUTES).forEach(function (key) {
+      var el = document.getElementById(key);
+      if (el) el.hidden = key !== section;
     });
+    ['space', 'friends'].forEach(function (view) {
+      var heading = document.getElementById(view + 'Heading');
+      var directory = document.getElementById(view + 'Directory');
+      if (heading) heading.hidden = view !== name || !!section;
+      if (directory) directory.hidden = view !== name || !!section;
+    });
+    var guest = $('#guest');
+    if (guest) guest.hidden = name !== 'friends' || !!section;
+    var account = $('#account');
+    if (account) account.hidden = !(name === 'space' && !section && isOwnerUser());
+    var crumbs = $('#sectionBreadcrumb');
+    if (crumbs) crumbs.hidden = !section;
+    if (section) {
+      var route = SECTION_ROUTES[section];
+      var parent = $('#sectionParentLink');
+      if (parent) {
+        parent.textContent = name === 'space' ? '个人空间' : '朋友们';
+        parent.href = VIEW_PATHS[name];
+        parent.setAttribute('data-view', name);
+      }
+      $('#sectionCrumbTitle').textContent = route.title;
+      document.title = route.title + ' · MiNgHZ';
+    } else document.title = VIEW_TITLES[name];
     $$('.main-nav .nav-link[data-view]').forEach(function (a) {
-      a.classList.toggle('active', a.getAttribute('data-view') === name);
-      if (a.getAttribute('data-view') === name) a.setAttribute('aria-current', 'page');
-      else a.removeAttribute('aria-current');
+      var active = a.getAttribute('data-view') === name;
+      a.classList.toggle('active', active);
+      if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    if (VIEW_TITLES[name]) document.title = VIEW_TITLES[name];
-    var sub = $('#subNav');
-    if (sub) sub.hidden = name !== 'space';
-    var subF = $('#subNavFriends');
-    if (subF) subF.hidden = name !== 'friends';
     if (opts.scroll !== false) {
       var target = opts.anchor ? document.getElementById(opts.anchor) : null;
-      var behavior = opts.instant ? 'auto' : 'smooth';
-      if (target && !target.closest('[hidden]')) {
-        target.scrollIntoView({ behavior: behavior, block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: behavior });
-      }
+      if (target && !target.closest('[hidden]')) target.scrollIntoView({ behavior: opts.instant ? 'auto' : 'smooth', block: 'start' });
+      else window.scrollTo({ top: 0, behavior: opts.instant ? 'auto' : 'smooth' });
     }
     if (name !== 'home') bindReveal();
+    if (section === 'footprint') loadFootprintMap();
     if (mountMsgTs) setTimeout(mountMsgTs, 60);
     return changed;
   }
 
-  function viewForHash(hash) {
-    var h = String(hash || '').replace(/^#/, '');
-    if (!h) return { view: 'home' };
-    if (VIEWS.indexOf(h) >= 0) return { view: h };
-    if (SECTION_VIEW[h]) return { view: SECTION_VIEW[h], anchor: h };
-    return null;
+  function routeForLocation() {
+    var hash = String(location.hash || '').replace(/^#/, '');
+    /* 老收藏链接仍然进入对应页面，而不是滚动到同一长页面的一段。 */
+    if (LEGACY_EXTERNAL[hash]) return { external: LEGACY_EXTERNAL[hash] };
+    if (SECTION_ROUTES[hash]) return { view: SECTION_ROUTES[hash].view, section: hash, legacy: true };
+    if (VIEWS.indexOf(hash) >= 0) return { view: hash, legacy: true };
+    if (hash === 'guest' || hash === 'account') return { view: hash === 'guest' ? 'friends' : 'space', anchor: hash, legacy: true };
+    var pathname = location.pathname.replace(/index\.html$/, '').replace(/\/*$/, '/');
+    var section = Object.keys(SECTION_ROUTES).filter(function (key) { return SECTION_ROUTES[key].path === pathname; })[0];
+    if (section) return { view: SECTION_ROUTES[section].view, section: section };
+    var view = VIEWS.filter(function (key) { return VIEW_PATHS[key] === pathname; })[0];
+    return { view: view || 'home' };
   }
 
   function applyLocation(instant) {
-    var loc = viewForHash(location.hash);
-    if (!loc) return;
-    setView(loc.view, { anchor: loc.anchor, instant: !!instant });
-    if (!loc.anchor && location.hash !== '#' + loc.view && history.replaceState) {
-      history.replaceState(null, '', '#' + loc.view);
+    var loc = routeForLocation();
+    if (loc.external) {
+      if (maintLocked()) setView('home', { instant: !!instant });
+      else location.replace(loc.external);
+      return;
+    }
+    setView(loc.view, { section: loc.section, anchor: loc.anchor, instant: !!instant });
+    if (loc.legacy && history.replaceState) {
+      var path = currentSection ? SECTION_ROUTES[currentSection].path : VIEW_PATHS[currentView];
+      history.replaceState(null, '', path + location.search + (loc.anchor && currentView === loc.view ? '#' + loc.anchor : ''));
     }
   }
 
-  function goView(name, push) {
-    var changed = name !== currentView;
+  function navigateView(name, section, push) {
+    if (maintLocked()) { name = 'home'; section = ''; }
+    var path = section ? SECTION_ROUTES[section].path : VIEW_PATHS[name];
+    var changed = name !== currentView || (section || '') !== currentSection;
     try {
-      if (push !== false && changed) history.pushState({ view: name }, '', '#' + name);
-      else if (history.replaceState) history.replaceState({ view: name }, '', '#' + name);
-    } catch (e) { /* 本地 file:// 预览时 history 可能受限 */ }
-    setView(name, {});
-    var mt = $('#menuToggle'), nav = $('#mainNav');
+      if (push !== false && changed) history.pushState({ view: name, section: section || '' }, '', path);
+      else history.replaceState(null, '', path);
+    } catch (e) {}
+    setView(name, { section: section });
+    var nav = $('#mainNav'), mt = $('#menuToggle');
     if (nav) nav.classList.remove('open');
     if (mt) { mt.textContent = '☰'; mt.setAttribute('aria-expanded', 'false'); }
   }
-
+  function goView(name, push) { navigateView(name, '', push); }
+  function goSection(section) { navigateView(SECTION_ROUTES[section].view, section); }
   window.addEventListener('popstate', function () { applyLocation(false); });
-  window.addEventListener('hashchange', function () {
-    var loc = viewForHash(location.hash);
-    if (loc && loc.view !== currentView) applyLocation(false);
-  });
+  window.addEventListener('hashchange', function () { applyLocation(false); });
+
 
   /* ============================================================
      数学公式：KaTeX 本地懒加载（页面里没公式就一个字节都不下载）
      ============================================================ */
-  var KATEX_DIR = 'vendor/katex/';
+  var KATEX_DIR = '/vendor/katex/';
   var katexWaiting = null;
 
   function ensureKatex(cb) {
@@ -3220,6 +3280,7 @@
       case 'ap-add': apAdd(btn.getAttribute('data-prefix'), btn.getAttribute('data-id')); break;
       case 'ap-remove': apRemove(btn.getAttribute('data-prefix'), btn.getAttribute('data-id')); break;
       case 'go-view': {
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) break;
         e.preventDefault();
         goView(btn.getAttribute('data-view') || 'home');
         break;
@@ -3229,18 +3290,18 @@
       case 'qa-moment': {
         $('#qaMenu').classList.remove('open');
         if (canPostMoment()) {
-          goView('friends');
+          goSection('moments');
           setTimeout(function () { var t = $('#postText'); if (t) t.focus(); }, 260);
         } else {
           openMomentModal(null);
         }
         break;
       }
-      case 'qa-travel': $('#qaMenu').classList.remove('open'); goView('space'); openTravelModal(null); break;
-      case 'qa-tech': $('#qaMenu').classList.remove('open'); goView('space'); openTechModal(null); break;
-      case 'qa-device': $('#qaMenu').classList.remove('open'); goView('space'); openDeviceModal(null); break;
-      case 'qa-study': $('#qaMenu').classList.remove('open'); goView('friends'); openStudyModal(null); break;
-      case 'qa-trip': $('#qaMenu').classList.remove('open'); goView('friends'); openTripModal(null); break;
+      case 'qa-travel': $('#qaMenu').classList.remove('open'); goSection('travel'); openTravelModal(null); break;
+      case 'qa-tech': $('#qaMenu').classList.remove('open'); goSection('tech'); openTechModal(null); break;
+      case 'qa-device': $('#qaMenu').classList.remove('open'); goSection('devices'); openDeviceModal(null); break;
+      case 'qa-study': $('#qaMenu').classList.remove('open'); goSection('study'); openStudyModal(null); break;
+      case 'qa-trip': $('#qaMenu').classList.remove('open'); goSection('trips'); openTripModal(null); break;
       case 'qa-friend': $('#qaMenu').classList.remove('open'); goView('friends'); openFriendModal(null); break;
       case 'add-moment': openMomentModal(null); break;
       case 'edit-moment': openMomentModal(find('moments')); break;
@@ -3260,7 +3321,7 @@
       case 'add-trip': openTripModal(null); break;
       case 'edit-trip': openTripModal(find('trips')); break;
       case 'del-trip': confirmDel('trip', id, '攻略'); break;
-      case 'qa-footprint': $('#qaMenu').classList.remove('open'); goView('space'); openFootprintModal(null); break;
+      case 'qa-footprint': $('#qaMenu').classList.remove('open'); goSection('footprint'); openFootprintModal(null); break;
       case 'add-footprint': openFootprintModal(null); break;
       case 'edit-footprint': openFootprintModal(find('footprints')); break;
       case 'del-footprint': confirmDel('footprint', id, '足迹'); break;
