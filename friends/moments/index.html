@@ -23,7 +23,7 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
   <link rel="stylesheet" href="/css/style.css?v=20261003-dashboard" />
   <link rel="stylesheet" href="/css/directory.css?v=20261003-dashboard" />
-  <link rel="stylesheet" href="/css/editor-guides.css?v=20261003-editor">
+  <link rel="stylesheet" href="/css/editor-guides.css?v=20261003-toc">
 </head>
 <body data-view="friends" data-section="moments">
   <span id="pageTop" aria-hidden="true"></span>
@@ -443,7 +443,13 @@
       </div>
       <div class="reader-meta" id="readerMeta"></div>
       <h2 class="reader-title" id="readerTitle"></h2>
-      <article class="md-body" id="readerBody"></article>
+      <div class="reader-layout" id="readerLayout">
+        <details class="reader-toc" id="readerToc" hidden>
+          <summary>文章目录</summary>
+          <nav aria-label="文章章节目录" id="readerTocNav"></nav>
+        </details>
+        <article class="md-body" id="readerBody"></article>
+      </div>
     </div>
   </div>
 
@@ -464,7 +470,7 @@
   </div>
 
   <script src="/js/editor.js?v=20261003-editor" defer></script>
-  <script src="/js/app.js?v=20261003-editor" defer></script>
+  <script src="/js/app.js?v=20261003-toc" defer></script>
   <script src="/js/maint.js?v=3" defer></script>
   <script src="/js/giraffe.js?v=3" defer></script>
 </body>

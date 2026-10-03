@@ -2488,6 +2488,65 @@
     root.appendChild(box);
   }
 
+  var readerTocCleanup = null;
+  function setupReaderToc(body) {
+    if (readerTocCleanup) readerTocCleanup();
+    var toc = $('#readerToc'), nav = $('#readerTocNav'), panel = $('#reader .reader-panel');
+    var headings = Array.prototype.slice.call(body.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+    nav.innerHTML = '';
+    toc.hidden = !headings.length;
+    panel.classList.toggle('has-toc', !!headings.length);
+    if (!headings.length) { readerTocCleanup = null; return; }
+    toc.open = !window.matchMedia('(max-width: 720px)').matches;
+    var root = document.createElement('ol'), stack = [], buttons = [];
+    nav.appendChild(root);
+    headings.forEach(function (heading, i) {
+      var level = Number(heading.tagName.slice(1));
+      heading.id = 'reader-heading-' + (i + 1);
+      heading.setAttribute('tabindex', '-1');
+      // 公式尚未加载时也能得到完整的目录标题；使用纯文本以保留转义。
+      var label = heading.cloneNode(true);
+      Array.prototype.forEach.call(label.querySelectorAll('.math-pending'), function (node) { node.textContent = node.getAttribute('data-tex') || ''; });
+      var text = label.textContent.trim() || '未命名章节';
+      var li = document.createElement('li'), button = document.createElement('button');
+      button.type = 'button'; button.textContent = text;
+      button.setAttribute('aria-controls', heading.id);
+      li.appendChild(button); buttons.push(button);
+      while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
+      var list = root;
+      if (stack.length) {
+        var parent = stack[stack.length - 1];
+        if (!parent.list) { parent.list = document.createElement('ol'); parent.item.appendChild(parent.list); }
+        list = parent.list;
+      }
+      list.appendChild(li); stack.push({ level: level, item: li });
+      button.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 720px)').matches) toc.open = false;
+        heading.focus({ preventScroll: true });
+        var top = panel.scrollTop + heading.getBoundingClientRect().top - panel.getBoundingClientRect().top - 20;
+        panel.scrollTo({ top: Math.max(0, top), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      });
+    });
+    var frame = 0;
+    function update() {
+      frame = 0;
+      var index = 0, top = panel.getBoundingClientRect().top + 36;
+      headings.forEach(function (heading, i) { if (heading.getBoundingClientRect().top <= top) index = i; });
+      buttons.forEach(function (button, i) {
+        if (i === index) button.setAttribute('aria-current', 'location');
+        else button.removeAttribute('aria-current');
+      });
+    }
+    function schedule() { if (!frame) frame = requestAnimationFrame(update); }
+    panel.addEventListener('scroll', schedule, { passive: true });
+    var observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
+    if (observer) observer.observe(body);
+    readerTocCleanup = function () {
+      panel.removeEventListener('scroll', schedule); cancelAnimationFrame(frame);
+      if (observer) observer.disconnect();
+    };
+    schedule();
+  }
   function openReader(kind, id) {
     if (maintLocked()) { toast('网站正在维护中，稍后再来 🛠️', 'info'); return; }
     var arr = S[READER_KINDS[kind]] || [];
@@ -2505,15 +2564,20 @@
     $('#readerTitle').textContent = item.title || '';
     var body = $('#readerBody');
     body.innerHTML = mdToHtml(item.content || item.text || item.summary || '暂无内容');
+    setupReaderToc(body);
     hydrateMath(body);
     appendEditLog(body, item);
     $('#reader').hidden = false;
+    $('#reader .reader-panel').scrollTop = 0;
     document.body.style.overflow = 'hidden';
     paintReaderTools();
   }
   function closeReader() {
+    if (readerTocCleanup) readerTocCleanup();
+    readerTocCleanup = null;
     $('#reader').hidden = true;
     $('#readerBody').innerHTML = '';
+    $('#readerTocNav').innerHTML = '';
     document.body.style.overflow = '';
     currentReader = null;
   }
