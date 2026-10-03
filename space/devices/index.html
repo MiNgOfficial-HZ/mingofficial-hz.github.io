@@ -23,6 +23,7 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;700&family=Titillium+Web:ital,wght@1,700&display=swap" /></noscript>
   <link rel="stylesheet" href="/css/style.css?v=20261003-dashboard" />
   <link rel="stylesheet" href="/css/directory.css?v=20261003-dashboard" />
+  <link rel="stylesheet" href="/css/editor-guides.css?v=20261003-editor">
 </head>
 <body data-view="space" data-section="devices">
   <span id="pageTop" aria-hidden="true"></span>
@@ -325,7 +326,8 @@
             </div>
             <p class="section-sub">一起写的教程与学习笔记。</p>
           </div>
-          <div class="timeline" id="studyList"></div>
+          <p class="guide-result-count" id="guideCaption">按板块整理的教程与笔记。选一个目录，再慢慢读。</p>
+          <div id="studyList"></div>
         </div>
       </section>
 
@@ -461,7 +463,8 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20261003-dashboard" defer></script>
+  <script src="/js/editor.js?v=20261003-editor" defer></script>
+  <script src="/js/app.js?v=20261003-editor" defer></script>
   <script src="/js/maint.js?v=3" defer></script>
   <script src="/js/giraffe.js?v=3" defer></script>
 </body>

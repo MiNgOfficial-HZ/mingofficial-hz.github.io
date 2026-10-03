@@ -1566,25 +1566,96 @@
     }).join('');
   }
 
-  function renderStudies() {
-    var list = $('#studyList');
-    if (!list) return;
-    if (!S.studies.length) { list.innerHTML = emptyHTML('还没有任何指南，点右上角 <b>＋</b> 添加第一篇教程/焚诀 ✍️'); return; }
-    list.innerHTML = sortDesc(S.studies, 'date').map(function (t, i) {
-      var pct2 = '';
-      return '<article class="tech-item reveal" style="--rd:' + Math.min(i * 70, 350) + 'ms" data-id="' + t.id + '">' +
-        '<div class="tech-dot">📚</div>' +
-        '<div class="tech-card card">' +
-          '<div class="tech-head"><span class="badge">' + esc(t.category || '指南') + '</span><time>' + esc(t.date) + '</time>' + actionsHTML('study', t) + '</div>' +
-          '<h3 class="tech-name">' + esc(t.title) + '</h3>' +
-          '<div class="author-chip">' + avatarHTML(t, 22, 'av-xs') + ' ✍️ 编写：<b>' + esc(authorsOf(t).map(function (a) { return a.nick; }).join('、')) + '</b>' + (t.time ? '<span class="m-time"> · ' + esc(t.time) + '</span>' : '') + '</div>' +
-          galleryHTML(t.imgs, t.title) +
-          '<p class="tech-text">' + esc(t.text) + '</p>' +
-          (t.content ? '<button class="read-more" type="button" data-action="read-item" data-kind="study" data-id="' + t.id + '">阅读全文 →</button>' : '') +
-        '</div>' +
-      '</article>';
-    }).join('');
+  function studyBoard(item) {
+    // 兼容迁移前的旧缓存；正文、原始日期和文章 ID 均不变。
+    return /焚诀/.test(item.title || '') || item.category === '焚诀' ? '高数焚诀' : (item.category || '其他指南');
   }
+  function studyBoardNames() {
+    var names = Array.from(new Set(['高数焚诀'].concat(S.studies.map(studyBoard))));
+    return names.sort(function (a, b) { return a === '高数焚诀' ? -1 : b === '高数焚诀' ? 1 : a.localeCompare(b, 'zh-CN'); });
+  }
+  function guideParams() {
+    var params = new URLSearchParams(location.search);
+    return { board: params.get('board') || '', q: params.get('q') || '', from: params.get('from') || '', to: params.get('to') || '', order: params.get('order') || 'newest' };
+  }
+  function guideBoardUrl(board) {
+    return SECTION_ROUTES.study.path + (board ? '?board=' + encodeURIComponent(board) : '');
+  }
+  function renderGuideArticles(filters) {
+    var grid = $('#guideArticles'); if (!grid) return;
+    var items = S.studies.filter(function (t) { return studyBoard(t) === filters.board; });
+    var allCount = items.length, words = filters.q.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    items = items.filter(function (t) {
+      var haystack = [t.title, t.text, t.content, authorsOf(t).map(function (a) { return a.nick; }).join(' ')].join(' ').toLocaleLowerCase();
+      var date = String(t.date || '').slice(0, 7);
+      return words.every(function (word) { return haystack.indexOf(word) >= 0; }) &&
+        (!filters.from || date && date >= filters.from) && (!filters.to || date && date <= filters.to);
+    }).sort(function (a, b) {
+      if (filters.order === 'title') return String(a.title || '').localeCompare(String(b.title || ''), 'zh-CN');
+      var compare = String(a.date || '').localeCompare(String(b.date || '')) || String(a.time || '').localeCompare(String(b.time || ''));
+      return filters.order === 'oldest' ? compare : -compare;
+    });
+    $('#guideResultCount').textContent = '显示 ' + items.length + ' / ' + allCount + ' 篇' + (filters.from && filters.to && filters.from > filters.to ? ' · 起始月份晚于结束月份' : '');
+    grid.innerHTML = items.length ? items.map(function (t) {
+      return '<article class="guide-article" data-id="' + esc(t.id) + '">' +
+        '<div class="guide-article-head"><time>' + esc(t.date || '日期未记录') + '</time>' + actionsHTML('study', t) + '</div>' +
+        '<h4><button type="button" data-action="read-item" data-kind="study" data-id="' + esc(t.id) + '">' + esc(t.title) + '</button></h4>' +
+        '<p>' + esc(t.text || '打开文章阅读全文。') + '</p>' +
+        '<div class="guide-article-author">编写 · ' + esc(authorsOf(t).map(function (a) { return a.nick; }).join('、')) + '</div>' +
+        '<button class="read-more" type="button" data-action="read-item" data-kind="study" data-id="' + esc(t.id) + '">阅读全文 →</button>' +
+        '</article>';
+    }).join('') : emptyHTML(allCount ? '没有找到符合条件的文章，可以清除筛选后再看看。' : '这个板块还没有文章。');
+  }
+  function renderStudies() {
+    var list = $('#studyList'); if (!list) return;
+    var filters = currentSection === 'study' ? guideParams() : { board: '' };
+    var caption = $('#guideCaption');
+    if (caption) caption.textContent = filters.board ? '在板块里找文章。可搜标题、正文和编写人，也可按月份筛选。' : '按板块整理的教程与笔记。选一个目录，再慢慢读。';
+    if (!filters.board) {
+      list.innerHTML = '<div class="guide-boards">' + studyBoardNames().map(function (board, i) {
+        var items = S.studies.filter(function (t) { return studyBoard(t) === board; });
+        var dates = items.map(function (t) { return t.date || ''; }).filter(Boolean).sort();
+        var description = board === '高数焚诀' ? '高等数学的笔记、推导和解题记录。' : '收在「' + board + '」里的指南与笔记。';
+        return '<a class="guide-board" href="' + esc(guideBoardUrl(board)) + '" data-guide-board="' + esc(board) + '">' +
+          '<span class="guide-board-mark"><span>' + String(i + 1).padStart(2, '0') + ' / GUIDE</span><span>↗</span></span>' +
+          '<h3>' + esc(board) + '</h3><p>' + esc(description) + '</p>' +
+          '<span class="guide-board-footer"><span>' + items.length + ' 篇文章</span><span>' + (dates.length ? '更新于 ' + esc(dates[dates.length - 1]) : '等待记录') + '</span></span></a>';
+      }).join('') + '</div>';
+      return;
+    }
+    document.title = filters.board + ' · 指南 · MiNgHZ';
+    list.innerHTML = '<div class="guide-board-head"><a href="' + SECTION_ROUTES.study.path + '" data-guide-board="">← 全部板块</a><h3>' + esc(filters.board) + '</h3></div>' +
+      '<form class="guide-toolbar" role="search" id="guideFilters">' +
+      '<label class="guide-search-label">关键词<input name="q" type="search" value="' + esc(filters.q) + '" placeholder="搜标题、正文、编写人…" aria-label="搜索板块内的指南"></label>' +
+      '<label>从<input name="from" type="month" value="' + esc(filters.from) + '" aria-label="起始月份"></label>' +
+      '<label>到<input name="to" type="month" value="' + esc(filters.to) + '" aria-label="结束月份"></label>' +
+      '<label>排序<select name="order" aria-label="指南排序">' + [['newest','最新在前'],['oldest','最早在前'],['title','按标题']].map(function (o) { return '<option value="' + o[0] + '"' + (filters.order === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
+      '<button class="btn btn-ghost btn-small" type="button" data-guide-clear>清除筛选</button></form>' +
+      '<p class="guide-result-count" id="guideResultCount" role="status" aria-live="polite"></p><div class="guide-articles" id="guideArticles"></div>';
+    renderGuideArticles(filters);
+  }
+  function updateGuideFilters() {
+    var form = $('#guideFilters'); if (!form) return;
+    var filters = guideParams(), params = new URLSearchParams();
+    params.set('board', filters.board);
+    ['q','from','to','order'].forEach(function (key) { var value = form.elements[key].value; filters[key] = value; if (value && !(key === 'order' && value === 'newest')) params.set(key, value); });
+    history.replaceState(null, '', SECTION_ROUTES.study.path + '?' + params.toString());
+    renderGuideArticles(filters);
+  }
+  $('#studyList').addEventListener('click', function (event) {
+    var anchor = event.target.closest('a[data-guide-board]');
+    if (anchor && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) {
+      event.preventDefault(); history.pushState(null, '', anchor.getAttribute('href')); applyLocation(true);
+    }
+    if (event.target.closest('[data-guide-clear]')) {
+      var form = $('#guideFilters');
+      ['q','from','to'].forEach(function (key) { form.elements[key].value = ''; });
+      form.elements.order.value = 'newest'; updateGuideFilters();
+    }
+  });
+  $('#studyList').addEventListener('input', function (event) { if (event.target.closest('#guideFilters')) updateGuideFilters(); });
+  $('#studyList').addEventListener('change', function (event) { if (event.target.closest('#guideFilters')) updateGuideFilters(); });
+  $('#studyList').addEventListener('submit', function (event) { if (event.target.id === 'guideFilters') { event.preventDefault(); updateGuideFilters(); } });
 
   /* ---------- 旅行攻略（朋友们共创，可配图） ---------- */
   var TRIP_EMOJI = { '城市漫游': '🏙️', '自然风光': '🏔️', '海岛': '🏝️', '美食': '🍜', '自驾': '🚗', '露营': '⛺', '境外': '✈️', '其他': '🧭' };
@@ -1982,6 +2053,7 @@
     }
     if (name !== 'home') bindReveal();
     if (section === 'footprint') loadFootprintMap();
+    if (section === 'study') renderStudies();
     if (mountMsgTs) setTimeout(mountMsgTs, 60);
     return changed;
   }
@@ -2095,9 +2167,9 @@
   var mathBag = [];
   var mathToken = function (i) { return '\u0001' + i + '\u0001'; };
 
-  function protectMath(s) {
+  function protectMath(s, firstLine) {
     return s.replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^$\n]+?)\$/g,
-      function (m, blockDollar, blockBracket, inlineParen, inlineDollar) {
+      function (m, blockDollar, blockBracket, inlineParen, inlineDollar, offset) {
         var tex, display = false;
         if (blockDollar != null) { tex = blockDollar; display = true; }
         else if (blockBracket != null) { tex = blockBracket; display = true; }
@@ -2110,14 +2182,16 @@
           display = false;
         }
         if (!tex.replace(/\s/g, '')) return m;
-        mathBag.push({ tex: tex, display: display });
-        return mathToken(mathBag.length - 1);
+        var line = firstLine == null ? null : firstLine + s.slice(0, offset).split('\n').length - 1;
+        var count = m.split('\n').length - 1;
+        mathBag.push({ tex: tex, display: display, line: line, end: line == null ? null : line + count });
+        return mathToken(mathBag.length - 1) + (line == null ? '' : Array(count + 1).join('\n'));
       });
   }
 
   function mathPlaceholder(o) {
     /* o.tex 已经过一次 HTML 转义（& < >），这里只要再挡一下引号，避免把 &gt; 又转成 &amp;gt; */
-    return '<span class="math-pending" data-tex="' + o.tex.replace(/"/g, '&quot;') + '" data-display="' + (o.display ? '1' : '0') + '"></span>';
+    return '<span' + mdSourceAttr(o.line, o.end) + ' class="math-pending" data-tex="' + o.tex.replace(/"/g, '&quot;') + '" data-display="' + (o.display ? '1' : '0') + '"></span>';
   }
 
   function restoreMath(html) {
@@ -2129,100 +2203,97 @@
   }
 
   function mdInline(s) {
+    var codeBag = [];
+    s = s.replace(/`([^`]+)`/g, function (_, code) { codeBag.push(code); return '\u0003' + (codeBag.length - 1) + '\u0003'; });
     s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (m, alt, url) {
       if (!/^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,)/i.test(url)) return m;
-      return '<img src="' + mediaUrl(url) + '" alt="' + alt + '" loading="lazy" decoding="async" />';
+      return '<img src="' + mdAttr(mediaUrl(url)) + '" alt="' + mdAttr(alt) + '" loading="lazy" decoding="async" />';
     });
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, label, url) {
       if (!/^(https?:\/\/|mailto:)/i.test(url)) return m;
-      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + label + '</a>';
+      return '<a href="' + mdAttr(url) + '" target="_blank" rel="noopener noreferrer">' + label + '</a>';
     });
-    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
     s = s.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
     s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
     s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-    return s;
+    s = s.replace(/==([^=\n]+)==/g, '<mark>$1</mark>');
+    return s.replace(/\u0003(\d+)\u0003/g, function (_, i) { return '<code>' + codeBag[Number(i)] + '</code>'; });
   }
 
   /* 表格：必须有 |---| 分隔行才算表格，避免误伤正文里的 | 符号 */
   function mdSplitRow(row) {
     return row.replace(/^\||\|$/g, '').split('|');
   }
-  function mdTable(head, rows) {
+  function mdAttr(s) { return String(s || '').replace(/"/g, '&quot;'); }
+  function mdSourceAttr(line, end) {
+    return line == null ? '' : ' data-source-line="' + line + '" data-source-end="' + (end == null ? line : end) + '"';
+  }
+  function mdTable(head, rows, firstLine) {
     var th = head.map(function (c) { return '<th>' + mdInline(c.trim()) + '</th>'; }).join('');
-    var tb = rows.map(function (r) {
-      return '<tr>' + head.map(function (_, i) { return '<td>' + mdInline((r[i] || '').trim()) + '</td>'; }).join('') + '</tr>';
+    var tb = rows.map(function (r, j) {
+      return '<tr' + mdSourceAttr(firstLine == null ? null : firstLine + j + 2) + '>' + head.map(function (_, i) { return '<td>' + mdInline((r[i] || '').trim()) + '</td>'; }).join('') + '</tr>';
     }).join('');
-    return '<table><thead><tr>' + th + '</tr></thead><tbody>' + tb + '</tbody></table>';
+    return '<table' + mdSourceAttr(firstLine, firstLine == null ? null : firstLine + rows.length + 1) + '><thead><tr' + mdSourceAttr(firstLine, firstLine == null ? null : firstLine + 1) + '>' + th + '</tr></thead><tbody>' + tb + '</tbody></table>';
   }
-
-  function mdListItem(li) {
+  function mdListItem(li, line) {
     var task = li.match(/^\[([ xX])\]\s+([\s\S]*)$/);
-    if (task) {
-      return '<li class="md-task"><input type="checkbox" disabled' + (task[1] === ' ' ? '' : ' checked') + ' />' + mdInline(task[2]) + '</li>';
-    }
-    return '<li>' + mdInline(li) + '</li>';
+    if (task) return '<li' + mdSourceAttr(line) + ' class="md-task"><input type="checkbox" disabled' + (task[1] === ' ' ? '' : ' checked') + ' />' + mdInline(task[2]) + '</li>';
+    return '<li' + mdSourceAttr(line) + '>' + mdInline(li) + '</li>';
   }
-
-  function mdBlock(block) {
-    var lines = block.split('\n');
-    var out = [];
-    var list = null;
-    var ordered = false;
-    var para = [];
-    function flushPara() { if (para.length) { out.push('<p>' + mdInline(para.join(' ')) + '</p>'); para = []; } }
+  function mdBlock(block, firstLine) {
+    var lines = block.split('\n'), out = [], list = null, ordered = false, para = [];
+    var mapped = firstLine != null;
+    function content(items) {
+      if (!mapped) return mdInline(items.map(function (x) { return x.text; }).join(' '));
+      return items.map(function (x) { return '<span' + mdSourceAttr(x.line) + '>' + mdInline(x.text) + '</span>'; }).join(' ');
+    }
+    function flushPara() {
+      if (para.length) { out.push('<p' + mdSourceAttr(para[0].line, para[para.length - 1].line) + '>' + content(para) + '</p>'); para = []; }
+    }
     function flushList() {
       if (list) {
         var tag = ordered ? 'ol' : 'ul';
-        out.push('<' + tag + '>' + list.map(mdListItem).join('') + '</' + tag + '>');
-        list = null;
+        out.push('<' + tag + mdSourceAttr(list[0].line, list[list.length - 1].line) + '>' + list.map(function (x) { return mdListItem(x.text, x.line); }).join('') + '</' + tag + '>'); list = null;
       }
     }
     for (var i = 0; i < lines.length; i++) {
-      var t = lines[i].trim();
+      var t = lines[i].trim(), line = mapped ? firstLine + i : null;
       if (!t) { flushPara(); flushList(); continue; }
       if (/^\|.*\|$/.test(t) && i + 1 < lines.length && /^\|[\s:|-]+\|$/.test(lines[i + 1].trim())) {
         flushPara(); flushList();
-        var head = mdSplitRow(t);
-        var rows = [];
-        i += 2;
+        var head = mdSplitRow(t), rows = []; i += 2;
         while (i < lines.length && /^\|.*\|$/.test(lines[i].trim())) { rows.push(mdSplitRow(lines[i].trim())); i++; }
-        i--;
-        out.push(mdTable(head, rows));
-        continue;
+        i--; out.push(mdTable(head, rows, line)); continue;
       }
-      /* 标题支持到六级（之前把 5、6 级强行折成了 h4，所以 ##### / ###### 看起来「没生效」） */
-      if (/^#{1,6}\s/.test(t)) { flushPara(); flushList(); var hv = Math.min(6, t.match(/^#+/)[0].length); out.push('<h' + hv + '>' + mdInline(t.replace(/^#+\s+/, '')) + '</h' + hv + '>'); continue; }
-      if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) { flushPara(); flushList(); out.push('<hr/>'); continue; }
-      /* 注意：正文已经过 HTML 转义，所以引用行的 > 到了这里其实是 &gt;（原版这里漏了，引用一直没生效） */
+      if (/^#{1,6}\s/.test(t)) { flushPara(); flushList(); var hv = Math.min(6, t.match(/^#+/)[0].length); out.push('<h' + hv + mdSourceAttr(line) + '>' + mdInline(t.replace(/^#+\s+/, '')) + '</h' + hv + '>'); continue; }
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) { flushPara(); flushList(); out.push('<hr' + mdSourceAttr(line) + '/>'); continue; }
       if (/^(?:>|&gt;)\s?/.test(t)) {
-        flushPara(); flushList();
-        var quote = [];
+        flushPara(); flushList(); var quote = [];
         while (i < lines.length && /^(?:>|&gt;)\s?/.test(lines[i].trim())) {
-          quote.push(lines[i].trim().replace(/^(?:>|&gt;)\s?/, ''));
-          i++;
+          quote.push({ text: lines[i].trim().replace(/^(?:>|&gt;)\s?/, ''), line: mapped ? firstLine + i : null }); i++;
         }
-        i--;
-        out.push('<blockquote>' + mdInline(quote.join(' ')) + '</blockquote>');
-        continue;
+        i--; out.push('<blockquote' + mdSourceAttr(line, mapped ? firstLine + i : null) + '>' + content(quote) + '</blockquote>'); continue;
       }
-      if (/^[-*+]\s/.test(t)) { flushPara(); if (!list || ordered) { flushList(); list = []; ordered = false; } list.push(t.replace(/^[-*+]\s/, '')); continue; }
-      if (/^\d+[.)]\s/.test(t)) { flushPara(); if (!list || !ordered) { flushList(); list = []; ordered = true; } list.push(t.replace(/^\d+[.)]\s/, '')); continue; }
-      flushList(); para.push(t);
+      if (/^[-*+]\s/.test(t)) { flushPara(); if (!list || ordered) { flushList(); list = []; ordered = false; } list.push({ text: t.replace(/^[-*+]\s/, ''), line: line }); continue; }
+      if (/^\d+[.)]\s/.test(t)) { flushPara(); if (!list || !ordered) { flushList(); list = []; ordered = true; } list.push({ text: t.replace(/^\d+[.)]\s/, ''), line: line }); continue; }
+      flushList(); para.push({ text: t, line: line });
     }
-    flushPara(); flushList();
-    return out.join('');
+    flushPara(); flushList(); return out.join('');
   }
-
-  function mdToHtml(src) {
+  function mdToHtml(src, mapped) {
     mathBag = [];
-    var h = String(src || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    var segs = h.split(MD_FENCE);
-    var out = [];
+    var h = String(src || '').replace(/\r\n?/g, '\n').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var segs = h.split(MD_FENCE), out = [], line = 1;
     for (var i = 0; i < segs.length; i++) {
-      if (i % 2 === 1) { out.push('<pre><code>' + segs[i].replace(/^[^\n]*\n/, '') + '</code></pre>'); }
-      else { out.push(restoreMath(mdBlock(protectMath(segs[i])))); }
+      var count = segs[i].split('\n').length - 1;
+      if (i % 2 === 1) {
+        var code = segs[i].replace(/^[^\n]*\n/, '');
+        var codeStart = line + (/^[^\n]*\n/.test(segs[i]) ? 1 : 0);
+        if (mapped) code = code.split('\n').map(function (text, j) { return '<span class="md-source-code"' + mdSourceAttr(codeStart + j) + '>' + text + '</span>'; }).join('');
+        out.push('<pre' + mdSourceAttr(mapped ? line : null, line + count) + '><code>' + code + '</code></pre>');
+      } else out.push(restoreMath(mdBlock(protectMath(segs[i], mapped ? line : null), mapped ? line : null)));
+      line += count;
     }
     return out.join('');
   }
@@ -2243,6 +2314,7 @@
     ['**', '**', '加粗', 'wrap', '重点', '**加粗**'],
     ['*', '*', '斜体', 'wrap', '强调', '*斜体*'],
     ['~~', '~~', '删除线', 'wrap', '划掉', '~~删除线~~'],
+    ['==', '==', '文字高亮', 'wrap', '重点', '==高亮=='],
     ['`', '`', '行内代码', 'wrap', 'code', '`代码`'],
     ['> ', '', '引用', 'line', '', '> 引用'],
     ['- ', '', '无序列表', 'line', '', '- 列表'],
@@ -2275,6 +2347,8 @@
     var box = btn.closest ? (btn.closest('.md-wrap') || btn.closest('.md-box')) : null;
     var ta = (box || document).querySelector('.md-input');
     if (!ta) return;
+    var px = (box || document).querySelector('.md-preview');
+    if (px && !px.hidden) mdToggleTab(box.querySelector('[data-action="md-tab-edit"]'), 'edit');
     var before = btn.getAttribute('data-before') || '';
     var after = btn.getAttribute('data-after') || '';
     var sample = btn.getAttribute('data-sample') || '';
@@ -2298,8 +2372,7 @@
     var caret = from + text.length;
     ta.focus();
     try { ta.setSelectionRange(caret, caret); } catch (e) {}
-    var px = (box || document).querySelector('.md-preview');
-    if (px && !px.hidden) { px.innerHTML = mdToHtml(ta.value); hydrateMath(px); }
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   function fieldHTML(f) {
@@ -2312,9 +2385,9 @@
         '<p class="field-hint">' + esc(f.hint || '可以选多个账号联合署名；不选就署你自己。') + '</p>';
     } else if (f.type === 'markdown') {
       inner = '<div class="md-wrap"><div class="md-box">' +
-        '<div class="md-tabs"><button type="button" class="m-tab on" data-action="md-tab-edit">✏️ 编辑</button><button type="button" class="m-tab" data-action="md-tab-prev">👁️ 预览</button></div>' +
+        '<div class="md-tabs"><button type="button" class="m-tab on" data-action="md-tab-edit">✏️ 编辑</button><button type="button" class="m-tab" data-action="md-tab-prev">👁️ 预览</button><span class="md-position">第 1 行</span></div>' +
         '<textarea class="md-input" id="f_' + f.key + '" name="' + f.key + '" rows="14" maxlength="50000" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>' +
-        '<div class="md-preview md-body" hidden></div>' +
+        '<div class="md-preview md-body" tabindex="0" aria-label="Markdown 预览" hidden></div>' + MingEditor.html() +
         '</div>' + mdHelpHTML() + '</div>' +
         '<p class="field-hint">支持 Markdown 与 LaTeX 公式（KaTeX 渲染）：<code>$行内公式$</code> · <code>$$独占一行的公式$$</code>；右侧速查表点一下即可插入。</p>';
     } else if (f.type === 'imgs') {
@@ -2326,6 +2399,9 @@
         '<p class="field-hint">浏览器里自动压缩（长边 1600px · 优先 WebP），支持 JPG / PNG / WebP / HEIC 转码；最多 6 张，可拖拽或直接粘贴</p>';
     } else if (f.type === 'textarea') {
       inner = '<textarea id="f_' + f.key + '" name="' + f.key + '" rows="' + (f.rows || 4) + '" maxlength="' + (f.max || 500) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>';
+    } else if (f.type === 'board') {
+      inner = '<input id="f_' + f.key + '" name="' + f.key + '" list="f_' + f.key + '_options" value="' + esc(v) + '" maxlength="10" placeholder="如：高数焚诀 / 编程 / 生活">' +
+        '<datalist id="f_' + f.key + '_options">' + studyBoardNames().map(function (name) { return '<option value="' + esc(name) + '"></option>'; }).join('') + '</datalist>';
     } else if (f.type === 'select') {
       inner = '<select id="f_' + f.key + '" name="' + f.key + '">' + (f.options || []).map(function (o) {
         return '<option value="' + esc(o) + '"' + (String(o) === String(v) ? ' selected' : '') + '>' + esc(o) + '</option>';
@@ -2346,7 +2422,13 @@
     var dlg = $('#modalBackdrop .modal');
     if (dlg) dlg.classList.toggle('modal-wide', wide);
     $('#modalTitle').textContent = opts.title;
+    MingEditor.destroy($('#modalBody'));
     $('#modalBody').innerHTML = currentFields.map(fieldHTML).join('');
+    MingEditor.wire($('#modalBody'), {
+      render: mdToHtml, math: hydrateMath, compress: compressImage, toast: toast,
+      upload: function (file, progress) { return uploadImage(Object.assign({}, file, { folder: 'markdown', session: mySession, kind: opts.markdownKind, itemId: opts.markdownItemId || '' }), progress); },
+      list: function () { return apiPost('/api/media/list', { session: mySession }); }
+    });
     $('#modalFoot').innerHTML =
       '<button class="btn btn-ghost" type="button" data-action="close-modal">取消</button>' +
       '<button class="btn btn-primary" type="button" data-action="submit-modal">' + esc(opts.submitText || '保存') + '</button>';
@@ -2359,6 +2441,7 @@
   function closeModal() {
     /* 强制绑定向导期间不允许关掉弹窗（点背景、按 Esc、点 ✕ 都无效） */
     if (modalLocked) { toast('请先完成两步验证绑定，绑定后会自动进入网站', 'info'); return; }
+    MingEditor.destroy($('#modalBody'));
     $('#modalBackdrop').hidden = true;
     document.body.style.overflow = '';
     currentSubmit = null;
@@ -2373,18 +2456,7 @@
     if (x) x.hidden = !!on;
   }
 
-  function mdToggleTab(btn, mode) {
-    var box = btn.closest('.md-box');
-    if (!box) return;
-    var tabs = box.querySelectorAll('.m-tab');
-    var tx = box.querySelector('.md-input');
-    var px = box.querySelector('.md-preview');
-    if (!tx || !px) return;
-    for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('on');
-    btn.classList.add('on');
-    if (mode === 'prev') { px.innerHTML = mdToHtml(tx.value); hydrateMath(px); px.hidden = false; tx.hidden = true; }
-    else { px.hidden = true; tx.hidden = false; }
-  }
+  function mdToggleTab(btn, mode) { MingEditor.toggle(btn, mode); }
 
   var READER_KINDS = { travel: 'travels', tech: 'tech', study: 'studies', trip: 'trips' };
   var currentReader = null;       /* 当前打开的文章（导出要用） */
@@ -2589,6 +2661,7 @@
 
   function openTravelModal(item) {
     openModal({
+      markdownKind: 'travel', markdownItemId: item ? item.id : '',
       title: item ? '编辑长文' : '添加长文',
       submitText: item ? '保存修改' : '添加 ✨',
       fields: [
@@ -2601,6 +2674,7 @@
         { key: 'tags', label: '标签', max: 60, placeholder: '江南, 慢游', hint: '用逗号分隔', value: item && Array.isArray(item.tags) ? item.tags.join(', ') : '' }
       ],
       onSubmit: function (v) {
+        if (MingEditor.busy($('#modalBody'))) { toast('正文图片尚未完成上传', 'info'); return false; }
         var tags = v.tags.split(/[,，、]/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 5);
         if (item) {
           adminMutate('travel.edit', { id: item.id, title: v.title.trim(), date: v.date, location: v.location.trim(), emoji: v.emoji.trim(), grad: item.grad != null ? item.grad : Math.floor(Math.random() * 8), summary: v.summary.trim(), content: v.content || '', tags: tags }, '长文已更新 ✍️');
@@ -2880,6 +2954,7 @@
 
   /* 正在上传时不允许保存，避免上传完的图没进正文 */
   function uploadsBusy() {
+    if (MingEditor.busy($('#modalBody'))) { toast('正文图片还在上传或需要重试，请完成后再保存', 'info'); return true; }
     if (!uploadItems.length) return false;
     toast('还有图片在上传，稍等一下再保存～', 'info');
     return true;
@@ -2890,6 +2965,7 @@
     pendingModalImgs = item && Array.isArray(item.imgs) ? item.imgs.slice() : [];
     uploadItems = [];
     openModal({
+      markdownKind: 'tech', markdownItemId: item ? item.id : '',
       title: item ? '编辑体验' : '添加数码体验',
       submitText: item ? '保存修改' : '添加 ✨',
       fields: [
@@ -2927,7 +3003,7 @@
       : [];
     var fields = [
       { key: 'title', label: '标题', required: true, max: 60, placeholder: '如：C 语言焚诀 · 燃烧你的 CPU', value: item ? item.title : '' },
-      { key: 'category', label: '类目', type: 'select', options: ['教程', '焚诀', '笔记', '杂谈'], value: item ? item.category : '教程' },
+      { key: 'category', label: '所属板块', type: 'board', required: true, max: 10, hint: '选已有板块，也可以输入新板块名称（最多 10 字）。', value: item ? studyBoard(item) : (guideParams().board || '高数焚诀') },
       { key: 'date', label: '月份', type: 'month', required: true, value: item ? item.date : dateStr(0).slice(0, 7) },
       { key: 'text', label: '简介', type: 'textarea', required: true, max: 160, rows: 3, placeholder: '一两句话概括这篇指南…', value: item ? (item.text || '') : '' },
       { key: 'content', label: '正文（Markdown 长文）', type: 'markdown', max: 50000, rows: 14, placeholder: '# 第一章 · 心法总纲\n\n**正文从这里开始**……', value: item ? (item.content || '') : '' }
@@ -2935,6 +3011,7 @@
     if (owner) fields.push({ key: '_authors', label: '编写人（可以选好几个）', type: 'authors', hint: '从已有账号里挑；不选就署你自己。' });
     fields.push({ key: '_imgs', label: '图片', type: 'imgs' });
     openModal({
+      markdownKind: 'study', markdownItemId: item ? item.id : '',
       title: item ? '编辑指南' : '添加指南',
       submitText: item ? '保存修改' : '添加 ✍️',
       fields: fields,
@@ -2979,6 +3056,7 @@
     if (owner) fields.push({ key: '_authors', label: '编写人（可以选好几个）', type: 'authors', hint: '从已有账号里挑；不选就署你自己。' });
     fields.push({ key: '_imgs', label: '图片（最多 6 张）', type: 'imgs' });
     openModal({
+      markdownKind: 'trip', markdownItemId: item ? item.id : '',
       title: item ? '编辑旅行攻略' : '写一篇旅行攻略',
       submitText: item ? '保存修改' : '发布攻略 🧭',
       fields: fields,
