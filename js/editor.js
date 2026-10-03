@@ -23,6 +23,14 @@
         box.querySelector('.md-position').textContent = '第 ' + line + ' 行';
       }
       ['input','keyup','click','select','blur'].forEach(function (event) { tx.addEventListener(event, remember); });
+      px.addEventListener('scroll', function () {
+        if (px.hidden || Math.abs(px.scrollTop - (box._mdPreviewTop || 0)) < 1) return;
+        var anchor = previewAnchor(px);
+        if (anchor) {
+          px.dataset.activeLine = String(anchor.line);
+          box.querySelector('.md-position').textContent = '第 ' + anchor.line + ' 行';
+        }
+      }, { passive: true });
       remember();
       function insert(text) {
         if (!px.hidden) toggle(box.querySelector('[data-action="md-tab-edit"]'), 'edit');
@@ -142,14 +150,115 @@
     ctx.math(px);
   }
   function stopTracking(box) { if (box._mdStop) { box._mdStop(); box._mdStop = null; } }
+  function previewAnchor(px) {
+    var viewport = px.getBoundingClientRect(), baseline = viewport.top + 18;
+    var nodes = Array.from(px.querySelectorAll('[data-source-line]')).filter(function (node) {
+      return !node.querySelector('[data-source-line]') ||
+        (node.tagName === 'SPAN' && node.dataset.sourceLine === node.dataset.sourceEnd);
+    });
+    var selected = null, distance = Infinity;
+    nodes.forEach(function (node) {
+      Array.from(node.getClientRects()).forEach(function (rect) {
+        if (!rect.height || rect.bottom <= baseline || rect.top >= viewport.bottom) return;
+        var delta = Math.max(0, rect.top - baseline);
+        if (delta < distance) {
+          distance = delta;
+          selected = { line: Number(node.dataset.sourceLine), offset: Math.max(14, rect.top - viewport.top) };
+          var x = rect.left + 1, y = Math.min(rect.bottom - 1, viewport.bottom - 2, Math.max(baseline, rect.top) + rect.height / 2);
+          var caret = document.caretPositionFromPoint ? document.caretPositionFromPoint(x, y) : null;
+          var range = !caret && document.caretRangeFromPoint ? document.caretRangeFromPoint(x, y) : null;
+          var textNode = caret ? caret.offsetNode : range && range.startContainer;
+          var textOffset = caret ? caret.offset : range && range.startOffset;
+          if (textNode && textNode.nodeType === 3 && node.contains(textNode)) {
+            var prefix = document.createRange(); prefix.setStart(node, 0); prefix.setEnd(textNode, textOffset);
+            selected.fragment = textNode.nodeValue; selected.textOffset = textOffset;
+            selected.progress = prefix.toString().length / Math.max(1, node.textContent.length);
+          }
+        }
+      });
+    });
+    if (!selected && nodes.length) {
+      var last = nodes[nodes.length - 1];
+      selected = { line: Number(last.dataset.sourceEnd || last.dataset.sourceLine), offset: 18 };
+    }
+    return selected;
+  }
+  function lineStart(text, line) {
+    var at = 0;
+    for (var n = 1; n < line; n++) {
+      var next = text.indexOf('\n', at);
+      if (next < 0) return text.length;
+      at = next + 1;
+    }
+    return at;
+  }
+  function sourcePosition(text, anchor) {
+    var start = lineStart(text, anchor.line), end = text.indexOf('\n', start);
+    var source = text.slice(start, end < 0 ? text.length : end);
+    if (!anchor.fragment) return start;
+    var desired = source.length * anchor.progress - anchor.textOffset, best = -1, distance = Infinity;
+    for (var at = source.indexOf(anchor.fragment); at >= 0; at = source.indexOf(anchor.fragment, at + 1)) {
+      var delta = Math.abs(at - desired);
+      if (delta < distance) { best = at; distance = delta; }
+    }
+    return best < 0 ? start : start + best + anchor.textOffset;
+  }
+  function previewCaretRect(tx, target) {
+    var line = tx.value.slice(0, tx.selectionStart).split('\n').length;
+    if (Number(target.dataset.sourceLine) !== line) return target.getBoundingClientRect();
+    var start = lineStart(tx.value, line), end = tx.value.indexOf('\n', start);
+    var source = tx.value.slice(start, end < 0 ? tx.value.length : end);
+    var caret = tx.selectionStart - start, from = 0, node;
+    var walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+    while ((node = walker.nextNode())) {
+      if (!node.nodeValue || node.parentElement.closest('.math-pending,.math-inline,.math-display')) continue;
+      var at = source.indexOf(node.nodeValue, from);
+      if (at < 0) continue;
+      var last = at + node.nodeValue.length;
+      if (caret >= at && caret <= last) {
+        var range = document.createRange(), offset = Math.min(caret - at, node.nodeValue.length - 1);
+        range.setStart(node, Math.max(0, offset)); range.setEnd(node, Math.min(node.nodeValue.length, offset + 1));
+        var rect = range.getBoundingClientRect();
+        if (rect.height) return rect;
+      }
+      from = last;
+    }
+    return target.getBoundingClientRect();
+  }
+  function sourceScroll(tx, at, offset) {
+    // 用相同宽度和字体量出源码位置，长行换行时也能正确定位。
+    var computed = getComputedStyle(tx), mirror = document.createElement('div');
+    ['fontFamily','fontSize','fontWeight','fontStyle','lineHeight','letterSpacing','wordSpacing',
+      'tabSize','paddingTop','paddingRight','paddingBottom','paddingLeft','textIndent'].forEach(function (key) { mirror.style[key] = computed[key]; });
+    Object.assign(mirror.style, {
+      position: 'fixed', left: '-100000px', top: '0', visibility: 'hidden',
+      pointerEvents: 'none', width: tx.clientWidth + 'px', boxSizing: 'border-box',
+      whiteSpace: tx.wrap === 'off' ? 'pre' : 'pre-wrap', overflowWrap: 'break-word', border: '0'
+    });
+    mirror.setAttribute('aria-hidden', 'true');
+    mirror.appendChild(document.createTextNode(tx.value.slice(0, at)));
+    var marker = document.createElement('span'); marker.textContent = '\u200b';
+    mirror.appendChild(marker);
+    mirror.appendChild(document.createTextNode(tx.value.slice(at) || '\u200b'));
+    document.body.appendChild(mirror);
+    var top = marker.getBoundingClientRect().top - mirror.getBoundingClientRect().top;
+    mirror.remove();
+    return Math.max(0, top - offset);
+  }
   function toggle(btn, mode) {
     var box = btn.closest('.md-box'), tx = box.querySelector('.md-input'), px = box.querySelector('.md-preview');
+    if (mode === 'edit' && px.hidden) { tx.focus({ preventScroll: true }); return; }
+    if (mode === 'prev' && !px.hidden) return;
+    var anchor = mode === 'edit' && Math.abs(px.scrollTop - (box._mdPreviewTop || 0)) >= 1 ? previewAnchor(px) : null;
     stopTracking(box);
     box.querySelectorAll('.m-tab').forEach(function (tab) { tab.classList.toggle('on', tab === btn); });
     if (mode === 'edit') {
       px.hidden = true; tx.hidden = false;
-      tx.focus({ preventScroll: true }); tx.setSelectionRange(box._mdStart || 0, box._mdEnd || 0);
-      tx.scrollTop = box._mdScroll || 0; return;
+      var start = anchor ? sourcePosition(tx.value, anchor) : (box._mdStart || 0);
+      tx.focus({ preventScroll: true }); tx.setSelectionRange(start, anchor ? start : (box._mdEnd || 0));
+      tx.scrollTop = anchor ? sourceScroll(tx, start, anchor.offset) : (box._mdScroll || 0);
+      tx.dispatchEvent(new Event('select', { bubbles: true }));
+      return;
     }
     box._mdStart = tx.selectionStart; box._mdEnd = tx.selectionEnd; box._mdScroll = tx.scrollTop;
     var line = tx.value.slice(0, tx.selectionStart).split('\n').length;
@@ -158,13 +267,18 @@
     renderPreview(box); px.hidden = false; tx.hidden = true;
     px.dataset.activeLine = String(line);
     var nodes = Array.from(px.querySelectorAll('[data-source-line]'));
-    var target = nodes.filter(function (node) { return +node.dataset.sourceLine <= line && +(node.dataset.sourceEnd || node.dataset.sourceLine) >= line; }).pop();
+    var matches = nodes.filter(function (node) { return +node.dataset.sourceLine <= line && +(node.dataset.sourceEnd || node.dataset.sourceLine) >= line; });
+    var target = matches.filter(function (node) {
+      return +node.dataset.sourceLine === line && +(node.dataset.sourceEnd || node.dataset.sourceLine) === line &&
+        !node.matches('.math-pending,.math-inline,.math-display');
+    }).pop() || matches.pop();
     if (!target) target = nodes.find(function (node) { return +node.dataset.sourceLine >= line; }) || nodes[nodes.length - 1];
     if (target) target.classList.add('md-current-line');
     var tracking = true, frame = 0;
     function align() {
       if (!tracking || !target || px.hidden) return;
-      px.scrollTop += target.getBoundingClientRect().top - px.getBoundingClientRect().top - 18;
+      px.scrollTop += previewCaretRect(tx, target).top - px.getBoundingClientRect().top - 18;
+      box._mdPreviewTop = px.scrollTop;
     }
     function schedule() { cancelAnimationFrame(frame); frame = requestAnimationFrame(align); }
     function stop() { tracking = false; cancelAnimationFrame(frame); if (observer) observer.disconnect(); px.removeEventListener('wheel', stop); px.removeEventListener('touchstart', stop); px.removeEventListener('pointerdown', stop); px.removeEventListener('keydown', stop); }
